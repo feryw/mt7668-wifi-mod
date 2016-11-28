@@ -2281,7 +2281,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_CHIP            "GET_CHIP"
 #define CMD_SET_DBG_LEVEL       "SET_DBG_LEVEL"
 #define CMD_GET_DBG_LEVEL       "GET_DBG_LEVEL"
-#define PRIV_CMD_SIZE 512
+#define PRIV_CMD_SIZE 2000
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
 #define CMD_SET_TEST_MODE		"SET_TEST_MODE"
@@ -2303,6 +2303,9 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 #define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
 #endif
+
+#define CMD_SET_P2P_PS			"SET_P2P_PS"
+#define CMD_SET_P2P_NOA			"SET_P2P_NOA"
 
 static UINT_8 g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -6832,6 +6835,77 @@ static int priv_driver_get_hif_info(IN struct net_device *prNetDev, IN char *pcC
 	return halDumpHifStatus(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
 }
 
+int priv_driver_set_p2p_ps(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	UINT_32 u4Ret;
+	INT_32 i4Parameter;
+	PARAM_CUSTOM_OPPPS_PARAM_STRUCT_T rOpppsParamInfo;
+	UINT_8 ucRoleIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 3) {
+		/* get Bss Index from ndev */
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+			return -1;
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &rOpppsParamInfo.ucBssIdx) !=
+			WLAN_STATUS_SUCCESS)
+			return -1;
+
+		DBGLOG(REQ, LOUD, "priv_driver_set_p2p_ps bss Idx %u\n", rOpppsParamInfo.ucBssIdx);
+
+		u4Ret = kalkStrtos32(apcArgv[1], 0, &i4Parameter);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv[1] error u4Ret=%d\n", u4Ret);
+
+		if (i4Parameter >= 1)
+			rOpppsParamInfo.ucLegcyPS = 1;
+		else
+			rOpppsParamInfo.ucLegcyPS = 0;
+
+		u4Ret = kalkStrtos32(apcArgv[2], 0, &i4Parameter);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv[2] error u4Ret=%d\n", u4Ret);
+
+		if (i4Parameter >= 1)
+			rOpppsParamInfo.ucOppPs = 1;
+		else
+			rOpppsParamInfo.ucOppPs = 0;
+
+		u4Ret = kalkStrtos32(apcArgv[3], 0, &i4Parameter);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv[2] error u4Ret=%d\n", u4Ret);
+
+		if (rOpppsParamInfo.ucOppPs)
+			rOpppsParamInfo.u4CTwindowMs = (UINT_32)i4Parameter;
+
+		rStatus = kalIoctl(prGlueInfo,
+						wlanoidSetOppPsParam,
+						&rOpppsParamInfo, sizeof(rOpppsParamInfo),
+						FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	} else {
+		DBGLOG(INIT, ERROR, "ERR, iwpriv wlanXX driver SET_P2P_PS <legacy ps> <Oppps> <CTW>\n");
+	}
+
+	return i4BytesWritten;
+}
+
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -7041,6 +7115,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_mem_info(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_HIF_INFO, strlen(CMD_GET_HIF_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_hif_info(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_P2P_PS, strlen(CMD_SET_P2P_PS)) == 0)
+			i4BytesWritten = priv_driver_set_p2p_ps(prNetDev, pcCommand, i4TotalLen);
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
@@ -7080,6 +7156,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 	priv_driver_cmd_t *priv_cmd = NULL;
 	int i4BytesWritten = 0;
 	int i4TotalLen = 0;
+	struct iwreq	*wrqin = (struct iwreq *) prReq;
 
 	if (!prReq->ifr_data) {
 		ret = -EINVAL;
@@ -7103,17 +7180,20 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 		return -ENOMEM;
 	}
 
-	if (copy_from_user(priv_cmd, prReq->ifr_data, sizeof(priv_driver_cmd_t))) {
+	if (copy_from_user(priv_cmd->buf, prReq->ifr_data, PRIV_CMD_SIZE)) {
 		DBGLOG(REQ, INFO, "%s: copy_from_user fail\n", __func__);
 		ret = -EFAULT;
 		goto exit;
 	}
 
+	priv_cmd->total_len = wrqin->u.data.length;
+
 	i4TotalLen = priv_cmd->total_len;
 
 	if (i4TotalLen <= 0) {
 		ret = -EINVAL;
-		DBGLOG(REQ, INFO, "%s: i4TotalLen invalid\n", __func__);
+		DBGLOG(REQ, INFO, "%s: i4TotalLen invalid %x %x %s\n", __func__,
+			i4TotalLen, priv_cmd->used_len, priv_cmd->buf);
 		goto exit;
 	}
 
@@ -7121,7 +7201,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 
 	DBGLOG(REQ, INFO, "%s: driver cmd \"%s\" on %s\n", __func__, pcCommand, prReq->ifr_name);
 
-	i4BytesWritten = priv_driver_cmds(prNetDev, pcCommand, i4TotalLen);
+	i4BytesWritten = priv_driver_cmds(prNetDev, pcCommand, PRIV_CMD_SIZE);
 
 	if (i4BytesWritten < 0) {
 		DBGLOG(REQ, INFO, "%s: command %s Written is %d\n", __func__, pcCommand, i4BytesWritten);
@@ -7129,6 +7209,22 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 			snprintf(pcCommand, 3, "OK");
 			i4BytesWritten = strlen("OK");
 		}
+	}
+
+	if (copy_to_user(prReq->ifr_data, priv_cmd->buf, PRIV_CMD_SIZE)) {
+		DBGLOG(REQ, INFO, "%s: copy_to_user fail\n", __func__);
+		ret = -EFAULT;
+		goto exit;
+	}
+
+
+	if (i4BytesWritten > 0) {
+		if (i4BytesWritten > PRIV_CMD_SIZE)
+			i4BytesWritten = PRIV_CMD_SIZE;
+		wrqin->u.data.length = i4BytesWritten;	/* the iwpriv will use the length */
+
+	} else if (i4BytesWritten == 0) {
+		wrqin->u.data.length = i4BytesWritten;
 	}
 
 exit:

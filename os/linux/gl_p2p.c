@@ -225,6 +225,7 @@ mtk_cfg80211_default_mgmt_stypes[NUM_NL80211_IFTYPES] = {
 
 
 static const struct iw_priv_args rP2PIwPrivTable[] = {
+#if 0
 	{
 	 .cmd = IOC_P2P_CFG_DEVICE,
 	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(IW_P2P_CFG_DEVICE_TYPE),
@@ -292,6 +293,9 @@ static const struct iw_priv_args rP2PIwPrivTable[] = {
 	 .set_args = IW_PRIV_TYPE_NONE,
 	 .get_args = 256,
 	 .name = "get_oid"}
+	,
+#endif
+	 {IOCTL_GET_DRIVER, IW_PRIV_TYPE_CHAR | 2000, IW_PRIV_TYPE_CHAR | 2000, "driver"},
 };
 
 #if 0
@@ -1507,10 +1511,15 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	int ret = 0;
 	/* char *prExtraBuf = NULL; */
 	/* UINT_32 u4ExtraSize = 0; */
-	/* struct iwreq *prIwReq = (struct iwreq *)prIfReq; */
-	/* struct iw_request_info rIwReqInfo; */
+	struct iwreq *prIwReq = (struct iwreq *)prIfReq;
+	struct iw_request_info rIwReqInfo;
+	/* fill rIwReqInfo */
+	rIwReqInfo.cmd = (__u16) i4Cmd;
+	rIwReqInfo.flags = 0;
 
 	ASSERT(prDev && prIfReq);
+
+	DBGLOG(P2P, ERROR, "p2pDoIOCTL In %x %x\n", i4Cmd, SIOCDEVPRIVATE);
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
 	if (!prGlueInfo) {
@@ -1523,10 +1532,11 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 		return -EINVAL;
 	}
 
-	if (i4Cmd == SIOCDEVPRIVATE + 1) {
+	if (i4Cmd == IOCTL_GET_DRIVER)
 		ret = priv_support_driver_cmd(prDev, prIfReq, i4Cmd);
-
-	} else {
+	else if (i4Cmd == SIOCGIWPRIV)
+		ret = mtk_p2p_wext_get_priv(prDev, &rIwReqInfo, &(prIwReq->u), NULL);
+	else {
 		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n", i4Cmd);
 		ret = -1;
 	}
@@ -1663,4 +1673,43 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	/* @FIXME */
 	return eth_mac_addr(prDev, addr);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief To report the private supported IOCTLs table to user space.
+ *
+ * \param[in] prDev Net device requested.
+ * \param[out] prIfReq Pointer to ifreq structure, content is copied back to
+ *                  user space buffer in gl_iwpriv_table.
+ *
+ * \retval 0 For success.
+ * \retval -E2BIG For user's buffer size is too small.
+ * \retval -EFAULT For fail.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int
+mtk_p2p_wext_get_priv(IN struct net_device *prDev,
+		      IN struct iw_request_info *info, IN OUT union iwreq_data *wrqu, IN OUT char *extra)
+{
+	struct iw_point *prData = (struct iw_point *)&wrqu->data;
+	UINT_16 u2BufferSize = 0;
+
+	ASSERT(prDev);
+
+	u2BufferSize = prData->length;
+
+	/* update our private table size */
+	prData->length = (__u16) sizeof(rP2PIwPrivTable) / sizeof(struct iw_priv_args);
+
+	if (u2BufferSize < prData->length)
+		return -E2BIG;
+
+	if (prData->length) {
+		if (copy_to_user(prData->pointer, rP2PIwPrivTable, sizeof(rP2PIwPrivTable)))
+			return -EFAULT;
+	}
+
+	return 0;
+}				/* end of mtk_p2p_wext_get_priv() */
 

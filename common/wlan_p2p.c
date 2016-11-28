@@ -1335,32 +1335,27 @@ wlanoidSetOppPsParam(IN P_ADAPTER_T prAdapter,
 	prOppPsParam = (P_PARAM_CUSTOM_OPPPS_PARAM_STRUCT_T) pvSetBuffer;
 
 	kalMemZero(&rCmdOppPsParam, sizeof(CMD_CUSTOM_OPPPS_PARAM_STRUCT_T));
-	rCmdOppPsParam.u4CTwindowMs = prOppPsParam->u4CTwindowMs;
 
-#if 0
+	rCmdOppPsParam.ucBssIdx = prOppPsParam->ucBssIdx;
+
+	if (prOppPsParam->ucOppPs) {
+		/* [spec. 3.3.2] CTWindow should be at least 10 TU */
+		if (prOppPsParam->u4CTwindowMs < 10)
+			rCmdOppPsParam.u4CTwindowMs = 10;
+		else
+			rCmdOppPsParam.u4CTwindowMs = prOppPsParam->u4CTwindowMs;
+	} else
+		rCmdOppPsParam.u4CTwindowMs = 0;/* Set 0 means disable OppPs */
+
 	return wlanSendSetQueryCmd(prAdapter,
-				   CMD_ID_SET_OPPPS_PARAM,
-				   TRUE,
-				   FALSE,
-				   TRUE,
-				   nicCmdEventSetCommon,
-				   nicOidCmdTimeoutCommon,
-				   sizeof(CMD_CUSTOM_OPPPS_PARAM_STRUCT_T),
-				   (PUINT_8) &rCmdOppPsParam, pvSetBuffer, u4SetBufferLen);
-#else
-	return wlanoidSendSetQueryP2PCmd(prAdapter,
-					 CMD_ID_SET_NOA_PARAM,
-					 prOppPsParam->ucBssIdx,
-					 TRUE,
-					 FALSE,
-					 TRUE,
-					 NULL,
-					 nicOidCmdTimeoutCommon,
-					 sizeof(CMD_CUSTOM_OPPPS_PARAM_STRUCT_T),
-					 (PUINT_8) &rCmdOppPsParam, pvSetBuffer, u4SetBufferLen);
-
-#endif
-
+					CMD_ID_SET_OPPPS_PARAM,
+					TRUE,
+					FALSE,
+					TRUE,
+					nicCmdEventSetCommon,
+					nicOidCmdTimeoutCommon,
+					sizeof(CMD_CUSTOM_OPPPS_PARAM_STRUCT_T),
+					(PUINT_8)&rCmdOppPsParam, pvSetBuffer, u4SetBufferLen);
 }
 
 WLAN_STATUS
