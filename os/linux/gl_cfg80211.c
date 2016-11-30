@@ -3234,14 +3234,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	enum regd_state old_state;
 
 
-	/*
-	 * Check if firmawre support single sku
-	 */
-	if (!regd_is_single_sku_en())
-		return; /*no need to do the followings*/
-
-
-
 	if (!pWiphy) {
 		DBGLOG(RLM, ERROR, "%s(): pWiphy = NULL.\n", __func__);
 		return;
@@ -3395,6 +3387,13 @@ DOMAIN_SEND_CMD:
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter)
 		return; /*interface is not up yet.*/
+
+
+	/*
+	 * Check if firmawre support single sku
+	 */
+	if (!regd_is_single_sku_en())
+		return; /*no need to send information to firmware due to firmware is not supported*/
 
 
 	/*
