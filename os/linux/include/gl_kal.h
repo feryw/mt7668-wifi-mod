@@ -427,6 +427,17 @@ typedef struct _MONITOR_RADIOTAP_T {
 #define KAL_GET_PKT_ARRIVAL_TIME(_p)            GLUE_GET_PKT_ARRIVAL_TIME(_p)
 
 /*----------------------------------------------------------------------------*/
+/* Macros for kernel related defines                      */
+/*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#define IEEE80211_CHAN_PASSIVE_FLAG	IEEE80211_CHAN_PASSIVE_SCAN
+#define IEEE80211_CHAN_PASSIVE_STR		"PASSIVE"
+#else
+#define IEEE80211_CHAN_PASSIVE_FLAG	IEEE80211_CHAN_NO_IR
+#define IEEE80211_CHAN_PASSIVE_STR		"NO_IR"
+#endif
+
+/*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)

@@ -3233,7 +3233,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		return;
 	}
 
-
 	/*
 	 * Magic flow for driver to send inband command after kernel's calling reg_notifier callback
 	 */
@@ -3281,21 +3280,26 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	/*
 	 * State machine transition
 	 */
-	DBGLOG(RLM, INFO, "request->alpha2 = %s, initiator = %x\n", pRequest->alpha2, pRequest->initiator);
+	DBGLOG(RLM, INFO, "request->alpha2=%s, initiator=%x, intersect=%d\n",
+			pRequest->alpha2, pRequest->initiator, pRequest->intersect);
 
 	old_state = rlmDomainGetCtrlState();
 	regd_state_machine(pRequest);
 
-	if (rlmDomainGetCtrlState() == old_state)
-		return; /*the same state. no need to go further process*/
-	else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
+	if (rlmDomainGetCtrlState() == old_state) {
+		if (old_state == REGD_STATE_SET_COUNTRY_USER &&
+		    !(rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2))))
+			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
+		else
+			/* Change to same state or same country, ignore */
+			return;
+	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
 		DBGLOG(RLM, ERROR, "\n%s():\n---> ERROR. Transit to invalid state.\n", __func__);
 		DBGLOG(RLM, ERROR, "---> ERROR. Ignore country code updateing.\n");
 		DBGLOG(RLM, ERROR, "---> ERROR.\n ");
 		ASSERT(0);
 		return; /*error state*/
 	}
-
 
 	/*
 	 * Set country code
@@ -3317,10 +3321,8 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	}
 
 
-
 DOMAIN_SEND_CMD:
 	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = 0x%x\n", rlmDomainGetCountryCode());
-
 
 	/*
 	 * Check if using customized regulatory rule
@@ -3352,7 +3354,6 @@ DOMAIN_SEND_CMD:
 	}
 
 
-
 	/*
 	 * Parsing channels
 	 */
@@ -3370,7 +3371,6 @@ DOMAIN_SEND_CMD:
 	 */
 
 	prGlueInfo = rlmDomainGetGlueInfo();
-
 
 	/*
 	 * Prepare to send channel information to firmware
