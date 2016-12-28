@@ -1445,7 +1445,7 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	 * Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
 	 * Linux path: "/lib/firmware", "/lib/firmware/update"
 	 */
-	ret = request_firmware(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
+	ret = REQUEST_FIRMWARE(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
 
 	if (ret) {
 		DBGLOG(RLM, ERROR, "\nERROR + ERROR + ERROR\n%s(); ERROR. Open file [%s] failed.\n",

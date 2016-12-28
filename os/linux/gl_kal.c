@@ -195,7 +195,7 @@ WLAN_STATUS kalFirmwareOpen(IN P_GLUE_INFO_T prGlueInfo, IN PPUINT_8 apucNameTab
 		* Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
 		* Linux path: "/lib/firmware", "/lib/firmware/update"
 		*/
-		ret = request_firmware(&fw_entry, apucNameTable[ucNameIdx], prGlueInfo->prDev);
+		ret = REQUEST_FIRMWARE(&fw_entry, apucNameTable[ucNameIdx], prGlueInfo->prDev);
 
 		if (ret) {
 			DBGLOG(INIT, TRACE, "Request FW image: %s failed, errno[%d]\n",
@@ -3965,7 +3965,7 @@ INT_32 kalRequestFirmware(const PUINT_8 pucPath, PUINT_8 pucData, UINT_32 u4Size
 	* Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
 	* Linux path: "/lib/firmware", "/lib/firmware/update"
 	*/
-	ret = request_firmware(&fw, pucPath, dev);
+	ret = REQUEST_FIRMWARE(&fw, pucPath, dev);
 
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "kalRequestFirmware %s Fail, errno[%d]!!\n", pucPath, ret);

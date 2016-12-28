@@ -437,6 +437,17 @@ typedef struct _MONITOR_RADIOTAP_T {
 #define IEEE80211_CHAN_PASSIVE_STR		"NO_IR"
 #endif
 
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#define REQUEST_FIRMWARE(_fw, _name, _dev) \
+	request_firmware(_fw, _name, _dev)
+#else
+	/* Do no fall back to user helper to avoid blocking 60 seconds
+	 * when file does not exist.
+	 */
+#define REQUEST_FIRMWARE(_fw, _name, _dev) \
+	request_firmware_direct(_fw, _name, _dev)
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
