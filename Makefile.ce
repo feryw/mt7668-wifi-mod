@@ -38,7 +38,7 @@ endif
 ifeq ($(PLATFORM),MT53XX)
 
 # Sets DRIVER_PARTIAL_BUILD to y to compile driver only, otherwise set to n
-DRIVER_PARTIAL_BUILD=n
+DRIVER_PARTIAL_BUILD := n
 # Set if 64 bit platform
 64BIT_MODE=true
 export WIFI_TARGET
@@ -117,6 +117,8 @@ CFG_ENABLE_EFUSE_MAC_ADDR=1
 # eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
+CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
+
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
 endif
@@ -158,6 +160,10 @@ endif
 
 ifeq ($(CFG_DRIVER_INF_NAME_CHANGE), y)
 PLATFORM_FLAGS += -DCFG_DRIVER_INF_NAME_CHANGE
+endif
+
+ifneq ($(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB),)
+PLATFORM_FLAGS += -DCFG_SUPPORT_SINGLE_SKU_LOCAL_DB=$(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB)
 endif
 
 ##############################################################

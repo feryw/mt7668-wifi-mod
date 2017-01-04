@@ -921,7 +921,9 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_SINGLE_SKU	1
+#ifndef CFG_SUPPORT_SINGLE_SKU_LOCAL_DB
 #define CFG_SUPPORT_SINGLE_SKU_LOCAL_DB 1
+#endif
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
