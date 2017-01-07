@@ -6858,16 +6858,14 @@ static int priv_driver_set_wow(IN struct net_device *prNetDev, IN char *pcComman
 	if (u4Ret)
 		DBGLOG(REQ, LOUD, "parse bEnable error u4Ret=%d\n", u4Ret);
 
-	pWOW_CTRL->fgWowEnable = Enable;
-
-	DBGLOG(INIT, INFO, "CMD set_wow_enable = %d\n", pWOW_CTRL->fgWowEnable);
+	DBGLOG(INIT, INFO, "CMD set_wow_enable = %d\n", Enable);
 	DBGLOG(INIT, INFO, "Scenario ID %d\n", pWOW_CTRL->ucScenarioId);
 	DBGLOG(INIT, INFO, "ucBlockCount %d\n", pWOW_CTRL->ucBlockCount);
 	DBGLOG(INIT, INFO, "interface %d\n", pWOW_CTRL->astWakeHif[0].ucWakeupHif);
 	DBGLOG(INIT, INFO, "gpio_pin %d\n", pWOW_CTRL->astWakeHif[0].ucGpioPin);
 	DBGLOG(INIT, INFO, "gpio_level 0x%x\n", pWOW_CTRL->astWakeHif[0].ucTriggerLvl);
 	DBGLOG(INIT, INFO, "gpio_timer %d\n", pWOW_CTRL->astWakeHif[0].u4GpioInterval);
-	kalWowProcess(prGlueInfo, pWOW_CTRL->fgWowEnable);
+	kalWowProcess(prGlueInfo, Enable);
 
 	return 0;
 }
