@@ -985,6 +985,12 @@ struct _ADAPTER_T {
 	BOOLEAN fgIsFwOwn;
 	BOOLEAN fgWiFiInSleepyState;
 
+	/* Set by callback to make sure WOW process done before system suspend */
+	BOOLEAN fgSetPfCapabilityDone;
+	BOOLEAN fgSetWowDone;
+
+	BOOLEAN fgForceFwOwn;
+
 	OS_SYSTIME rLastOwnFailedLogTime;
 	UINT_32 u4OwnFailedCount;
 	UINT_32 u4OwnFailedLogCount;

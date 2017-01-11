@@ -418,22 +418,44 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	func = dev_to_sdio_func(pDev);
 	prGlueInfo = sdio_get_drvdata(func);
 
+	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d, state:%d\n",
+		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.fgWowEnable,
+		kalGetMediaStateIndicated(prGlueInfo));
+
+	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
+		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
+		(kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED)) {
+		DBGLOG(HAL, STATE, "enter WOW flow\n");
+		kalWowProcess(prGlueInfo, TRUE);
+	}
+
+	prGlueInfo->prAdapter->fgForceFwOwn = TRUE;
+
 	/* Wait for
 	*  1. The other unfinished ownership handshakes
 	*  2. FW own back
 	*/
+	wait = 0;
 	while (1) {
-		if (wait > LP_OWN_BACK_FAILED_LOG_SKIP_MS) {
-			DBGLOG(HAL, ERROR, "Timeout !!\n");
+		if (prGlueInfo->prAdapter->u4PwrCtrlBlockCnt == 0
+				&& prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
+			DBGLOG(HAL, STATE, "************************\n");
+			DBGLOG(HAL, STATE, "* Entered SDIO Supsend *\n");
+			DBGLOG(HAL, STATE, "************************\n");
+			DBGLOG(HAL, INFO, "wait = %d\n\n", wait);
 			break;
 		}
-		if (prGlueInfo->prAdapter->u4PwrCtrlBlockCnt == 0
-			&& prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
-			DBGLOG(HAL, STATE, "\n Entered SDIO Supsend ");
-			break;
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+		kalMsleep(5);
+		RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
+
+		if (wait > 200) {
+			DBGLOG(HAL, ERROR, "Timeout !!\n\n");
+			return -EAGAIN;
 		}
 		wait++;
-		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
 	}
 
 	/* Ask kernel keeping SDIO bus power-on */
@@ -450,8 +472,28 @@ out:
 
 static int mtk_sdio_pm_resume(struct device *pDev)
 {
+	struct sdio_func *func;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
 	DBGLOG(HAL, STATE, "==>\n");
 
+	func = dev_to_sdio_func(pDev);
+	prGlueInfo = sdio_get_drvdata(func);
+
+	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d, state:%d\n",
+		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.fgWowEnable,
+		kalGetMediaStateIndicated(prGlueInfo));
+
+	prGlueInfo->prAdapter->fgForceFwOwn = FALSE;
+
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
+		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
+		(kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED)) {
+		DBGLOG(HAL, STATE, "leave WOW flow\n");
+		kalWowProcess(prGlueInfo, FALSE);
+	}
+
+	DBGLOG(HAL, STATE, "<==\n");
 	return 0;
 }
 

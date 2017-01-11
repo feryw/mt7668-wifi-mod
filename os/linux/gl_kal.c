@@ -4920,17 +4920,38 @@ VOID kalWowInit(IN P_GLUE_INFO_T prGlueInfo)
 	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort, sizeof(WOW_PORT_T));
 }
 
+VOID kalWowCmdEventSetCb(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+
+	if (prCmdInfo->ucCID == CMD_ID_SET_PF_CAPABILITY) {
+		DBGLOG(INIT, STATE, "CMD_ID_SET_PF_CAPABILITY cmd submitted\n");
+		prAdapter->fgSetPfCapabilityDone = TRUE;
+	}
+
+	if (prCmdInfo->ucCID == CMD_ID_SET_WOWLAN) {
+		DBGLOG(INIT, STATE, "CMD_ID_SET_WOWLAN cmd submitted\n");
+		prAdapter->fgSetWowDone = TRUE;
+	}
+
+}
+
 VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 {
 	CMD_WOWLAN_PARAM_T rCmdWowlanParam;
 	CMD_PACKET_FILTER_CAP_T rCmdPacket_Filter_Cap;
 	P_WOW_CTRL_T pWOW_CTRL = &prGlueInfo->prAdapter->rWowCtrl;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-	UINT_32 ii;
+	UINT_32 ii, wait = 0;
 
 	kalMemZero(&rCmdWowlanParam, sizeof(CMD_WOWLAN_PARAM_T));
 
 	kalMemZero(&rCmdPacket_Filter_Cap, sizeof(CMD_PACKET_FILTER_CAP_T));
+
+	prGlueInfo->prAdapter->fgSetPfCapabilityDone = FALSE;
+	prGlueInfo->prAdapter->fgSetWowDone = FALSE;
 
 	DBGLOG(PF, INFO, "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
 		prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, prGlueInfo->prAdapter->prAisBssInfo->ucOwnMacIndex);
@@ -4954,7 +4975,7 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 				TRUE,
 				FALSE,
 				FALSE,
-				nicCmdEventSetCommon,
+				kalWowCmdEventSetCb,
 				nicOidCmdTimeoutCommon,
 				sizeof(CMD_PACKET_FILTER_CAP_T),
 				(PUINT_8)&rCmdPacket_Filter_Cap,
@@ -5005,12 +5026,28 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 				TRUE,
 				FALSE,
 				FALSE,
-				nicCmdEventSetCommon,
+				kalWowCmdEventSetCb,
 				nicOidCmdTimeoutCommon,
 				sizeof(CMD_WOWLAN_PARAM_T),
 				(PUINT_8)&rCmdWowlanParam,
 				NULL,
 				0);
+
+
+	while (1) {
+		kalMsleep(5);
+
+		if (wait > 100) {
+			DBGLOG(INIT, ERROR, "WoW process timeout\n\n");
+			break;
+		}
+		if ((prGlueInfo->prAdapter->fgSetPfCapabilityDone == TRUE)
+			&& (prGlueInfo->prAdapter->fgSetWowDone == TRUE)) {
+			DBGLOG(INIT, STATE, "WoW process done\n\n");
+			break;
+		}
+		wait++;
+	}
 
 }
 #endif
