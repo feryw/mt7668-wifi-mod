@@ -2614,11 +2614,12 @@ ENUM_CHNL_EXT_T rlmSelectSecondaryChannelType(P_ADAPTER_T prAdapter, ENUM_BAND_T
 	below_ch = primary_ch - CHNL_SPAN_20;
 	above_ch = primary_ch + CHNL_SPAN_20;
 
+	if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
+		return CHNL_EXT_SCA;
+
 	if (rlmDomainIsLegalChannel(prAdapter, band, below_ch))
 		return CHNL_EXT_SCB;
 
-	if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
-		return CHNL_EXT_SCA;
 #endif
 
 	return CHNL_EXT_SCN;
