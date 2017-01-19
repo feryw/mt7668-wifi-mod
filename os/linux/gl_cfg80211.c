@@ -3179,6 +3179,7 @@ enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
 	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
 		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_COUNTRY_IE\n");
 
+		return REGD_STATE_SET_COUNTRY_USER;
 	default:
 		return rlmDomainStateTransition(REGD_STATE_INVALID, pRequest);
 	}
@@ -3260,11 +3261,12 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 			/* Change to same state or same country, ignore */
 			return;
 	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
-		DBGLOG(RLM, ERROR, "\n%s():\n---> ERROR. Transit to invalid state.\n", __func__);
-		DBGLOG(RLM, ERROR, "---> ERROR. Ignore country code updateing.\n");
-		DBGLOG(RLM, ERROR, "---> ERROR.\n ");
+		DBGLOG(RLM, ERROR, "\n%s():\n---> WARNING. Transit to invalid state.\n", __func__);
+		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
 		rlmDomianAssert(0);
+#if 0
 		return; /*error state*/
+#endif
 	}
 
 	/*
