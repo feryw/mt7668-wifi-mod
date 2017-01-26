@@ -889,6 +889,26 @@ static inline u16 mtk_wlan_ndev_select_queue(struct sk_buff *skb)
 	return ieee8021d_to_queue[skb->priority];
 }
 
+#if KERNEL_VERSION(2, 6, 34) > LINUX_VERSION_CODE
+#define netdev_for_each_mc_addr(mclist, dev) \
+	for (mclist = dev->mc_list; mclist; mclist = mclist->next)
+#endif
+
+#if KERNEL_VERSION(2, 6, 34) > LINUX_VERSION_CODE
+#define GET_ADDR(ha) ha->da_addr
+#else
+#define GET_ADDR(ha) ha->addr
+#endif
+
+#if KERNEL_VERSION(2, 6, 35) <= LINUX_VERSION_CODE
+#define LIST_FOR_EACH_IPV6_ADDR(_prIfa, _ip6_ptr) \
+	list_for_each_entry(_prIfa, &((struct inet6_dev *) _ip6_ptr)->addr_list, if_list)
+#else
+#define LIST_FOR_EACH_IPV6_ADDR(_prIfa, _ip6_ptr) \
+	for (_prIfa = ((struct inet6_dev *) _ip6_ptr)->addr_list; _prIfa; _prIfa = _prIfa->if_next)
+#endif
+
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
