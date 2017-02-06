@@ -253,12 +253,12 @@ typedef enum _ENUM_BA_RESET_SEL_T {
 
 #endif
 
-#define QM_DEQUE_PERCENT_VHT80_NSS1	23		/* BW80 NSS1 rate: MCS9 433 Mbps */
-#define QM_DEQUE_PERCENT_VHT40_NSS1	10		/* BW40 NSS1 Max rate: 200 Mbps */
-#define QM_DEQUE_PERCENT_VHT20_NSS1	5		/* BW20 NSS1 Max rate: 86.7Mbps */
+#define QM_DEQUE_PERCENT_VHT80_NSS1	75		/* BW80 NSS1 rate: MCS9 433 Mbps */
+#define QM_DEQUE_PERCENT_VHT40_NSS1	35		/* BW40 NSS1 Max rate: 200 Mbps */
+#define QM_DEQUE_PERCENT_VHT20_NSS1	15		/* BW20 NSS1 Max rate: 86.7Mbps */
 
-#define QM_DEQUE_PERCENT_HT40_NSS1	10		/* BW40 NSS1 Max rate: 150 Mbps (MCS9 200Mbps)*/
-#define QM_DEQUE_PERCENT_HT20_NSS1	5		/* BW20 NSS1 Max rate: 72.2Mbps (MCS8 86.7Mbps)*/
+#define QM_DEQUE_PERCENT_HT40_NSS1	25		/* BW40 NSS1 Max rate: 150 Mbps (MCS9 200Mbps)*/
+#define QM_DEQUE_PERCENT_HT20_NSS1	12		/* BW20 NSS1 Max rate: 72.2Mbps (MCS8 86.7Mbps)*/
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
