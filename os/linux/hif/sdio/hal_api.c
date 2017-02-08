@@ -396,11 +396,20 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 			break;
 		}
 
+#if 1
+		if (i == 0) {
+			/* Software get LP ownership - only one time.
+			 * Suppose one CLR_LP_OWN will trigger firmware to return the hif_own.
+			 * If not, there is something wrong in chipset.
+			 */
+			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+		}
+#else
 		if ((i & (LP_OWN_BACK_CLR_OWN_ITERATION - 1)) == 0) {
 			/* Software get LP ownership - per 256 iterations */
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
 		}
-
+#endif
 		/* Delay for LP engine to complete its operation. */
 		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
 		i++;
