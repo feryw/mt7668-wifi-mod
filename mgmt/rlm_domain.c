@@ -2660,7 +2660,7 @@ u32 rlmDomainGetTempCountryCode(void)
 #endif
 }
 
-void rlmDomianAssert(BOOLEAN cond)
+void rlmDomainAssert(BOOLEAN cond)
 {
 	/* bypass this check because single sku is not enable */
 	if (!regd_is_single_sku_en())

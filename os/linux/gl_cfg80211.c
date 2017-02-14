@@ -3263,7 +3263,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
 		DBGLOG(RLM, ERROR, "\n%s():\n---> WARNING. Transit to invalid state.\n", __func__);
 		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
-		rlmDomianAssert(0);
+		rlmDomainAssert(0);
 #if 0
 		return; /*error state*/
 #endif
@@ -3311,7 +3311,7 @@ DOMAIN_SEND_CMD:
 			DBGLOG(RLM, ERROR, "%s(): Error, Cannot find the correct RegDomain. country = %s\n",
 				__func__, rlmDomainGetCountryCode());
 
-			rlmDomianAssert(0);
+			rlmDomainAssert(0);
 			return;
 		}
 
