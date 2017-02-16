@@ -2801,11 +2801,8 @@ wlanoidSetDefaultKey(IN P_ADAPTER_T prAdapter,
 				prBssInfo->fgBcDefaultKeyExist = TRUE;
 				ucWlanIndex = prBssInfo->wepkeyWlanIdx;
 			} else {
-				if (prDefaultKey->ucUnicast) {
-					DBGLOG(RSN, ERROR, "Set STA Unicast default key");
-					return WLAN_STATUS_SUCCESS;
-				}
-				ASSERT(FALSE);
+				DBGLOG(RSN, ERROR, "WPA encryption should retrun");
+				return WLAN_STATUS_SUCCESS;
 			}
 		} else {	/* For AP mode only */
 
