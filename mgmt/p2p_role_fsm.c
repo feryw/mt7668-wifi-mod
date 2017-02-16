@@ -2352,7 +2352,7 @@ p2pProcessEvent_UpdateNOAParam(IN P_ADAPTER_T prAdapter,
 
 	prP2pSpecificBssInfo->fgIsNoaAttrExisted = fgNoaAttrExisted;
 
-	DBGLOG(P2P, ERROR, "[Error][Eason]p2pProcessEvent_UpdateNOAParam\n");
+	DBGLOG(P2P, TRACE, "p2pProcessEvent_UpdateNOAParam\n");
 	/* update beacon content by the change */
 	bssUpdateBeaconContent(prAdapter, ucBssIdx);
 }				/* p2pProcessEvent_UpdateNOAParam */
