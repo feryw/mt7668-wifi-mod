@@ -2591,6 +2591,12 @@ wlanoidUpdateSLTMode(IN P_ADAPTER_T prAdapter,
 
 #endif
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+WLAN_STATUS
+wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
+	OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
+#endif
+
 WLAN_STATUS
 wlanoidQueryWlanInfo(IN P_ADAPTER_T prAdapter,
 	OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);

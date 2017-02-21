@@ -11664,6 +11664,48 @@ wlanoidSetMonitor(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 }
 #endif
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+WLAN_STATUS
+wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
+	OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
+{
+	P_CMD_PTA_CONFIG_T cmd;
+
+	DBGLOG(REQ, LOUD, "%s>\n", __func__);
+
+	ASSERT(prAdapter);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+	ASSERT(pu4QueryInfoLen);
+
+	*pu4QueryInfoLen = sizeof(*cmd);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+		       "Fail in query receive error! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		*pu4QueryInfoLen = sizeof(UINT_32);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4QueryBufferLen < sizeof(*cmd)) {
+		DBGLOG(REQ, WARN, "Too short length %ld\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	cmd = (P_CMD_PTA_CONFIG_T)pvQueryBuffer;
+	DBGLOG(RSN, INFO, "%s cmd type %d\n", __func__, cmd->u2Type);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_ADV_CONTROL,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventQueryAdvCtrl,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(*cmd), (PUINT_8)cmd,
+				   pvQueryBuffer, u4QueryBufferLen);
+}
+#endif
+
 #if CFG_SUPPORT_MSP
 WLAN_STATUS
 wlanoidQueryWlanInfo(IN P_ADAPTER_T prAdapter,

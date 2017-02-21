@@ -2231,6 +2231,30 @@ VOID nicEventRddPulseDump(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 }
 
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+VOID nicCmdEventQueryAdvCtrl(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	PUINT_8 query;
+	P_GLUE_INFO_T prGlueInfo;
+	UINT_32 query_len;
+	P_CMD_ADV_CONFIG_HEADER_T hdr;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	hdr = (P_CMD_ADV_CONFIG_HEADER_T) pucEventBuf;
+	DBGLOG(REQ, LOUD, "%s type %x len %d>\n", __func__, hdr->u2Type, hdr->u2Len);
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		query_len = hdr->u2Len;
+		query = prCmdInfo->pvInformationBuffer;
+		if (hdr && query && (query_len == prCmdInfo->u4InformationBufferLength))
+			kalMemCopy(query, hdr, query_len);
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, query_len, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif
+
 #if CFG_SUPPORT_MSP
 VOID nicCmdEventQueryWlanInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
 {

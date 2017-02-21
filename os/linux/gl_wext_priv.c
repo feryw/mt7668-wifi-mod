@@ -781,6 +781,7 @@ priv_set_int(IN struct net_device *prNetDev,
 	case PRIV_CMD_POWER_MODE:
 		{
 			PARAM_POWER_MODE_T rPowerMode;
+
 			P_BSS_INFO_T prBssInfo = prGlueInfo->prAdapter->prAisBssInfo;
 
 			if (!prBssInfo)
@@ -2326,6 +2327,10 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
 #define CMD_SET_NOISE           "SET_NOISE"
 #define CMD_GET_NOISE           "GET_NOISE"
+#define CMD_AFH_RANGE_CONFIG   "AFH_RANGE_CONFIG"
+#define CMD_PTA_CONFIG  "PTA_CONFIG"
+#define CMD_PTA_TAG_CONFIG  "PTA_TAG_CONFIG"
+#define CMD_BA_SIZE_CONFIG     "BA_SIZE_CONFIG"
 #define CMD_SET_POP           "SET_POP"
 #define CMD_SET_ED            "SET_ED"
 #define CMD_SET_PD            "SET_PD"
@@ -8102,6 +8107,147 @@ static int priv_driver_get_noise(IN struct net_device *prNetDev, IN char *pcComm
 
 }				/* priv_driver_get_sw_ctrl */
 
+static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	P_GLUE_INFO_T prGlueInfo;
+	INT_32 i4BytesWritten = 0;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4Argc = 0;
+	UINT_32 u4Val = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	P_CMD_PTA_CONFIG_T cmd = NULL;
+	INT_32 u4Ret = 0;
+	INT_32 i = 0;
+
+	DBGLOG(REQ, LOUD, "%s(%s)>\n", __func__, pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 2)
+		goto set_pta_invalid;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto set_pta_invalid;
+
+	cmd = (P_CMD_PTA_CONFIG_T)kalMemAlloc(sizeof(*cmd), VIR_MEM_TYPE);
+	if (!cmd)
+		goto set_pta_invalid;
+
+	memset(cmd, 0, sizeof(*cmd));
+	cmd->u2Type = CMD_PTA_CONFIG_TYPE;
+	cmd->u2Len = sizeof(*cmd);
+	/* set command + parameter must be even number */
+	if ((strnicmp(apcArgv[1], "SET", strlen("SET")) == 0) && (i4Argc >= 4) && !(i4Argc & 1)) {
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+		for (i = 2; i < i4Argc; i += 2) {
+			u4Ret = kalkStrtou32(apcArgv[i+1], 0, &u4Val);
+			if (u4Ret) {
+				i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\nparsing err(%d) %s %s", u4Ret, apcArgv[i], apcArgv[i+1]);
+				goto set_pta_invalid;
+			}
+
+			DBGLOG(REQ, LOUD, "arg[%d] %s %s (0x%x)\n", i, apcArgv[i], apcArgv[i+1], u4Val);
+			if (strnicmp(apcArgv[i], "ENABLE", strlen("ENABLE")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_PTA;
+				cmd->u4PtaConfig = u4Val;
+			} else if (strnicmp(apcArgv[i], "TXTAG", strlen("TXTAG")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TX_TAG;
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXACK_TAG;
+				cmd->u4TxTag = u4Val;
+				cmd->u4RxAckTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "RXTAG", strlen("RXTAG")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RX_TAG;
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TXACK_TAG;
+				cmd->u4RxTag = u4Val;
+				cmd->u4TxAckTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "PROTTAG", strlen("PROTTAG")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TXPROTFRAME_TAG;
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXPROTFRAMEACK_TAG;
+				cmd->u4TxProtFrameTag = u4Val;
+				cmd->u4RxProtFrameAckTag = u4Val;
+			} else {
+				i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\nunknown parameter %s %s", apcArgv[i], apcArgv[i+1]);
+				goto set_pta_invalid;
+			}
+		}
+
+		rStatus	= wlanSendSetQueryCmd(prGlueInfo->prAdapter,
+			CMD_ID_ADV_CONTROL,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL, NULL, sizeof(*cmd), (PUINT_8) cmd, NULL, 0);
+	} else if (strnicmp(apcArgv[1], "GET", strlen("GET")) == 0) {
+		rStatus = kalIoctl(prGlueInfo, wlanoidAdvCtrl, cmd, sizeof(*cmd), TRUE, TRUE, TRUE, &u4BufLen);
+	} else
+		goto set_pta_invalid;
+
+	if ((rStatus != WLAN_STATUS_SUCCESS) && (rStatus != WLAN_STATUS_PENDING))
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand failed %x", rStatus);
+	else if (!(cmd->u2Type & CMD_ADV_CONTROL_SET)) {
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nCoex mode: %s", (cmd->u4CoexMode)?"FDD":"TDD");
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nPTA status:");
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n module enable %x wifi %x bt %x wifi arb %x"
+				, (cmd->u4PtaConfig>>EVENT_CONFIG_PTA_OFFSET)&EVENT_CONFIG_PTA_FEILD
+				, (cmd->u4PtaConfig>>EVENT_CONFIG_PTA_WIFI_OFFSET)&EVENT_CONFIG_PTA_WIFI_FEILD
+				, (cmd->u4PtaConfig>>EVENT_CONFIG_PTA_BT_OFFSET)&EVENT_CONFIG_PTA_BT_FEILD
+				, (cmd->u4PtaConfig>>EVENT_CONFIG_PTA_ARB_OFFSET)&EVENT_CONFIG_PTA_ARB_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nPriority stat:");
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n txtag %d", (cmd->u4TxTag>>EVENT_CONFIG_TXTAG_OFFSET)&EVENT_CONFIG_TXTAG_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n rxtag %d", cmd->u4RxTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n prottag %d", cmd->u4TxProtFrameTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nGrant stat:");
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n wifi grant %x txreq %x rxreq %x pritag %x"
+				, (cmd->u4GrantStat>>EVENT_CONFIG_WIFI_GRANT_OFFSET)&EVENT_CONFIG_WIFI_GRANT_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_WIFI_TXREQ_OFFSET)&EVENT_CONFIG_WIFI_TXREQ_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_WIFI_RXREQ_OFFSET)&EVENT_CONFIG_WIFI_RXREQ_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_WIFI_PRI_OFFSET)&EVENT_CONFIG_WIFI_PRI_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n bt grant %x txreq %x rxreq %x pritag %x"
+				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_GRANT_OFFSET)&EVENT_CONFIG_BT_GRANT_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_TXREQ_OFFSET)&EVENT_CONFIG_BT_TXREQ_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_RXREQ_OFFSET)&EVENT_CONFIG_BT_RXREQ_FEILD
+				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_PRI_OFFSET)&EVENT_CONFIG_BT_PRI_FEILD);
+	} else
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand sent %x", rStatus);
+
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+
+	return i4BytesWritten;
+set_pta_invalid:
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nformat:pta_config set [enable 1|0] [txtag val] [rxtag val] [prottag val]");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [enable 1|0]: enable PTA or not");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [txtag val<0~15>]: priority tag for Tx session");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [rxtag val<0~15>]: priority tag for Rx session");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [prottag val<0~15>]: priority tag for Protection frame");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nformat(%d):pta_config get", i4Argc);
+	return i4BytesWritten;
+}
+
 static int priv_driver_set_pop(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -8558,6 +8704,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_noise(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_NOISE, strlen(CMD_GET_NOISE)) == 0)
 			i4BytesWritten = priv_driver_get_noise(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_PTA_CONFIG, strlen(CMD_PTA_CONFIG)) == 0)
+			i4BytesWritten = priv_driver_pta_config(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_POP, strlen(CMD_SET_POP)) == 0)
 			i4BytesWritten = priv_driver_set_pop(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_ED, strlen(CMD_SET_ED)) == 0)
