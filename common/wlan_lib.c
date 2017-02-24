@@ -9309,3 +9309,16 @@ wlanGetSupportNss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	return ucRetValNss;
 }
 
+INT_32 wlanGetFileContent(P_ADAPTER_T prAdapter,
+	const PUINT_8 pcFileName, PUINT_8 pucBuf,
+	UINT_32 u4MaxFileLen, PUINT_32 pu4ReadFileLen, BOOL bReqFw)
+{
+	if (bReqFw)
+		return kalRequestFirmware(pcFileName, pucBuf,
+				 u4MaxFileLen, pu4ReadFileLen,
+				 prAdapter->prGlueInfo->prDev);
+
+	return kalReadToFile(pcFileName, pucBuf,
+				u4MaxFileLen, pu4ReadFileLen);
+}
+

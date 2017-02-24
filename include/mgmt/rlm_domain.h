@@ -472,6 +472,9 @@ typedef struct _DOMAIN_INFO_ENTRY {
 #define ELEMENT_PREFIX (0xffff)
 #define VERSION (0x00000001)
 #define SIZE_OF_VERSION 4
+#define WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE 204800
+#define WLAN_TX_PWR_LIMIT_FILE_NAME "TxPwrLimit_MT76x8.dat"
+
 
 struct tx_pwr_element {
 	UINT_16 prefix;
@@ -723,8 +726,6 @@ void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2);
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region);
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
 void rlmDomainResetCtrlInfo(void);
-u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file);
-BOOLEAN rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);
 void rlmDomainParsingChannel(IN struct wiphy *pWiphy);
