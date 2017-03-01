@@ -2321,6 +2321,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SET_P2P_NOA			"SET_P2P_NOA"
 
 #define CMD_GET_CNM_INFO		"GET_CNM"
+#define CMD_GET_DSLP_CNT		"GET_DSLEEP_CNT"
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
 #define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
@@ -7750,6 +7751,54 @@ int priv_driver_set_p2p_ps(IN struct net_device *prNetDev, IN char *pcCommand, I
 	return i4BytesWritten;
 }
 
+static int priv_driver_get_deep_sleep_cnt(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	CNM_STATUS_T rCnmStatus;
+	PUINT_32 pu4Ptr;
+	UINT_32 u4Offset = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id = 0xb0100000;
+
+	rStatus = kalIoctl(prGlueInfo,
+						 wlanoidQuerySwCtrlRead,
+						 &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	pu4Ptr = (PUINT_32)&rCnmStatus;
+	*pu4Ptr = rSwCtrlInfo.u4Data;
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+							"Deep Sleep Cnt %d\n", rSwCtrlInfo.u4Data);
+
+	i4BytesWritten = (INT_32)u4Offset;
+
+	return i4BytesWritten;
+}
+
 static int priv_driver_get_cnm_info(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -8693,6 +8742,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_p2p_ps(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_CNM_INFO, strlen(CMD_GET_CNM_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_cnm_info(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_DSLP_CNT, strlen(CMD_GET_DSLP_CNT)) == 0)
+			i4BytesWritten = priv_driver_get_deep_sleep_cnt(prNetDev, pcCommand, i4TotalLen);
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
