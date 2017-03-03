@@ -2403,17 +2403,19 @@ typedef struct _CMD_TDLS_CH_SW_T {
 #endif
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
+/* command type */
 #define CMD_ADV_CONTROL_SET (1<<15)
-#define CMD_PTA_CONFIG_TYPE (1<<0)
-#define CMD_AFH_CONFIG_TYPE (1<<1)
-#define CMD_BA_CONFIG_TYPE (1<<2)
+#define CMD_PTA_CONFIG_TYPE (0x1)
+#define CMD_AFH_CONFIG_TYPE (0x2)
+#define CMD_BA_CONFIG_TYPE (0x3)
+#define CMD_GET_REPORT_TYPE (0x4)
 
 /* for PtaConfig field */
 #define CMD_PTA_CONFIG_PTA_EN (1<<0)
 #define CMD_PTA_CONFIG_RW_EN (1<<1)
 #define CMD_PTA_CONFIG_PTA_STAT_EN (1<<2)
 
-/* for ConfigMask field */
+/* pta config related mask */
 #define CMD_PTA_CONFIG_PTA (1<<0)
 #define CMD_PTA_CONFIG_RW (1<<1)
 #define CMD_PTA_CONFIG_TXDATA_TAG (1<<2)
@@ -2502,6 +2504,49 @@ typedef struct _CMD_PTA_CONFIG {
 	UINT_32 u4GrantStat;
 	UINT_32 u4CoexMode;
 } CMD_PTA_CONFIG_T, *P_CMD_PTA_CONFIG_T;
+
+/* get report related */
+enum _ENUM_GET_REPORT_ACTION_T {
+	CMD_GET_REPORT_ENABLE = 1,
+	CMD_GET_REPORT_DISABLE,
+	CMD_GET_REPORT_RESET,
+	CMD_GET_REPORT_GET,
+	CMD_GET_REPORT_ACTIONS
+};
+#define EVENT_REPORT_OFDM_FCCA (16)
+#define EVENT_REPORT_OFDM_FCCA_FEILD (0xffff)
+#define EVENT_REPORT_CCK_FCCA (0)
+#define EVENT_REPORT_CCK_FCCA_FEILD (0xffff)
+#define EVENT_REPORT_OFDM_SIGERR (16)
+#define EVENT_REPORT_OFDM_SIGERR_FEILD (0xffff)
+#define EVENT_REPORT_CCK_SIGERR (0)
+#define EVENT_REPORT_CCK_SIGERR_FEILD (0xffff)
+struct CMD_GET_TRAFFIC_REPORT {
+	UINT_16 u2Type;
+	UINT_16 u2Len;
+	/* parameter */
+	UINT_8 ucBand;
+	UINT_8 ucAction;
+	UINT_8 reserved[2];
+	/* report 1 */
+	UINT_32 u4FalseCCA;
+	UINT_32 u4HdrCRC;
+	UINT_32 u4PktSent;
+	UINT_32 u4PktRetried;
+	UINT_32 u4PktTxfailed;
+	UINT_32 u4RxMPDU;
+	UINT_32 u4RxFcs;
+	/* air time report */
+	UINT_32 u4FetchSt; /* ms */
+	UINT_32 u4FetchEd; /* ms */
+	UINT_32 u4ChBusy; /* us */
+	UINT_32 u4ChIdle; /* us */
+	UINT_32 u4TxAirTime; /* us */
+	UINT_32 u4RxAirTime; /* us */
+	UINT_32 u4TimerDur; /* ms */
+	UINT_32 u4FetchCost; /* us */
+	INT_32 TimerDrift; /* ms */
+};
 
 typedef struct _CMD_ADV_CONFIG_HEADER {
 	UINT_16 u2Type;

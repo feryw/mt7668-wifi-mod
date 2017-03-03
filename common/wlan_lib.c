@@ -6114,6 +6114,7 @@ wlanoidQueryStaStatistics(IN P_ADAPTER_T prAdapter,
 		/* 4 6. Ensure FW supports get station link status */
 		if (prAdapter->u4FwCompileFlag0 & COMPILE_FLAG0_GET_STA_LINK_STATUS) {
 
+			DBGLOG(REQ, LOUD, "%s index[%x]\n", __func__, prStaRec->ucIndex);
 			rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
 			COPY_MAC_ADDR(rQueryCmdStaStatistics.aucMacAddr, prQueryStaStatistics->aucMacAddr);
 			rQueryCmdStaStatistics.ucReadClear = prQueryStaStatistics->ucReadClear;

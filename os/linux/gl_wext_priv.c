@@ -2333,6 +2333,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_PTA_CONFIG  "PTA_CONFIG"
 #define CMD_PTA_TAG_CONFIG  "PTA_TAG_CONFIG"
 #define CMD_BA_SIZE_CONFIG     "BA_SIZE_CONFIG"
+#define CMD_TRAFFIC_REPORT  "TRAFFIC_REPORT"
 #define CMD_SET_POP           "SET_POP"
 #define CMD_SET_ED            "SET_ED"
 #define CMD_SET_PD            "SET_PD"
@@ -8340,6 +8341,159 @@ static int priv_driver_get_noise(IN struct net_device *prNetDev, IN char *pcComm
 
 }				/* priv_driver_get_sw_ctrl */
 
+static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	P_GLUE_INFO_T prGlueInfo;
+	INT_32 i4BytesWritten = 0;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	struct CMD_GET_TRAFFIC_REPORT *cmd = NULL;
+	UINT_8 ucBand = ENUM_BAND_0;
+	UINT_32 u4Val = 0;
+	INT_32 u4Ret = 0;
+	BOOL fgWaitResp = FALSE;
+	BOOL fgRead = FALSE;
+	BOOL fgGetDbg = FALSE;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto get_report_invalid;
+
+	cmd = (struct CMD_GET_TRAFFIC_REPORT *)kalMemAlloc(sizeof(*cmd), VIR_MEM_TYPE);
+	if (!cmd)
+		goto get_report_invalid;
+
+	if ((i4Argc > 4) || (i4Argc < 2))
+		goto get_report_invalid;
+
+	memset(cmd, 0, sizeof(*cmd));
+
+	cmd->u2Type = CMD_GET_REPORT_TYPE;
+	cmd->u2Len = sizeof(*cmd);
+	cmd->ucBand = ucBand;
+
+	if (strnicmp(apcArgv[1], "ENABLE", strlen("ENABLE")) == 0) {
+		cmd->ucAction = CMD_GET_REPORT_ENABLE;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if (strnicmp(apcArgv[1], "DISABLE", strlen("DISABLE")) == 0) {
+		cmd->ucAction = CMD_GET_REPORT_DISABLE;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if (strnicmp(apcArgv[1], "RESET", strlen("RESET")) == 0) {
+		cmd->ucAction = CMD_GET_REPORT_RESET;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if ((strnicmp(apcArgv[1], "GET", strlen("GET")) == 0) ||
+		(strnicmp(apcArgv[1], "GETDBG", strlen("GETDBG")) == 0)) {
+		cmd->ucAction = CMD_GET_REPORT_GET;
+		fgWaitResp = TRUE;
+		fgRead = TRUE;
+		if ((i4Argc == 4) && (strnicmp(apcArgv[2], "BAND", strlen("BAND")) == 0)) {
+			u4Ret = kalkStrtou32(apcArgv[3], 0, &u4Val);
+			cmd->ucBand = u4Val;
+		}
+		if (strnicmp(apcArgv[1], "GETDBG", strlen("GETDBG")) == 0)
+			fgGetDbg = TRUE;
+	} else if ((strnicmp(apcArgv[1], "TIMEDUR", strlen("TIMEDUR")) == 0) && (i4Argc == 3)) {
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Val);
+		cmd->u4TimerDur = u4Val;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else
+		goto get_report_invalid;
+
+	DBGLOG(REQ, LOUD, "%s(%s) action %x band %x wait_resp %x\n"
+		, __func__, pcCommand, cmd->ucAction, ucBand, fgWaitResp);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidAdvCtrl, cmd, sizeof(*cmd), TRUE, TRUE, TRUE, &u4BufLen);
+
+	if ((rStatus != WLAN_STATUS_SUCCESS) && (rStatus != WLAN_STATUS_PENDING))
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand failed %x", rStatus);
+	else if (cmd->ucAction & CMD_GET_REPORT_GET) {
+		int persentage = 0;
+		int sample_dur = cmd->u4FetchEd - cmd->u4FetchSt;
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nCCK false detect cnt: %d"
+				, (cmd->u4FalseCCA >> EVENT_REPORT_CCK_FCCA) & EVENT_REPORT_CCK_FCCA_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nOFDM false detect cnt: %d"
+				, (cmd->u4FalseCCA >> EVENT_REPORT_OFDM_FCCA) & EVENT_REPORT_OFDM_FCCA_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nCCK Sig CRC cnt: %d"
+				, (cmd->u4HdrCRC >> EVENT_REPORT_CCK_SIGERR) & EVENT_REPORT_CCK_SIGERR_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nOFDM Sig CRC cnt: %d"
+				, (cmd->u4HdrCRC >> EVENT_REPORT_OFDM_SIGERR) & EVENT_REPORT_OFDM_SIGERR_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nBand%d Info:", cmd->ucBand);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tSample every %u ms", cmd->u4TimerDur);
+		if (fgGetDbg) {
+			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				" from systime %u - %u total_dur %u us f_cost %u us t_drift %d ms"
+				, cmd->u4FetchSt, cmd->u4FetchEd
+				, sample_dur
+				, cmd->u4FetchCost, cmd->TimerDrift);
+			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\n\tbusy-RMAC %u us, idle-TMAC %u us, t_total %u"
+					, cmd->u4ChBusy, cmd->u4ChIdle, cmd->u4ChBusy + cmd->u4ChIdle);
+		}
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tch_busy %u us, ch_idle %u us, total_period %u us"
+				, sample_dur - cmd->u4ChIdle
+				, cmd->u4ChIdle, sample_dur);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tmy_tx_time: %u us"
+				, cmd->u4TxAirTime);
+		if (cmd->u4FetchEd - cmd->u4FetchSt) {
+			persentage = cmd->u4TxAirTime / (sample_dur / 1000);
+			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				", tx utility: %d.%1d%%"
+				, persentage / 10
+				, persentage % 10);
+		}
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tmy_data_rx_time (no BMC data): %u us"
+				, cmd->u4RxAirTime);
+		if (cmd->u4FetchEd - cmd->u4FetchSt) {
+			persentage = cmd->u4RxAirTime / (sample_dur / 1000);
+			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				", rx utility: %d.%1d%%"
+				, persentage / 10
+				, persentage % 10);
+		}
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal packet transmitted: %u", cmd->u4PktSent);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal tx ok packet: %u", cmd->u4PktSent - cmd->u4PktTxfailed);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal tx failed packet: %u", cmd->u4PktTxfailed);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal tx retried packet: %u", cmd->u4PktRetried);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal rx mpdu: %u", cmd->u4RxMPDU);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n\tTotal rx fcs: %u", cmd->u4RxFcs);
+	} else
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand sent %x", rStatus);
+
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+
+	return i4BytesWritten;
+get_report_invalid:
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nformat:get_report [enable|disable|get|reset]");
+	return i4BytesWritten;
+}
+
+
 static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -9031,6 +9185,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_noise(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_PTA_CONFIG, strlen(CMD_PTA_CONFIG)) == 0)
 			i4BytesWritten = priv_driver_pta_config(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_TRAFFIC_REPORT, strlen(CMD_TRAFFIC_REPORT)) == 0)
+			i4BytesWritten = priv_driver_get_traffic_report(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_POP, strlen(CMD_SET_POP)) == 0)
 			i4BytesWritten = priv_driver_set_pop(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_ED, strlen(CMD_SET_ED)) == 0)

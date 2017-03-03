@@ -11669,7 +11669,11 @@ WLAN_STATUS
 wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
 	OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
 {
-	P_CMD_PTA_CONFIG_T cmd;
+	P_CMD_ADV_CONFIG_HEADER_T cmd;
+	UINT_16 type = 0;
+	UINT_32 len;
+	BOOLEAN fgSetQuery = FALSE;
+	BOOLEAN fgNeedResp = TRUE;
 
 	DBGLOG(REQ, LOUD, "%s>\n", __func__);
 
@@ -11677,8 +11681,6 @@ wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
 	if (u4QueryBufferLen)
 		ASSERT(pvQueryBuffer);
 	ASSERT(pu4QueryInfoLen);
-
-	*pu4QueryInfoLen = sizeof(*cmd);
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(REQ, WARN,
@@ -11691,17 +11693,37 @@ wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
-	cmd = (P_CMD_PTA_CONFIG_T)pvQueryBuffer;
+	cmd = (P_CMD_ADV_CONFIG_HEADER_T)pvQueryBuffer;
+
+	if (cmd->u2Type & CMD_ADV_CONTROL_SET) {
+		fgSetQuery = TRUE;
+		fgNeedResp = FALSE;
+	}
+
+	type = cmd->u2Type;
+	type &= ~CMD_ADV_CONTROL_SET;
 	DBGLOG(RSN, INFO, "%s cmd type %d\n", __func__, cmd->u2Type);
+	switch (type) {
+	case CMD_PTA_CONFIG_TYPE:
+		*pu4QueryInfoLen = sizeof(CMD_PTA_CONFIG_T);
+		len = sizeof(CMD_PTA_CONFIG_T);
+		break;
+	case CMD_GET_REPORT_TYPE:
+		*pu4QueryInfoLen = sizeof(struct CMD_GET_TRAFFIC_REPORT);
+		len = sizeof(struct CMD_GET_TRAFFIC_REPORT);
+		break;
+	default:
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_ADV_CONTROL,
-				   FALSE,
-				   TRUE,
+				   fgSetQuery,
+				   fgNeedResp,
 				   TRUE,
 				   nicCmdEventQueryAdvCtrl,
 				   nicOidCmdTimeoutCommon,
-				   sizeof(*cmd), (PUINT_8)cmd,
+				   len, (PUINT_8)cmd,
 				   pvQueryBuffer, u4QueryBufferLen);
 }
 #endif

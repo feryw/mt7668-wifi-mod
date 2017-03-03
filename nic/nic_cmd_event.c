@@ -2250,6 +2250,9 @@ VOID nicCmdEventQueryAdvCtrl(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 		query = prCmdInfo->pvInformationBuffer;
 		if (hdr && query && (query_len == prCmdInfo->u4InformationBufferLength))
 			kalMemCopy(query, hdr, query_len);
+		else
+			DBGLOG(REQ, LOUD, "%s type %x, len %d != buflen %d>\n"
+				, __func__, hdr->u2Type, hdr->u2Len, prCmdInfo->u4InformationBufferLength);
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, query_len, WLAN_STATUS_SUCCESS);
 	}
 }
