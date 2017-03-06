@@ -3340,6 +3340,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		}
 	}
 
+	rlmDomainSetDfsRegion(pRequest->dfs_region);
 
 DOMAIN_SEND_CMD:
 	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = 0x%x\n", rlmDomainGetCountryCode());
