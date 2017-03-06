@@ -134,6 +134,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */
 	.eco_info = mt7668_eco_table,
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
+	.features = 0,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {

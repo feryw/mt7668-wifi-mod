@@ -96,6 +96,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.patch_addr = MT6632_PATCH_START_ADDR,
 	.is_pcie_32dw_read = MT6632_IS_PCIE_32DW_READ, /* Litien */
 	.eco_info = mt6632_eco_table,
+	.features = 0,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632 = {
