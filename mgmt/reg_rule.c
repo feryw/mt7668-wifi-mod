@@ -10,6 +10,7 @@
 
 #include "precomp.h"
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 #include "rlm_domain.h"
 
@@ -270,4 +271,4 @@ const struct mtk_regdomain *g_prRegRuleTable[] = {
 };
 
 #endif
-
+#endif
