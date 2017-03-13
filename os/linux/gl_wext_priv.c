@@ -8385,23 +8385,49 @@ static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCom
 			DBGLOG(REQ, LOUD, "arg[%d] %s %s (0x%x)\n", i, apcArgv[i], apcArgv[i+1], u4Val);
 			if (strnicmp(apcArgv[i], "ENABLE", strlen("ENABLE")) == 0) {
 				cmd->u4ConfigMask |= CMD_PTA_CONFIG_PTA;
-				cmd->u4PtaConfig = u4Val;
-			} else if (strnicmp(apcArgv[i], "TXTAG", strlen("TXTAG")) == 0) {
-				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TX_TAG;
-				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXACK_TAG;
-				cmd->u4TxTag = u4Val;
-				cmd->u4RxAckTag = u4Val;
-			} else if (strnicmp(apcArgv[i], "RXTAG", strlen("RXTAG")) == 0) {
-				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RX_TAG;
+				if (u4Val)
+					cmd->u4PtaConfig |= CMD_PTA_CONFIG_PTA_EN;
+			} else if (strnicmp(apcArgv[i], "TXDATA", strlen("TXDATA")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TXDATA_TAG;
+				cmd->u4TxDataTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "RXDATAACK", strlen("RXDATAACK")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXDATAACK_TAG;
+				cmd->u4RxDataAckTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "RXDATA", strlen("RXDATA")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RX_NSW_TAG;
+				cmd->u4RxNswTag = u4Val;
+			}  else if (strnicmp(apcArgv[i], "TXACK", strlen("TXACK")) == 0) {
 				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TXACK_TAG;
-				cmd->u4RxTag = u4Val;
 				cmd->u4TxAckTag = u4Val;
 			} else if (strnicmp(apcArgv[i], "PROTTAG", strlen("PROTTAG")) == 0) {
 				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TXPROTFRAME_TAG;
 				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXPROTFRAMEACK_TAG;
 				cmd->u4TxProtFrameTag = u4Val;
 				cmd->u4RxProtFrameAckTag = u4Val;
-			} else {
+			} else if (strnicmp(apcArgv[i], "TXBMC", strlen("TXBMC")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TX_BMC_TAG;
+				cmd->u4TxBMCTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "TXBCN", strlen("TXBCN")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TX_BCN_TAG;
+				cmd->u4TxBCNTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "RXBCN", strlen("RXBCN")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RX_SP_TAG;
+				cmd->u4RxSPTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "TXMGMT", strlen("TXMGMT")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_TX_MGMT_TAG;
+				cmd->u4TxMgmtTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "RXMGMTACK", strlen("RXMGMTACK")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_RXMGMTACK_TAG;
+				cmd->u4RxMgmtAckTag = u4Val;
+			} else if (strnicmp(apcArgv[i], "STATENABLE", strlen("STATENABLE")) == 0) {
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_PTA_STAT;
+				if (!u4Val)
+					cmd->u4PtaConfig &= ~CMD_PTA_CONFIG_PTA_STAT_EN;
+				else
+					cmd->u4PtaConfig |= CMD_PTA_CONFIG_PTA_STAT_EN;
+			} else if (strnicmp(apcArgv[i], "STATRESET", strlen("STATRESET")) == 0)
+				cmd->u4ConfigMask |= CMD_PTA_CONFIG_PTA_STAT_RESET;
+			else {
 				i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"\nunknown parameter %s %s", apcArgv[i], apcArgv[i+1]);
 				goto set_pta_invalid;
@@ -8436,13 +8462,27 @@ static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCom
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\nPriority stat:");
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n txtag %d", (cmd->u4TxTag>>EVENT_CONFIG_TXTAG_OFFSET)&EVENT_CONFIG_TXTAG_FEILD);
+				"\n txData %d", cmd->u4TxDataTag);
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n rxtag %d", cmd->u4RxTag);
+				"\n rxDataAck %d", cmd->u4RxDataAckTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n rxData %d", cmd->u4RxNswTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n txAck %d", cmd->u4TxAckTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n txBmc %d", cmd->u4TxBMCTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n txBcn %d", cmd->u4TxBCNTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n txMgmt %d", cmd->u4TxMgmtTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n rxMgmtAck %d", cmd->u4RxMgmtAckTag);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n rxBcn %d", cmd->u4RxSPTag);
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\n prottag %d", cmd->u4TxProtFrameTag);
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\nGrant stat:");
+				"\nLast fetched grant stat:");
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\n wifi grant %x txreq %x rxreq %x pritag %x"
 				, (cmd->u4GrantStat>>EVENT_CONFIG_WIFI_GRANT_OFFSET)&EVENT_CONFIG_WIFI_GRANT_FEILD
@@ -8455,6 +8495,38 @@ static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCom
 				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_TXREQ_OFFSET)&EVENT_CONFIG_BT_TXREQ_FEILD
 				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_RXREQ_OFFSET)&EVENT_CONFIG_BT_RXREQ_FEILD
 				, (cmd->u4GrantStat>>EVENT_CONFIG_BT_PRI_OFFSET)&EVENT_CONFIG_BT_PRI_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nPTA stat:");
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n wf0 txreq_cnt %d txgrant_cnt %d txabort_cnt %d"
+				, (cmd->u4PtaWF0TxCnt>>EVENT_PTA_WFTRX_CNT_OFFSET)&EVENT_PTA_WFTRX_CNT_FEILD
+				, (cmd->u4PtaWF0TxCnt>>EVENT_PTA_WFTRX_GRANT_CNT_OFFSET)&EVENT_PTA_WFTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaWF0AbtCnt>>EVENT_PTA_TX_ABT_CNT_OFFSET)&EVENT_PTA_TX_ABT_CNT_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n wf0 rxreq_cnt %d rxgrant_cnt %d rxabort_cnt %d"
+				, (cmd->u4PtaWF0RxCnt>>EVENT_PTA_WFTRX_CNT_OFFSET)&EVENT_PTA_WFTRX_CNT_FEILD
+				, (cmd->u4PtaWF0RxCnt>>EVENT_PTA_WFTRX_GRANT_CNT_OFFSET)&EVENT_PTA_WFTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaWF0AbtCnt>>EVENT_PTA_RX_ABT_CNT_OFFSET)&EVENT_PTA_RX_ABT_CNT_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n wf1 txreq_cnt %d txgrant_cnt %d txabort_cnt %d"
+				, (cmd->u4PtaWF1TxCnt>>EVENT_PTA_WFTRX_CNT_OFFSET)&EVENT_PTA_WFTRX_CNT_FEILD
+				, (cmd->u4PtaWF1TxCnt>>EVENT_PTA_WFTRX_GRANT_CNT_OFFSET)&EVENT_PTA_WFTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaWF1AbtCnt>>EVENT_PTA_TX_ABT_CNT_OFFSET)&EVENT_PTA_TX_ABT_CNT_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n wf1 rxreq_cnt %d rxgrant_cnt %d rxabort_cnt %d"
+				, (cmd->u4PtaWF1RxCnt>>EVENT_PTA_WFTRX_CNT_OFFSET)&EVENT_PTA_WFTRX_CNT_FEILD
+				, (cmd->u4PtaWF1RxCnt>>EVENT_PTA_WFTRX_GRANT_CNT_OFFSET)&EVENT_PTA_WFTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaWF1AbtCnt>>EVENT_PTA_RX_ABT_CNT_OFFSET)&EVENT_PTA_RX_ABT_CNT_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n bt txreq_cnt %d txgrant_cnt %d txabort_cnt %d"
+				, (cmd->u4PtaBTTxCnt>>EVENT_PTA_BTTRX_CNT_OFFSET)&EVENT_PTA_BTTRX_CNT_FEILD
+				, (cmd->u4PtaBTTxCnt>>EVENT_PTA_BTTRX_GRANT_CNT_OFFSET)&EVENT_PTA_BTTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaBTAbtCnt>>EVENT_PTA_TX_ABT_CNT_OFFSET)&EVENT_PTA_TX_ABT_CNT_FEILD);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n bt rxreq_cnt %d rxgrant_cnt %d rxabort_cnt %d"
+				, (cmd->u4PtaBTRxCnt>>EVENT_PTA_BTTRX_CNT_OFFSET)&EVENT_PTA_BTTRX_CNT_FEILD
+				, (cmd->u4PtaBTRxCnt>>EVENT_PTA_BTTRX_GRANT_CNT_OFFSET)&EVENT_PTA_BTTRX_GRANT_CNT_FEILD
+				, (cmd->u4PtaBTAbtCnt>>EVENT_PTA_RX_ABT_CNT_OFFSET)&EVENT_PTA_RX_ABT_CNT_FEILD);
 	} else
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\ncommand sent %x", rStatus);
@@ -8467,13 +8539,29 @@ set_pta_invalid:
 	if (cmd)
 		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\nformat:pta_config set [enable 1|0] [txtag val] [rxtag val] [prottag val]");
+				"\nformat:pta_config set [enable 1|0][txdata val][rxdataack val]");
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n [enable 1|0]: enable PTA or not");
+				"\n\t[rxdata val][txack val][txbmc val][txbcn val][rxbcn val]");
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n [txtag val<0~15>]: priority tag for Tx session");
+				"\n\t[txmgmt val][rxmgmtack val][prottag val]");
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n [rxtag val<0~15>]: priority tag for Rx session");
+				"\n\t[statenable 1|0][statreset 1]");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [enable val]: enable PTA(1) or not(0)");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [txtag val<0~15>]: priority tag for tx ac0-ac3");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [rxdataack val<0~15>]: priority tag for rx ac0-ac3 ack");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [rxdata val<0~15>]: priority tag for rx data");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [txack val<0~15>]: priority tag for tx ack");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [txbmc val<0~15>]: priority tag for tx bmc packet");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [txbcn val<0~15>]: priority tag for tx beacon");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n [rxbcn val<0~15>]: priority tag for rx beacon");
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\n [prottag val<0~15>]: priority tag for Protection frame");
 	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,

@@ -125,7 +125,7 @@
 
 #define NUM_TC_RESOURCE_TO_STATISTICS       4
 
-#define WLAN_CFG_ARGV_MAX 10
+#define WLAN_CFG_ARGV_MAX 23
 #define WLAN_CFG_ARGV_MAX_LONG 22 /* for WOW, 2+20 */
 #define WLAN_CFG_ENTRY_NUM_MAX 200 /* 128 */
 #define WLAN_CFG_KEY_LEN_MAX 32	/* include \x00  EOL */
