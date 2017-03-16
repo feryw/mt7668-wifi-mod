@@ -90,6 +90,8 @@
 #endif
 
 #define HQA_RX_STATISTIC_NUM 66
+#define BUFFER_BIN_MODE 0x0
+#define EFUSE_MODE 0x2
 
 extern UINT_8 uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE];
 

@@ -97,6 +97,7 @@ BOOLEAN g_DBDCEnable = FALSE;
 BOOLEAN	g_BufferDownload = FALSE;
 UINT_32	u4EepromMode = 4;
 UINT_32 g_u4Chip_ID;
+UINT_8 g_ucEepromCurrentMode = EFUSE_MODE;
 
 #if CFG_SUPPORT_BUFFER_MODE
 UINT_8	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
@@ -2089,7 +2090,7 @@ static INT_32 HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Address : %d\n", rAccessEfuseInfo.u4Address);
 
-	if	((prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal != TRUE)
+	if	((g_ucEepromCurrentMode == EFUSE_MODE)
 		&& (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse == TRUE)) {
 
 		/* Read from Efuse */
@@ -2228,7 +2229,7 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM Len : %d\n", Len);
 
 
-    /* Support Delay Calibraiton */
+	/* Support Delay Calibraiton */
 	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse == TRUE) {
 
 		Buffer = kmalloc(sizeof(UINT_8)*(EFUSE_BLOCK_SIZE), GFP_KERNEL);
@@ -2236,24 +2237,35 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 
 		kalMemCopy((UINT_8 *)Buffer, (UINT_8 *)HqaCmdFrame->Data + 4, Len);
 
-		for (u4Loop = 0; u4Loop < (Len); u4Loop++) {
+#if 0
+		for (u4Loop = 0; u4Loop < (Len)/2 ; u4Loop++) {
 
 			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
 				u4Loop, Buffer[u4Loop]);
 		}
+#endif
 
-		if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+		if (g_ucEepromCurrentMode == BUFFER_BIN_MODE) {
 			/* EEPROM */
-			DBGLOG(INIT, INFO, "Direct EEPROM buffer, offset=%x\n", Offset);
+			DBGLOG(INIT, INFO, "Direct EEPROM buffer, offset=%x, len=%x\n", Offset, Len);
 #if 0
 			for (i = 0; i < EFUSE_BLOCK_SIZE; i++)
 				memcpy(uacEEPROMImage + Offset + i, Buffer + i, 1);
 
 #endif
-			*Buffer = ntohs(*Buffer);
-			uacEEPROMImage[Offset] = *Buffer & 0xff;
-			uacEEPROMImage[Offset + 1] = *Buffer >> 8 & 0xff;
-		} else {
+			if (Len > 2) {
+				for (u4Loop = 0; u4Loop < EFUSE_BLOCK_SIZE/2 ; u4Loop++) {
+					Buffer[u4Loop] = ntohs(Buffer[u4Loop]);
+					uacEEPROMImage[Offset] = Buffer[u4Loop] & 0xff;
+					uacEEPROMImage[Offset + 1] = Buffer[u4Loop] >> 8 & 0xff;
+					Offset += 2;
+				}
+			} else {
+				*Buffer = ntohs(*Buffer);
+				uacEEPROMImage[Offset] = *Buffer & 0xff;
+				uacEEPROMImage[Offset + 1] = *Buffer >> 8 & 0xff;
+			}
+		} else if (g_ucEepromCurrentMode == EFUSE_MODE) {
 			/* EFUSE */
 			/* Read */
 			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM  Read\n");
@@ -2301,8 +2313,9 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 							&rAccessEfuseInfoWrite,
 							sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T),
 							FALSE, TRUE, TRUE, &u4BufLen);
+		} else {
+			DBGLOG(INIT, INFO, "Invalid ID!!\n");
 		}
-
 	} else {
 
 		if (Len == 2) {
@@ -3047,6 +3060,46 @@ static INT_32 HQA_GetCfgOnOff(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  QA Agent For
+*
+* \param[in] prNetDev				Pointer to the Net Device
+* \param[in] prIwReqData
+* \param[in] HqaCmdFrame			Ethernet Frame Format receive from QA Tool DLL
+* \param[out] None
+*
+* \retval 0						On success.
+*/
+/*----------------------------------------------------------------------------*/
+static INT_32 HQA_SetBufferBin(struct net_device *prNetDev,
+			      IN union iwreq_data *prIwReqData, HQA_CMD_FRAME *HqaCmdFrame)
+{
+	INT_32 Ret = 0;
+	UINT_32 data = 0;
+
+	kalMemCopy(&data, HqaCmdFrame->Data, sizeof(data));
+	data = ntohl(data);
+	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetBufferBin data=%x\n", data);
+
+	if (data == BUFFER_BIN_MODE) {
+		/*Buffer mode*/
+		g_ucEepromCurrentMode = BUFFER_BIN_MODE;
+	} else if (data == EFUSE_MODE) {
+		/*Efuse mode */
+		g_ucEepromCurrentMode = EFUSE_MODE;
+	} else {
+		DBGLOG(RFTEST, INFO, "Invalid data!!\n");
+	}
+
+	DBGLOG(RFTEST, INFO, "MT6632 : ucEepromCurrentMode=%x\n", g_ucEepromCurrentMode);
+
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2, Ret);
+	return Ret;
+}
+
+
 static HQA_CMD_HANDLER HQA_CMD_SET3[] = {
 	/* cmd id start from 0x1300 */
 	HQA_MacBbpRegRead,	/* 0x1300 */
@@ -3070,6 +3123,8 @@ static HQA_CMD_HANDLER HQA_CMD_SET3[] = {
 	HQA_SetRXFilterPktLen,	/* 0x1312 */
 	HQA_GetTXInfo,		/* 0x1313 */
 	HQA_GetCfgOnOff,	/* 0x1314 */
+	NULL,					/* 0x1315 */
+	HQA_SetBufferBin,		/* 0x1316 */
 };
 
 /*----------------------------------------------------------------------------*/
@@ -3647,16 +3702,30 @@ static INT_32 HQA_WriteBufferDone(struct net_device *prNetDev,
 				  IN union iwreq_data *prIwReqData, HQA_CMD_FRAME *HqaCmdFrame)
 {
 	INT_32 i4Ret = 0;
-/*	UINT_16	u2InitAddr = 0x000; */
+	UINT_16	u2InitAddr;
 	UINT_32 Value;
 /*	UINT_32 i = 0, j = 0;
 *	UINT_32 u4BufLen = 0;
 */
-/*	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS; */
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	P_GLUE_INFO_T prGlueInfo = NULL;
 /*	PARAM_CUSTOM_EFUSE_BUFFER_MODE_T rSetEfuseBufModeInfo; */
+	PARAM_CUSTOM_EFUSE_BUFFER_MODE_T *prSetEfuseBufModeInfo = NULL;
+	PUINT_8 pucConfigBuf = NULL;
+	UINT_32 u4ContentLen;
+	UINT_32 u4BufLen = 0;
+	P_ADAPTER_T prAdapter = NULL;
+
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+#if (CFG_FW_Report_Efuse_Address)
+	u2InitAddr = prAdapter->u4EfuseStartAddress;
+#else
+	u2InitAddr = EFUSE_CONTENT_BUFFER_START;
+#endif
+
 
 	memcpy(&Value, HqaCmdFrame->Data + 4 * 0, 4);
 	Value = ntohl(Value);
@@ -3664,6 +3733,34 @@ static INT_32 HQA_WriteBufferDone(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_WriteBufferDone Value : %d\n", Value);
 
 	u4EepromMode = Value;
+
+	/* allocate memory for buffer mode info */
+	prSetEfuseBufModeInfo = (PARAM_CUSTOM_EFUSE_BUFFER_MODE_T *)
+		kalMemAlloc(sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T), VIR_MEM_TYPE);
+	if (prSetEfuseBufModeInfo == NULL)
+		goto label_exit;
+	kalMemZero(prSetEfuseBufModeInfo, sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T));
+
+	/* copy to the command buffer */
+#if (CFG_FW_Report_Efuse_Address)
+	u4ContentLen = (prAdapter->u4EfuseEndAddress)-(prAdapter->u4EfuseStartAddress)+1;
+#else
+	u4ContentLen = EFUSE_CONTENT_BUFFER_SIZE;
+#endif
+	if (u4ContentLen > MAX_EEPROM_BUFFER_SIZE)
+		goto label_exit;
+	kalMemCopy(prSetEfuseBufModeInfo->aBinContent, &uacEEPROMImage[u2InitAddr], u4ContentLen);
+
+	prSetEfuseBufModeInfo->ucSourceMode = 1;
+
+	prSetEfuseBufModeInfo->ucCmdType = 0x1 | (prAdapter->rWifiVar.ucCalTimingCtrl << 4);
+	prSetEfuseBufModeInfo->ucCount   = 0xFF; /* ucCmdType 1 don't care the ucCount */
+
+	rStatus = kalIoctl(prGlueInfo,
+			wlanoidSetEfusBufferMode,
+			(PVOID)prSetEfuseBufModeInfo,
+			sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T),
+			FALSE, TRUE, TRUE, &u4BufLen);
 
 #if 0
 	for (i = 0 ; i < MAX_EEPROM_BUFFER_SIZE/16 ; i++) {
@@ -3685,6 +3782,15 @@ static INT_32 HQA_WriteBufferDone(struct net_device *prNetDev,
 #endif
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+label_exit:
+
+	/* free memory */
+	if (prSetEfuseBufModeInfo != NULL)
+		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T));
+
+	if (pucConfigBuf != NULL)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, MAX_EEPROM_BUFFER_SIZE);
 
 	return i4Ret;
 }
@@ -3765,7 +3871,7 @@ static INT_32 HQA_GetChipID(struct net_device *prNetDev, IN union iwreq_data *pr
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
 	g_u4Chip_ID = prChipInfo->chip_id;
-	u4ChipId = 0x00006632;
+	u4ChipId = g_u4Chip_ID;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetChipID ChipId = 0x%08lx\n", u4ChipId);
 
@@ -7276,8 +7382,12 @@ static INT_32 hqa_ext_cmds(struct net_device *prNetDev, IN union iwreq_data *prI
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds index : %d\n", i4Idx);
 
-	if (hqa_ext_cmd_set[i4Idx] != NULL)
-		i4Ret = (*hqa_ext_cmd_set[i4Idx]) (prNetDev, prIwReqData, HqaCmdFrame);
+	if (i4Idx < (sizeof(hqa_ext_cmd_set) / sizeof(HQA_CMD_HANDLER))) {
+		if (hqa_ext_cmd_set[i4Idx] != NULL)
+			i4Ret = (*hqa_ext_cmd_set[i4Idx]) (prNetDev, prIwReqData, HqaCmdFrame);
+		else
+			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds cmd idx %d is NULL : %d\n", i4Idx);
+	}
 	else
 		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n", i4Idx);
 
