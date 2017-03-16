@@ -1602,8 +1602,8 @@ BOOL rlmDomainTxPwrLimitLoadChannelSetting(
 	char cTmpChar = 0;
 	P_CHANNEL_TX_PWR_LIMIT prChTxPwrLimit = NULL;
 	BOOL bNeg = FALSE;
-	INT_8 cLimitValue = 0;
-	UINT_8 ucIdx = 0, ucChannel = 0, cChIdx = 0;
+	INT_8 cLimitValue = 0, cChIdx = 0;
+	UINT_8 ucIdx = 0, ucChannel = 0;
 
 	/* skip blank lines */
 	while (u4TmpPos < u4BufEnd) {
@@ -1637,8 +1637,6 @@ BOOL rlmDomainTxPwrLimitLoadChannelSetting(
 		return FALSE;
 	}
 
-	u4TmpPos += 5;
-
 	cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit, ucChannel);
 
 	if (cChIdx == -1) {
@@ -1646,6 +1644,8 @@ BOOL rlmDomainTxPwrLimitLoadChannelSetting(
 			pucBuf[u4TmpPos + 2], pucBuf[u4TmpPos + 3], pucBuf[u4TmpPos + 4]);
 		return FALSE;
 	}
+
+	u4TmpPos += 5;
 
 	prChTxPwrLimit = &pTxPwrLimit->rChannelTxPwrLimit[cChIdx];
 
@@ -1828,7 +1828,8 @@ VOID rlmDomainTxPwrLimitSetValues(
 	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T pSetCmd,
 	P_TX_PWR_LIMIT_DATA pTxPwrLimit)
 {
-	UINT_8 ucIdx = 0, cChIdx = 0;
+	UINT_8 ucIdx = 0;
+	INT_8 cChIdx = 0;
 	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd = NULL;
 	P_CHANNEL_TX_PWR_LIMIT pChTxPwrLimit = NULL;
 
@@ -1903,16 +1904,23 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	P_TX_PWR_LIMIT_DATA pTxPwrLimit =
 		(P_TX_PWR_LIMIT_DATA) kalMemAlloc(sizeof(TX_PWR_LIMIT_DATA), VIR_MEM_TYPE);
 
-	pTxPwrLimit->rChannelTxPwrLimit =
-		(P_CHANNEL_TX_PWR_LIMIT) kalMemAlloc(sizeof(CHANNEL_TX_PWR_LIMIT) *
-			(pSetCmd_2g->ucNum + pSetCmd_5g->ucNum), VIR_MEM_TYPE);
-
-	if (!pTxPwrLimit->rChannelTxPwrLimit) {
+	if (!pTxPwrLimit) {
 		bRet = FALSE;
-		goto error;
+		DBGLOG(RLM, ERROR, "Alloc buffer for TxPwrLimit main struct failed\n");
+		return bRet;
 	}
 
 	pTxPwrLimit->ucChNum = pSetCmd_2g->ucNum + pSetCmd_5g->ucNum;
+
+	pTxPwrLimit->rChannelTxPwrLimit =
+		(P_CHANNEL_TX_PWR_LIMIT) kalMemAlloc(sizeof(CHANNEL_TX_PWR_LIMIT) *
+			(pTxPwrLimit->ucChNum), VIR_MEM_TYPE);
+
+	if (!pTxPwrLimit->rChannelTxPwrLimit) {
+		bRet = FALSE;
+		DBGLOG(RLM, ERROR, "Alloc buffer for TxPwrLimit ch values failed\n");
+		goto error;
+	}
 
 	for (ucIdx = 0; ucIdx < pSetCmd_2g->ucNum; ucIdx++) {
 		pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
@@ -2390,7 +2398,7 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 
 		if (!prCmd[band_idx]) {
 			DBGLOG(RLM, ERROR, "Domain: no buf to send cmd\n");
-			return;
+			goto error;
 		}
 
 		/*initialize tw pwr table*/
@@ -2445,8 +2453,12 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 					      NULL,	/* pvSetQueryBuffer */
 					      0	/* u4SetQueryBufferLen */
 						);
+	}
 
-		cnmMemFree(prAdapter, prCmd[band_idx]);
+error:
+	for (band_idx = 0; band_idx < IEEE80211_NUM_BANDS; band_idx++) {
+		if (prCmd[band_idx])
+			cnmMemFree(prAdapter, prCmd[band_idx]);
 	}
 #endif
 }
