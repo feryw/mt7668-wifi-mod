@@ -1704,14 +1704,14 @@ typedef struct _CMD_CHANNEL_POWER_LIMIT_V2 {
 	UINT_8 tx_pwr_lg_80;
 
 	UINT_8 tx_pwr_1ss_delta;
-	UINT_8 ucReserved_1[3];
+	UINT_8 ucReserved_1[2];
 } CMD_CHANNEL_POWER_LIMIT_V2, *P_CMD_CHANNEL_POWER_LIMIT_V2;
 
 typedef struct _CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T {
 	UINT_8 ucNum;
 	UINT_8 eband; /*ENUM_BAND_T*/
-	UINT_32 countryCode;
 	UINT_8 usReserved[2];
+	UINT_32 countryCode;
 	CMD_CHANNEL_POWER_LIMIT_V2 rChannelPowerLimit[0];
 } CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T, *P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T;
 
