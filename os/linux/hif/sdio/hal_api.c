@@ -503,11 +503,8 @@ VOID halSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt)
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
-	if (prAdapter->u4PwrCtrlBlockCnt != 0) {
-		DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
-			prAdapter->u4PwrCtrlBlockCnt);
+	if (prAdapter->u4PwrCtrlBlockCnt != 0)
 		return;
-	}
 
 	if (prAdapter->fgForceFwOwn == FALSE)
 		if (prAdapter->fgWiFiInSleepyState == FALSE)
