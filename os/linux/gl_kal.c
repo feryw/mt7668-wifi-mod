@@ -946,8 +946,14 @@ WLAN_STATUS kalRxIndicateOnePkt(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPkt)
 		*/
 		const UINT_8 vlan_skb_mem_move = 2;
 
+		/* Remove "Len" and shift data pointer 2 bytes */
 		kalMemCopy(prSkb->data+vlan_skb_mem_move, prSkb->data, vlan_skb_mem_move);
 		skb_pull_rcsum(prSkb, vlan_skb_mem_move);
+
+		/* Have to update MAC header properly. Otherwise, wrong MACs woud be passed up */
+		kalMemMove(prSkb->data - ETH_HLEN, prSkb->data - ETH_HLEN - vlan_skb_mem_move, ETH_HLEN);
+		prSkb->mac_header += vlan_skb_mem_move;
+
 		skb_reset_network_header(prSkb);
 		skb_reset_transport_header(prSkb);
 		skb_reset_mac_len(prSkb);
