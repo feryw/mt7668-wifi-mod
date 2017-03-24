@@ -12,80 +12,110 @@ export CONFIG_MTK_COMBO_COMM=m
 export CONFIG_MTK_COMBO_COMM_UART=m
 export CONFIG_MTK_COMBO_COMM_SDIO=m
 export CONFIG_MT_WIFI_CHRDEV=m
-WIFI_TARGET := mt76x8
+WLAN_CHIP_ID := mt7668
+
+PWD=$(shell pwd)
+DRIVER_DIR=$(PWD)
 
 ifeq ($(HIF),)
     HIF=usb
 endif
 
 export CONFIG_MTK_COMBO_WIFI_HIF=$(HIF)
-MODULE_NAME := wlan_$(WIFI_TARGET)_$(HIF)
+MODULE_NAME := wlan_$(WLAN_CHIP_ID)_$(HIF)
 
 
 ##############################################################
 # Platform specific
 ##############################################################
 # Set default platform
-PLATFORM = MT53XX
+PLATFORM:=MT53XX
 
 ifeq ($(PLATFORM),)
-PLATFORM = MT53XX
+PLATFORM=MT53XX
 endif
 
-#- - - - -- - - - - - - - - -
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # MT53XX start
-#- - - - -- - - - - - - - - -
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ifeq ($(PLATFORM),MT53XX)
+TARGET = LINUX
 
 # Sets DRIVER_PARTIAL_BUILD to y to compile driver only, otherwise set to n
 DRIVER_PARTIAL_BUILD := n
-# Set if 64 bit platform
-64BIT_MODE=true
-export WIFI_TARGET
-TARGET = LINUX
-
-ifeq ($(DRIVER_PARTIAL_BUILD),y)
-# *****For driver partial build*****
-LINUX_ROOT ?= $(word 1, $(subst /apollo/,/apollo /, $(shell pwd -L)))
-#    Modify the build parameters below to fit your build
-SYSBUILD_NAME=m-base
-RELEASE_NAME=mediatek/mt5891_eu_64
-KERNEL_VER=3.18
-KERNEL_CONFIG=mt5891_android_smp_mod_defconfig
-ifeq ($(64BIT_MODE),true)
-export 64BIT_MODE=true
-export KERNEL_64BIT=true
-export TOOL_CHAIN_64BIT=4.9.3
-endif
+ANDROID=true
 #
-LINUX_SRC=$(LINUX_ROOT)/../android/$(SYSBUILD_NAME)/out/mediatek_linux/output/$(RELEASE_NAME)/rel/obj/kernel/linux_core/kernel/linux-$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
-OBJ_ROOT ?= $(LINUX_ROOT)/../android/$(SYSBUILD_NAME)/out/mediatek_linux/output/$(RELEASE_NAME)/rel/obj
-export KERNEL_OBJ_ROOT=$(LINUX_SRC)/../..
+# [ Driver Partial Build ]
+#
+ifeq ($(DRIVER_PARTIAL_BUILD),y)
+# Please adjust the following variables according to your build attempt
+ifeq ($(ANDROID),)
+	ANDROID=false
+endif
+64BIT_MODE := false
+LINUX_ROOT ?= $(word 1, $(subst /apollo/,/apollo /, $(shell pwd -L)))
+
+ifeq ($(ANDROID),true)
+# -> Android, driver partial build
+	SYSBUILD_NAME=m-base
+	RELEASE_NAME=mediatek/mt5891_eu_64
+	KERNEL_VER=3.18
+	KERNEL_CONFIG=mt5891_android_smp_mod_defconfig
+	ifeq ($(64BIT_MODE),true)
+		export 64BIT_MODE=true
+		export KERNEL_64BIT=true
+		export TOOL_CHAIN_64BIT=4.9.3
+	endif
+	LINUX_SRC=$(LINUX_ROOT)/../android/$(SYSBUILD_NAME)/out/mediatek_linux/output/$(RELEASE_NAME)/rel/obj/kernel/linux_core/kernel/linux-$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
+	OBJ_ROOT ?= $(LINUX_ROOT)/../android/$(SYSBUILD_NAME)/out/mediatek_linux/output/$(RELEASE_NAME)/rel/obj
+	export KERNEL_OBJ_ROOT=$(LINUX_SRC)/../..
+
 else
-# *****For system auto build*****
-LINUX_SRC=$(KERNEL_OBJ_ROOT)/$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
-# 	overwrite $(OUT_STA_KO) for MT53XX platform
-OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)/$(MODULE_NAME).ko
+# -> Linux, driver partial build
+# !NOTE! Edit the following parameters!
+	SYSBUILD_NAME := sys_build/XXXX
+	RELEASE_NAME=mt5891_eu
+	KERNEL_VER=3.10?
+	KERNEL_CONFIG=mt5891_smp_mod_defconfig
+	ifeq ($(64BIT_MODE),true)
+		export 64BIT_MODE=true
+		export KERNEL_64BIT=true
+		export TOOL_CHAIN_64BIT=4.9.3
+	endif
+	LINUX_SRC=$(LINUX_ROOT)/$(SYSBUILD_NAME)/$(RELEASE_NAME)/rel_obj/kernel/linux_core/kernel/linux-$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
+	OBJ_ROOT := $(LINUX_ROOT)/$(SYSBUILD_NAME)/$(RELEASE_NAME)/rel_obj
+	export KERNEL_OBJ_ROOT=$(LINUX_SRC)/../..
+	CROSS_COMPILE=/mtkoss/gnuarm/neon_4.8.2_2.6.35_cortex-a9-ubuntu/i686/bin/armv7a-mediatek482_001_neon-linux-gnueabi-
+
 endif
 
+
+#
+# [ Sys build ]
+#
+else
+LINUX_SRC=$(KERNEL_OBJ_ROOT)/$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
+# overwrite $(OUT_STA_KO) for MT53XX platform
+OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
 include $(LINUX_ROOT)/linux_mts/mak/toolchain.mak
+endif
+
 ifeq ($(CROSS_COMPILE),)
 CROSS_COMPILE=/mtkoss/gnuarm/vfp_4.5.1_2.6.27_cortex-a9-rhel4/i686/bin/armv7a-mediatek451_001_vfp-linux-gnueabi-
 endif
 ifeq "$(CC)" "gcc"
 CC ?= $(CROSS_COMPILE)gcc
 endif
+
 $(warning =============================================)
 $(warning wifi driver LINUX_SRC=$(LINUX_SRC))
 $(warning CROSS_COMPILE=$(CROSS_COMPILE))
 $(warning =============================================)
 
-DRIVER_DIR=$(LINUX_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)
-
 endif
-#- - - - -- - - - - - - - - -
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # MT53XX end
-#- - - - -- - - - - - - - - -
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 
 ##############################################################
@@ -112,12 +142,16 @@ CFG_USB_REQ_RX_DATA_CNT=2
 
 CFG_ENABLE_EFUSE_MAC_ADDR=1
 
+#CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
+
+#CFG_SUPPORT_DFS_MASTER=1
+
 # Support to change sta, p2p, ap interface names
 # y: enable, n: disable
-# eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
+# eg. insmod wlan_mt7668_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
-CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
+
 
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
@@ -166,6 +200,10 @@ ifneq ($(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB),)
 PLATFORM_FLAGS += -DCFG_SUPPORT_SINGLE_SKU_LOCAL_DB=$(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB)
 endif
 
+ifneq ($(CFG_SUPPORT_DFS_MASTER),)
+PLATFORM_FLAGS += -DCFG_SUPPORT_DFS_MASTER=$(CFG_SUPPORT_DFS_MASTER)
+endif
+
 ##############################################################
 # Compile settings
 ##############################################################
@@ -173,57 +211,72 @@ endif
 all: driver
 
 driver:
-	+cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) PLATFORM_FLAGS="$(PLATFORM_FLAGS)" modules
+	+cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) PLATFORM_FLAGS="$(PLATFORM_FLAGS)" WLAN_CHIP_ID=$(WLAN_CHIP_ID) modules
 ifeq ($(PLATFORM),MT53XX)
 ifeq ($(DRIVER_PARTIAL_BUILD), y)
 	@cd $(DRIVER_DIR) && $(CROSS_COMPILE)strip --strip-unneeded $(MODULE_NAME).ko
-else
+endif
+endif
+
+##############################################################
+# Post processing
+##############################################################
+
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# MT53XX start
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ifeq ($(PLATFORM),MT53XX)
+ifneq ($(DRIVER_PARTIAL_BUILD), y)
 ifneq ($(ANDROID),true)
-	if [ ! -d $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WIFI_TARGET) ]; then \
-		mkdir -p $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WIFI_TARGET)/; \
+	if [ ! -d $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID) ]; then \
+		mkdir -p $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/; \
 	fi
-	cp -f $(OUT_STA_KO) $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WIFI_TARGET)/$(MODULE_NAME).ko
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
 else
 ifeq "$(BUILD_CFG)" "debug"
 	echo "ANDROID_VERSION=$(ANDROID_VERSION)"
 	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg ]; then \
 		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg; \
 	fi
-	cp -f $(OUT_STA_KO) $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
+	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
 
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-	fi
+                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+        fi
+
 else
 	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING) ]; then \
 		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING); \
 	fi
-	cp -f $(OUT_STA_KO) $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
+	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
 
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-	fi
+                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+        fi
 endif
-endif
-endif
-endif
-#	@cd $(DRIVER_DIR) && cp $(MODULES_NAME)_$(HIF).ko $(MODULES_NAME).ko
-
-#common:
-#	+cd $(COMMON_DIR) && make -C $(LINUX_SRC) M=$(COMMON_DIR) modules
-#	@cat $(COMMON_DIR)/Module.symvers >> $(LINUX_SRC)/Module.symvers
+endif #ANDROID
+endif #DRIVER_PARTIAL_BUILD
+endif #MT53XX
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# MT53XX end
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 clean: driver_clean
 
-#symvers_clean: driver_clean
-#	@cp $(LINUX_SRC)/Module.symvers.original $(LINUX_SRC)/Module.symvers
-
 driver_clean:
-	cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean
-	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; fi;
+ifneq ($(ANDROID),true)
+	rm -rf $(THIRDPARTY_LIB_ROOT)/wlan
+endif
+#	cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean
+#	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; \
+#        fi
 
-#common_clean:
-#	cd $(COMMON_DIR) && make -C $(LINUX_SRC) M=$(COMMON_DIR) clean
+
+
 
 .PHONY: all clean driver driver_clean
 
