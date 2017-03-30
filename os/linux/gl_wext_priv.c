@@ -7709,17 +7709,21 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 		prTailer = &prVerInfo->rN9tailer;
 		kalMemCopy(aucBuf, prTailer->ram_version, 10);
 		aucBuf[10] = '\0';
+		kalMemCopy(aucDate, prTailer->ram_built_date, sizeof(prTailer->ram_built_date));
+		aucDate[sizeof(prTailer->ram_built_date)] = '\0';
 		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"N9  tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
+		aucBuf, aucDate, prTailer->chip_info,
 		prTailer->eco_code + 1);
 
 		prTailer = &prVerInfo->rCR4tailer;
 		kalMemCopy(aucBuf, prTailer->ram_version, 10);
 		aucBuf[10] = '\0';
+		kalMemCopy(aucDate, prTailer->ram_built_date, sizeof(prTailer->ram_built_date));
+		aucDate[sizeof(prTailer->ram_built_date)] = '\0';
 		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"CR4 tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
+		aucBuf, aucDate, prTailer->chip_info,
 		prTailer->eco_code + 1);
 #endif
 	if (!prVerInfo->fgPatchIsDlByDrv) {
