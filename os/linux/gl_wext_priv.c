@@ -2299,6 +2299,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_DEL_ACL_ENTRY       "DEL_ACL_ENTRY"
 #define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
+#define CMD_GET_CURR_AR_RATE	"GET_CURR_AR_RATE"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -2847,8 +2848,25 @@ static char *HW_TX_MODE_STR[] = {"CCK", "OFDM", "MM", "GF", "VHT", "N/A"};
 static char *HW_TX_RATE_CCK_STR[] = {"1M", "2M", "5.5M", "11M", "N/A"};
 static char *HW_TX_RATE_OFDM_STR[] = {"6M", "9M", "12M", "18M", "24M", "36M", "48M", "54M", "N/A"};
 static char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080", "N/A"};
+enum {
+	RATE_TBL_B = 0,
+	RATE_TBL_G,
+	RATE_TBL_N,
+	RATE_TBL_N_2SS,
+	RATE_TBL_AC,
+	RATE_TBL_AC_2SS,
+	RATE_TBL_MAX
+};
 
-static char *RATE_TBLE[] = {"B", "G", "N", "N_2SS", "AC", "AC_2SS", "N/A"};
+static char *RATE_TBLE[] = {
+	[RATE_TBL_B] = "B",
+	[RATE_TBL_G] = "G",
+	[RATE_TBL_N] = "N",
+	[RATE_TBL_N_2SS] = "N_2SS",
+	[RATE_TBL_AC] = "AC",
+	[RATE_TBL_AC_2SS] = "AC_2SS",
+	[RATE_TBL_MAX] = "N/A"
+};
 #if 0
 static char *AR_STATE[] = {"NULL", "STEADY", "PROBE", "N/A"};
 static char *AR_ACTION[] = {"NULL", "INDEX", "RATE_UP", "RATE_DOWN", "RATE_GRP", "RATE_BACK",
@@ -4240,8 +4258,8 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 	if (!prQueryStaStatistics->ucSkipAr) {
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "RateTable", " = ", prQueryStaStatistics->ucArTableIdx < 6 ?
-			RATE_TBLE[prQueryStaStatistics->ucArTableIdx] : RATE_TBLE[6]);
+			"%-20s%s%s\n", "RateTable", " = ", prQueryStaStatistics->ucArTableIdx < RATE_TBL_MAX ?
+			RATE_TBLE[prQueryStaStatistics->ucArTableIdx] : RATE_TBLE[RATE_TBL_MAX]);
 
 		if (wlanGetStaIdxByWlanIdx(prAdapter, (UINT_8)(prHwWlanInfo->u4Index), &ucStaIdx) ==
 			WLAN_STATUS_SUCCESS){
@@ -5179,6 +5197,168 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev, IN char *pcC
 	}
 
 	return i4BytesWritten;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Handle command to get current Tx rate from rate table and respond
+*        string buffer. Example: VHT-2SS-BW80-SGI-MCS7
+*
+* \param[in] net_device Pointer to the Adapter structure.
+* \param[out] pcCommand Pointer to the command buffer to respond.
+* \param[in] i4TotalLen The length of  buffer.
+*
+* \retval Length of response buffer
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_get_sta_curr_ar_rate(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	UINT_8 ucWlanIndex = 0;
+	PUINT_8 pucMacAddr = NULL;
+	UINT_8 idx, txmode, rate;
+	P_PARAM_GET_STA_STATISTICS prQueryStaStatistics = NULL;
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -EINVAL;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* Get AIS AP address for no argument */
+	if (prAdapter->prAisBssInfo->prStaRecOfAP)
+		ucWlanIndex = prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+	else if (!wlanGetWlanIdxByAddress(prAdapter, NULL, &ucWlanIndex))
+		return i4BytesWritten;
+	pucMacAddr = wlanGetStaAddrByWlanIdx(prAdapter, ucWlanIndex);
+	if (!pucMacAddr) {
+		DBGLOG(REQ, WARN, "%s: MAC address is invalid!\n", __func__);
+		return -EFAULT;
+	}
+	/* Get WTBL info */
+	prHwWlanInfo = (P_PARAM_HW_WLAN_INFO_T)kalMemAlloc(sizeof(PARAM_HW_WLAN_INFO_T), VIR_MEM_TYPE);
+	if (!prHwWlanInfo)
+		return -ENOMEM;
+	prHwWlanInfo->u4Index = ucWlanIndex;
+	rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryWlanInfo,
+					prHwWlanInfo, sizeof(PARAM_HW_WLAN_INFO_T), TRUE, TRUE, TRUE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = -EFAULT;
+		goto out_get_curr_ar_rate;
+	}
+
+	prQueryStaStatistics =
+		(P_PARAM_GET_STA_STATISTICS)kalMemAlloc(sizeof(PARAM_GET_STA_STA_STATISTICS), VIR_MEM_TYPE);
+	if (!prQueryStaStatistics) {
+		i4BytesWritten = -ENOMEM;
+		goto out_get_curr_ar_rate;
+	}
+
+	/* Get Statistics info */
+	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, pucMacAddr);
+	rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryStaStatistics,
+					prQueryStaStatistics,
+					sizeof(PARAM_GET_STA_STA_STATISTICS), TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = -EFAULT;
+		goto out_get_curr_ar_rate;
+	}
+
+	idx = prHwWlanInfo->rWtblRateInfo.ucRateIdx;
+	if (idx >= AUTO_RATE_NUM) {
+		DBGLOG(REQ, WARN, "%s: Rate index is incorrect (%d)\n", __func__, idx);
+		i4BytesWritten = -EFAULT;
+		goto out_get_curr_ar_rate;
+	}
+	txmode = HW_TX_RATE_TO_MODE(prHwWlanInfo->rWtblRateInfo.au2RateCode[idx]);
+	if (txmode >= MAX_TX_MODE)
+		txmode = MAX_TX_MODE;
+	rate = HW_TX_RATE_TO_MCS(prHwWlanInfo->rWtblRateInfo.au2RateCode[idx], txmode);
+
+	/* Mode: [CCK | OFDM | HT | VHT] */
+	if (txmode == TX_RATE_MODE_CCK)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"CCK-");
+	else if (txmode == TX_RATE_MODE_OFDM)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"OFDM-");
+	else if (txmode == TX_RATE_MODE_HTGF || txmode == TX_RATE_MODE_HTMIX)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"HT-");
+	else
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"VHT-");
+	/* Spatial Streams: [1SS | 2SS | N/A] */
+	if (prQueryStaStatistics->ucArTableIdx == RATE_TBL_N_2SS ||
+		prQueryStaStatistics->ucArTableIdx == RATE_TBL_AC_2SS)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"2SS-");
+	else if (prQueryStaStatistics->ucArTableIdx == RATE_TBL_N ||
+		prQueryStaStatistics->ucArTableIdx == RATE_TBL_AC)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"1SS-");
+	else
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"N/A-");
+
+	/* BW mode: [BW20 | BW40 | BW80 | BW160/BW8080] */
+	if ((txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM))
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s-", HW_TX_RATE_BW[0]);
+	else
+		if (idx > prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN)
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			  i4TotalLen - i4BytesWritten, "%s-",
+			  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+				(prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability > BW_20 ?
+				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability - 1] :
+				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]) :
+				HW_TX_RATE_BW[4]);
+		else
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			  i4TotalLen - i4BytesWritten, "%s-",
+			  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] :
+				HW_TX_RATE_BW[4]);
+	/* GI mode: [LGI | SGI | X] */
+	if (txmode == TX_RATE_MODE_CCK || txmode == TX_RATE_MODE_OFDM)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"N/A-");
+	else
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s-", priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap) == 0 ?
+			"LGI" : "SGI");
+	/* Rate index: [1M | 2M | 5.5M | 11M |
+	 *				6M | 9M | 12M | 18M | 24M | 36M | 48M | 54M |
+	 *				MCS# ]
+	 */
+	if (txmode == TX_RATE_MODE_CCK)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
+	else if (txmode == TX_RATE_MODE_OFDM)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", hw_rate_ofdm_str(rate));
+	else
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"MCS%d", rate);
+
+out_get_curr_ar_rate:
+	if (prHwWlanInfo)
+		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
+	if (prQueryStaStatistics)
+		kalMemFree(prQueryStaStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_STA_STA_STATISTICS));
+
+	return i4BytesWritten;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8603,6 +8783,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_sta_stat2(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_STA_STAT, strlen(CMD_GET_STA_STAT)) == 0) {
 			i4BytesWritten = priv_driver_get_sta_stat(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_GET_CURR_AR_RATE, strlen(CMD_GET_CURR_AR_RATE)) == 0) {
+			i4BytesWritten = priv_driver_get_sta_curr_ar_rate(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_STA_RX_STAT, strlen(CMD_GET_STA_RX_STAT)) == 0) {
 			i4BytesWritten = priv_driver_show_rx_stat(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_SET_ACL_POLICY, strlen(CMD_SET_ACL_POLICY)) == 0) {
