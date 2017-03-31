@@ -505,6 +505,8 @@ struct _GLUE_INFO_T {
 	struct task_struct *rx_thread;
 
 #endif
+	struct tasklet_struct rRxTask;
+	struct tasklet_struct rTxCompleteTask;
 
 	struct work_struct rTxMsduFreeWork;
 	struct delayed_work rRxPktDeAggWork;
