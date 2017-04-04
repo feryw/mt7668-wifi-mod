@@ -153,6 +153,7 @@
 #include <linux/firmware.h>	/* for firmware download */
 #include <linux/ctype.h>
 
+#include <linux/interrupt.h>
 
 #if defined(_HIF_USB)
 #include <linux/usb.h>
@@ -162,7 +163,6 @@
 
 #if defined(_HIF_PCIE)
 #include <linux/pci.h>
-#include <linux/interrupt.h>
 #endif
 
 #if defined(_HIF_SDIO)
