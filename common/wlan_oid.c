@@ -12003,7 +12003,9 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 	prSetRddReport = (P_PARAM_CUSTOM_SET_RDD_REPORT_T) pvSetBuffer;
 
 	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+					sizeof(*prCmdRddOnOffCtrl));
+
+	ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_RADAR_EMULATE;
 
@@ -12024,8 +12026,10 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 					TRUE,   /* fgIsOid*/
 					nicCmdEventSetCommon, /* REF: wlanoidSetDbdcEnable */
 					nicOidCmdTimeoutCommon,
-					sizeof(CMD_RDD_ON_OFF_CTRL_T),
+					sizeof(*prCmdRddOnOffCtrl),
 					(PUINT_8) (prCmdRddOnOffCtrl), pvSetBuffer, u4SetBufferLen);
+
+	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
 	return rWlanStatus;
 }
@@ -12067,7 +12071,9 @@ wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, I
 	prSetRadarDetectMode = (P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T) pvSetBuffer;
 
 	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+					sizeof(*prCmdRddOnOffCtrl));
+
+	ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_DET_MODE;
 
@@ -12083,8 +12089,10 @@ wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, I
 					TRUE,   /* fgIsOid*/
 					nicCmdEventSetCommon, /* REF: wlanoidSetDbdcEnable */
 					nicOidCmdTimeoutCommon,
-					sizeof(CMD_RDD_ON_OFF_CTRL_T),
+					sizeof(*prCmdRddOnOffCtrl),
 					(PUINT_8) (prCmdRddOnOffCtrl), pvSetBuffer, u4SetBufferLen);
+
+	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
 	return rWlanStatus;
 }
