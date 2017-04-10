@@ -2515,13 +2515,13 @@ typedef struct _ADC_BUS_FMT_T {
 } ADC_BUS_FMT_T, *P_ADC_BUS_FMT_T;
 
 typedef struct _IQC_BUS_FMT_T {
-	INT_32 u4Iqc0Q:12;	/* [11:0] */
-	INT_32 u4Iqc0I:12;	/* [23:12] */
-	INT_32 u4Na1:8;		/* [31:24] */
+	INT_32 u4Iqc0Q:14;	/* [13:0] */
+	INT_32 u4Iqc0I:14;	/* [27:14] */
+	INT_32 u4Na1:4;		/* [31:28] */
 
-	INT_32 u4Iqc1Q:12;	/* [43:32] */
-	INT_32 u4Iqc1I:12;	/* [55:44] */
-	INT_32 u4Na2:8;		/* [63:56] */
+	INT_32 u4Iqc1Q:14;	/* [45:32] */
+	INT_32 u4Iqc1I:14;	/* [59:46] */
+	INT_32 u4Na2:4;		/* [63:60] */
 
 	INT_32 u4Na3;		/* [95:64] */
 } IQC_BUS_FMT_T, *P_IQC_BUS_FMT_T;
