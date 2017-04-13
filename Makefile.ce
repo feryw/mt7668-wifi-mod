@@ -146,6 +146,8 @@ CFG_ENABLE_EFUSE_MAC_ADDR=1
 
 #CFG_SUPPORT_DFS_MASTER=1
 
+CFG_SUPPORT_ROAMING=0
+
 # Support to change sta, p2p, ap interface names
 # y: enable, n: disable
 # eg. insmod wlan_mt7668_usb.ko sta=wlan p2p=p2p ap=ap
@@ -186,6 +188,10 @@ endif
 
 ifneq ($(CFG_USB_REQ_RX_DATA_CNT),)
 PLATFORM_FLAGS += -DCFG_USB_REQ_RX_DATA_CNT=$(CFG_USB_REQ_RX_DATA_CNT)
+endif
+
+ifneq ($(CFG_SUPPORT_ROAMING),)
+PLATFORM_FLAGS += -DCFG_SUPPORT_ROAMING=$(CFG_SUPPORT_ROAMING)
 endif
 
 ifneq ($(CFG_ENABLE_EFUSE_MAC_ADDR),)

@@ -663,7 +663,9 @@
 #define CFG_SUPPORT_UAPSD           1
 #define CFG_SUPPORT_UL_PSMP         0
 
+#ifndef CFG_SUPPORT_ROAMING
 #define CFG_SUPPORT_ROAMING         1	/* Roaming System */
+#endif
 #if (CFG_SUPPORT_ROAMING == 1)
 
 /* Roaming feature: skip roaming when only one ESSID AP
