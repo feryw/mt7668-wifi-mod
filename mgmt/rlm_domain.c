@@ -1833,6 +1833,11 @@ VOID rlmDomainTxPwrLimitSetValues(
 	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd = NULL;
 	P_CHANNEL_TX_PWR_LIMIT pChTxPwrLimit = NULL;
 
+	if (!pSetCmd || !pTxPwrLimit) {
+		DBGLOG(RLM, ERROR, "%s: Invalid request!!!\n", __func__);
+		return;
+	}
+
 	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
 		pCmd = &(pSetCmd->rChannelPowerLimit[ucIdx]);
 		cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit, pCmd->ucCentralCh);
@@ -1910,7 +1915,7 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 		return bRet;
 	}
 
-	pTxPwrLimit->ucChNum = pSetCmd_2g->ucNum + pSetCmd_5g->ucNum;
+	pTxPwrLimit->ucChNum = (pSetCmd_2g ? pSetCmd_2g->ucNum : 0) + (pSetCmd_5g ? pSetCmd_5g->ucNum : 0);
 
 	pTxPwrLimit->rChannelTxPwrLimit =
 		(P_CHANNEL_TX_PWR_LIMIT) kalMemAlloc(sizeof(CHANNEL_TX_PWR_LIMIT) *
@@ -1922,17 +1927,19 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 		goto error;
 	}
 
-	for (ucIdx = 0; ucIdx < pSetCmd_2g->ucNum; ucIdx++) {
-		pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
-			pSetCmd_2g->rChannelPowerLimit[ucIdx].ucCentralCh;
-		ucCnt++;
-	}
+	if (pSetCmd_2g)
+		for (ucIdx = 0; ucIdx < pSetCmd_2g->ucNum; ucIdx++) {
+			pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
+				pSetCmd_2g->rChannelPowerLimit[ucIdx].ucCentralCh;
+			ucCnt++;
+		}
 
-	for (ucIdx = 0; ucIdx < pSetCmd_5g->ucNum; ucIdx++) {
-		pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
-			pSetCmd_5g->rChannelPowerLimit[ucIdx].ucCentralCh;
-		ucCnt++;
-	}
+	if (pSetCmd_5g)
+		for (ucIdx = 0; ucIdx < pSetCmd_5g->ucNum; ucIdx++) {
+			pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
+				pSetCmd_5g->rChannelPowerLimit[ucIdx].ucCentralCh;
+			ucCnt++;
+		}
 
 	bRet = rlmDomainTxPwrLimitLoadFromFile(prGlueInfo->prAdapter,
 		country_code, pTxPwrLimit);
