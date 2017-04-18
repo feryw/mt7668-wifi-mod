@@ -300,9 +300,12 @@ int mtk_usb_resume(struct usb_interface *intf)
 	prGlueInfo->rHifInfo.state = USB_STATE_LINK_UP;
 	halEnableInterrupt(prGlueInfo->prAdapter);
 
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
-		DBGLOG(HAL, EVENT, "leave WOW flow\n");
-		kalWowProcess(prGlueInfo, FALSE);
+	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW leave */
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
+			DBGLOG(HAL, EVENT, "leave WOW flow\n");
+			kalWowProcess(prGlueInfo, FALSE);
+		}
 	}
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done!\n");

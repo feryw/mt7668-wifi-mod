@@ -6802,7 +6802,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prAdapter->rWowCtrl.astWakeHif[0].ucWakeupHif =
 		(UINT_8) wlanCfgGetUint32(prAdapter, "WowHif", ENUM_HIF_TYPE_GPIO);
 	prAdapter->rWowCtrl.astWakeHif[0].ucGpioPin = (UINT_8) wlanCfgGetUint32(prAdapter, "WowGpioPin", 0xFF);
-	prAdapter->rWowCtrl.astWakeHif[0].ucTriggerLvl = (UINT_8) wlanCfgGetUint32(prAdapter, "WowTriigerLevel", 3);
+	prAdapter->rWowCtrl.astWakeHif[0].ucTriggerLvl = (UINT_8) wlanCfgGetUint32(prAdapter, "WowTriggerLevel", 3);
 	prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval = wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
 #endif
 

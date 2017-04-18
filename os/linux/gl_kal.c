@@ -4988,11 +4988,15 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 	prGlueInfo->prAdapter->fgSetPfCapabilityDone = FALSE;
 	prGlueInfo->prAdapter->fgSetWowDone = FALSE;
 
-	DBGLOG(PF, INFO, "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
-		prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, prGlueInfo->prAdapter->prAisBssInfo->ucOwnMacIndex);
+	DBGLOG(PF, INFO, "PF, pAd AIS ucBssIndex=%d, ucOwnMacIndex=%d, band=%d\n",
+		prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, prGlueInfo->prAdapter->prAisBssInfo->ucOwnMacIndex,
+		prGlueInfo->prAdapter->prAisBssInfo->eDBDCBand);
 
 	DBGLOG(PF, INFO, "profile wow=%d, GpioInterval=%d\n",
 		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval);
+
+	/* add band info */
+	rCmdWowlanParam.ucDbdcBand = (UINT_8)prGlueInfo->prAdapter->prAisBssInfo->eDBDCBand;
 
 	rCmdPacket_Filter_Cap.packet_cap_type |= PACKETF_CAP_TYPE_MAGIC;
 	/* 20160627 Bennett: if receive BMC magic, PF search by bssid index, which is different with OM index */

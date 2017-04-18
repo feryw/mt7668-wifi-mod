@@ -700,7 +700,8 @@ typedef struct _CMD_WOWLAN_PARAM_T {
 	UINT_16		u2FilterFlag; /* ARP/MC/DropExceptMagic/SendMagicToHost */
 	UINT_8		ucScenarioID; /* WOW/WOBLE/Proximity */
 	UINT_8		ucBlockCount;
-	UINT_8		aucReserved1[2];
+	UINT_8		ucDbdcBand;
+	UINT_8		aucReserved1[1];
 	CMD_WAKE_HIF_T astWakeHif[2];
 	WOW_PORT_T	stWowPort;
 	UINT_8		aucReserved2[32];
