@@ -2309,8 +2309,6 @@ VOID p2pRoleFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 			break;
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
-		if (!(prP2pBssInfo->fgIsNetActive))
-			break;
 
 		prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
 
