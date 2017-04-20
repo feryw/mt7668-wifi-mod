@@ -489,9 +489,6 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 			/* 9. indicate disconnection as default status */
 			kalIndicateStatusAndComplete(prAdapter->prGlueInfo, WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
-
-			/*10. send regulatory information to firmware */
-			rlmDomainSendInfoToFirmware(prAdapter);
 		}
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);

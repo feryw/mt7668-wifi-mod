@@ -2296,6 +2296,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 #endif
 #endif
+		/* send regulatory information to firmware */
+		rlmDomainSendInfoToFirmware(prAdapter);
+
 		/* set MAC address */
 		{
 			WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
