@@ -4844,6 +4844,20 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	       prEventNicCapability->ucRfCalFail, prEventNicCapability->ucBbCalFail);
 #endif
 
+#if CFG_SISO_SW_DEVELOP
+	if ((!prEventNicCapability->ucHwNotSupportDBDC) && (!prEventNicCapability->ucHwSetNss1x1)) {
+		prAdapter->rWifiFemCfg.u2WifiPath =
+			(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
+	} else if ((!prEventNicCapability->ucHwNotSupportDBDC) && (prEventNicCapability->ucHwSetNss1x1)) {
+		prAdapter->rWifiFemCfg.u2WifiPath =
+			(WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1);
+	} else if ((prEventNicCapability->ucHwNotSupportDBDC) && (prEventNicCapability->ucHwSetNss1x1)) {
+		prAdapter->rWifiFemCfg.u2WifiPath =
+			(WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1);
+	} else
+		ASSERT(0);
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -9241,8 +9255,9 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	if (ucBssIndex > MAX_BSS_INDEX) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIndex);
-		return ucRetValSpeIdx;
+		ASSERT(0);
 	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	/*
 	* if DBDC enable return 0, else depend 2.4G/5G & support WF path
@@ -9261,7 +9276,7 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
 			} else
-				ucRetValSpeIdx = 0x18;
+				ucRetValSpeIdx = 0x0;
 		} else if (eBand == BAND_5G) {
 			if (IS_WIFI_5G_SISO(prAdapter)) {
 				if (IS_WIFI_5G_WF0_SUPPORT(prAdapter))
@@ -9269,9 +9284,9 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
 			} else
-				ucRetValSpeIdx = 0x18;
+				ucRetValSpeIdx = 0x0;
 		} else
-			ucRetValSpeIdx = 0x18;
+			ucRetValSpeIdx = 0x0;
 	}
 	DBGLOG(INIT, INFO, "SpeIdx:%d,D:%d,G=%d,B=%d,Bss=%d\n",
 						ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,
@@ -9290,8 +9305,9 @@ wlanGetSupportNss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	if (ucBssIndex > MAX_BSS_INDEX) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIndex);
-		return ucRetValNss;
+		ASSERT(0);
 	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	/*
 	* depend 2.4G/5G support SISO/MIMO

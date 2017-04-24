@@ -1161,6 +1161,11 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 		break;
 
 	case MSDU_RATE_MODE_MANUAL_CR:
+
+#if CFG_SISO_SW_DEVELOP
+		/* Update spatial extension index setting */
+		HAL_MAC_TX_DESC_SET_SPE_IDX(prTxDesc, wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex));
+#endif
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_MODE_TO_CR(prTxDesc);
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(prTxDesc);
 		break;
