@@ -494,7 +494,8 @@ VOID halSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt)
 
 VOID halWakeUpWiFi(IN P_ADAPTER_T prAdapter)
 {
-	BOOLEAN fgResult;
+	BOOLEAN fgResult, fgOwnResult;
+	UINT_8 ucCount = 0;
 
 #if CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH
 	UINT_32 u4Value = 0;
@@ -510,12 +511,33 @@ VOID halWakeUpWiFi(IN P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 
+	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");
+	fgOwnResult = FALSE;
+	HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
+
+	while (!fgResult && !fgOwnResult) {
+		HAL_LP_OWN_CLR(prAdapter, &fgOwnResult);
+		kalMdelay(50);
+		HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
+
+		ucCount++;
+
+		if (ucCount >= 5) {
+			DBGLOG(INIT, WARN, "Power on failed!!!\n");
+			break;
+		}
+	}
+
+	prAdapter->fgIsFwOwn = FALSE;
+
+#if 0
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 	if (fgResult)
 		prAdapter->fgIsFwOwn = FALSE;
 	else
 		HAL_LP_OWN_CLR(prAdapter, &fgResult);
+#endif
 }
 
 VOID halTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
@@ -1201,6 +1223,7 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 		GloCfg.field_1.fifo_little_endian = 1;
 
 		GloCfg.field_1.tx_bt_size_bit21 = 1;
+		GloCfg.field_1.sw_rst = 0;
 		GloCfg.field_1.first_token = 1;
 		GloCfg.field_1.omit_tx_info = 1;
 		GloCfg.field_1.reserve_30 = 1;
@@ -1214,6 +1237,7 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 	} else {
 		GloCfg.field_1.EnableRxDMA = 0;
 		GloCfg.field_1.EnableTxDMA = 0;
+		GloCfg.field_1.sw_rst = 1;
 
 		IntMask.field.rx_done_0 = 0;
 		IntMask.field.rx_done_1 = 0;
@@ -1265,6 +1289,7 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 		GloCfg.field.omit_tx_info = 1;
 		GloCfg.field.fifo_little_endian = 1;
 		GloCfg.field.multi_dma_en = 3;
+		GloCfg.field.sw_rst = 0;
 		GloCfg.field.clk_gate_dis = 1;
 
 		IntMask.field.rx_done_0 = 1;
@@ -1276,7 +1301,7 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 		GloCfg.field.EnableRxDMA = 0;
 		GloCfg.field.EnableTxDMA = 0;
 		GloCfg.field.multi_dma_en = 2;
-
+		GloCfg.field.sw_rst = 1;
 		IntMask.field.rx_done_0 = 0;
 		IntMask.field.rx_done_1 = 0;
 		IntMask.field.tx_done_0 = 0;
