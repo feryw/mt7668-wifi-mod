@@ -1467,6 +1467,7 @@ int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_devic
 }
 #endif
 
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
@@ -1629,6 +1630,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 	return i4Rslt;
 }
+#endif
 #endif
 
 #if 0
