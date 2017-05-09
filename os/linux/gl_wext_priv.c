@@ -8577,6 +8577,8 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 	struct CMD_GET_TRAFFIC_REPORT *cmd = NULL;
 	UINT_8 ucBand = ENUM_BAND_0;
 	UINT_32 u4Val = 0;
+	UINT_16 u2Val = 0;
+	UINT_8 ucVal = 0;
 	INT_32 u4Ret = 0;
 	BOOL fgWaitResp = FALSE;
 	BOOL fgRead = FALSE;
@@ -8621,10 +8623,27 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 		}
 		if (strnicmp(apcArgv[1], "GETDBG", strlen("GETDBG")) == 0)
 			fgGetDbg = TRUE;
-	} else if ((strnicmp(apcArgv[1], "TIMEDUR", strlen("TIMEDUR")) == 0) && (i4Argc == 3)) {
-		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Val);
-		cmd->u4TimerDur = u4Val;
+	} else if ((strnicmp(apcArgv[1], "SAMPLEPOINTS", strlen("SAMPLEPOINTS")) == 0) && (i4Argc == 3)) {
+		u4Ret = kalkStrtou16(apcArgv[2], 0, &u2Val);
+		cmd->u2SamplePoints = u2Val;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+		cmd->ucAction = CMD_SET_REPORT_SAMPLE_POINT;
+	} else if ((strnicmp(apcArgv[1], "TXTHRES", strlen("TXTHRES")) == 0) && (i4Argc == 3)) {
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucVal);
+		/* valid val range is from 0 - 100% */
+		if (u4Val > 100)
+			u4Val = 100;
+		cmd->ucTxThres = ucVal;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+		cmd->ucAction = CMD_SET_REPORT_TXTHRES;
+	} else if ((strnicmp(apcArgv[1], "RXTHRES", strlen("RXTHRES")) == 0) && (i4Argc == 3)) {
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucVal);
+		/* valid val range is from 0 - 100% */
+		if (u4Val > 100)
+			u4Val = 100;
+		cmd->ucRxThres = ucVal;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+		cmd->ucAction = CMD_SET_REPORT_RXTHRES;
 	} else
 		goto get_report_invalid;
 
@@ -8636,7 +8655,7 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 	if ((rStatus != WLAN_STATUS_SUCCESS) && (rStatus != WLAN_STATUS_PENDING))
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\ncommand failed %x", rStatus);
-	else if (cmd->ucAction & CMD_GET_REPORT_GET) {
+	else if (cmd->ucAction == CMD_GET_REPORT_GET) {
 		int persentage = 0;
 		int sample_dur = cmd->u4FetchEd - cmd->u4FetchSt;
 
@@ -8655,7 +8674,7 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\nBand%d Info:", cmd->ucBand);
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\n\tSample every %u ms", cmd->u4TimerDur);
+				"\n\tSample every %u ms with %u points", cmd->u4TimerDur, cmd->u2SamplePoints);
 		if (fgGetDbg) {
 			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				" from systime %u - %u total_dur %u us f_cost %u us t_drift %d ms"
@@ -8665,6 +8684,9 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"\n\tbusy-RMAC %u us, idle-TMAC %u us, t_total %u"
 					, cmd->u4ChBusy, cmd->u4ChIdle, cmd->u4ChBusy + cmd->u4ChIdle);
+			i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\n\theavy tx threshold %u%% rx threshold %u%%"
+					, cmd->ucTxThres, cmd->ucRxThres);
 		}
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\n\tch_busy %u us, ch_idle %u us, total_period %u us"
