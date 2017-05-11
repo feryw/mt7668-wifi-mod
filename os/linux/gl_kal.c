@@ -3123,13 +3123,18 @@ VOID kalFlushPendingTxPackets(IN P_GLUE_INFO_T prGlueInfo)
 	P_QUE_ENTRY_T prQueueEntry;
 	PVOID prPacket;
 
-	GLUE_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prGlueInfo);
 
 	prTxQue = &(prGlueInfo->rTxQueue);
 
-	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum)) {
+	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) == 0)
+		return;
+
+	if (HAL_IS_TX_DIRECT()) {
+		nicTxDirectClearSkbQ(prGlueInfo->prAdapter);
+	} else {
+		GLUE_SPIN_LOCK_DECLARATION();
+
 		while (TRUE) {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
 			QUEUE_REMOVE_HEAD(prTxQue, prQueueEntry, P_QUE_ENTRY_T);

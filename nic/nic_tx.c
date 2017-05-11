@@ -2202,14 +2202,18 @@ WLAN_STATUS nicTxFlush(IN P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 
-	/* ask Per STA/AC queue to be fllushed and return all queued packets */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-	prMsduInfo = qmFlushTxQueues(prAdapter);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectClearAllStaPsQ(prAdapter);
+	} else {
+		/* ask Per STA/AC queue to be fllushed and return all queued packets */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+		prMsduInfo = qmFlushTxQueues(prAdapter);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
 
-	if (prMsduInfo != NULL) {
-		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		if (prMsduInfo != NULL) {
+			nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -3203,19 +3207,121 @@ VOID nicTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
 
 /*----------------------------------------------------------------------------*/
 /*
+* \brief This function is to start rTxDirectHifTimer to try to send out packets in
+*        rStaPsQueue[], rBssAbsentQueue[], rTxDirectHifQueue[].
+*
+* \param[in] prAdapter   Pointer of Adapter
+*
+* \retval none
+*/
+/*----------------------------------------------------------------------------*/
+VOID nicTxDirectStartCheckQTimer(IN P_ADAPTER_T prAdapter)
+{
+	mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + 1);
+}
+
+VOID nicTxDirectClearSkbQ(IN P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	struct sk_buff *prSkb;
+
+	while (TRUE) {
+		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
+		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		if (prSkb == NULL)
+			break;
+
+		kalSendComplete(prGlueInfo, prSkb, WLAN_STATUS_NOT_ACCEPTED);
+	}
+}
+
+VOID nicTxDirectClearHifQ(IN P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	UINT_8 ucHifTc = 0;
+	QUE_T rNeedToFreeQue;
+	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++) {
+		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDirectHifQueue[ucHifTc])) {
+			spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+			QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rTxDirectHifQueue[ucHifTc]);
+			spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+			wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+		}
+	}
+}
+
+VOID nicTxDirectClearStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex)
+{
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	QUE_T rNeedToFreeQue;
+	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
+		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rStaPsQueue[ucStaRecIndex]);
+		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+		wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+	}
+}
+
+VOID nicTxDirectClearBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+{
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	QUE_T rNeedToFreeQue;
+	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex])) {
+		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
+		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+		wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+	}
+}
+
+VOID nicTxDirectClearAllStaPsQ(IN P_ADAPTER_T prAdapter)
+{
+	UINT_8 ucStaRecIndex;
+	UINT_32 u4StaPsBitmap;
+
+	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
+
+	if (u4StaPsBitmap)
+		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM; ++ucStaRecIndex) {
+			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
+				nicTxDirectClearBssAbsentQ(prAdapter, ucStaRecIndex);
+				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
+			}
+			if (u4StaPsBitmap == 0)
+				break;
+		}
+}
+
+/*----------------------------------------------------------------------------*/
+/*
 * \brief This function is to check the StaRec is in Ps or not,
 *        and store MsduInfo(s) or sent MsduInfo(s) to the next stage respectively.
 *
-* \param[in] prGlueInfo  Pointer of prGlueInfo
+* \param[in] prAdapter   Pointer of Adapter
 * \param[in] ucStaRecIndex  Indictate which StaRec to be checked
 * \param[in] prQue       Pointer of MsduInfo queue which to be processed
 *
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-static VOID nicTxDirectCheckStaPsQ(P_GLUE_INFO_T prGlueInfo, UINT_8 ucStaRecIndex, P_QUE_T prQue)
+static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex, P_QUE_T prQue)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
 	P_STA_RECORD_T prStaRec;	/* The current focused STA */
 	P_MSDU_INFO_T prMsduInfo;
 	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
@@ -3285,16 +3391,15 @@ static VOID nicTxDirectCheckStaPsQ(P_GLUE_INFO_T prGlueInfo, UINT_8 ucStaRecInde
 * \brief This function is to check the Bss is net absent or not,
 *        and store MsduInfo(s) or sent MsduInfo(s) to the next stage respectively.
 *
-* \param[in] prGlueInfo  Pointer of prGlueInfo
+* \param[in] prAdapter   Pointer of Adapter
 * \param[in] ucBssIndex  Indictate which Bss to be checked
 * \param[in] prQue       Pointer of MsduInfo queue which to be processed
 *
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-static VOID nicTxDirectCheckBssAbsentQ(P_GLUE_INFO_T prGlueInfo, UINT_8 ucBssIndex, P_QUE_T prQue)
+static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, P_QUE_T prQue)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
 	P_BSS_INFO_T prBssInfo;
 	P_MSDU_INFO_T prMsduInfo;
 	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
@@ -3381,7 +3486,7 @@ static UINT_8 nicTxDirectGetHifTc(P_MSDU_INFO_T prMsduInfo)
 *
 * \param[in] prSkb  Pointer of the sk_buff to be sent
 * \param[in] prMsduInfo  Pointer of the MsduInfo
-* \param[in] prGlueInfo  Pointer of prGlueInfo
+* \param[in] prAdapter   Pointer of Adapter
 * \param[in] ucCheckTc   Indictate which Tc HifQ to be checked
 * \param[in] ucStaRecIndex  Indictate which StaPsQ to be checked
 * \param[in] ucBssIndex  Indictate which BssAbsentQ to be checked
@@ -3389,10 +3494,9 @@ static UINT_8 nicTxDirectGetHifTc(P_MSDU_INFO_T prMsduInfo)
 * \retval WLAN_STATUS
 */
 /*----------------------------------------------------------------------------*/
-static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T prMsduInfo, P_GLUE_INFO_T prGlueInfo,
+static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T prMsduInfo, P_ADAPTER_T prAdapter,
 					  UINT_8 ucCheckTc, UINT_8 ucStaRecIndex, UINT_8 ucBssIndex)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
 	P_STA_RECORD_T prStaRec;	/* The current focused STA */
 	P_BSS_INFO_T prBssInfo;
 	UINT_8 ucTC = 0, ucHifTc = 0;
@@ -3491,10 +3595,10 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 		QUEUE_INSERT_TAIL(prProcessingQue, (P_QUE_ENTRY_T) prMsduInfo);
 
 		/* Power-save STA handling */
-		nicTxDirectCheckStaPsQ(prGlueInfo, prMsduInfo->ucStaRecIndex, prProcessingQue);
+		nicTxDirectCheckStaPsQ(prAdapter, prMsduInfo->ucStaRecIndex, prProcessingQue);
 
 		/* Absent BSS handling */
-		nicTxDirectCheckBssAbsentQ(prGlueInfo, prMsduInfo->ucBssIndex, prProcessingQue);
+		nicTxDirectCheckBssAbsentQ(prAdapter, prMsduInfo->ucBssIndex, prProcessingQue);
 
 		if (QUEUE_IS_EMPTY(prProcessingQue))
 			return WLAN_STATUS_SUCCESS;
@@ -3508,7 +3612,7 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 				ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 				QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc], (P_QUE_ENTRY_T) prMsduInfo);
 			}
-			mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + 1);
+			nicTxDirectStartCheckQTimer(prAdapter);
 			return WLAN_STATUS_SUCCESS;
 		}
 
@@ -3522,14 +3626,14 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
 		}
 	} else {
-		if (ucStaRecIndex != 0xff && ucBssIndex != 0xff) {
+		if (ucStaRecIndex != 0xff || ucBssIndex != 0xff) {
 			/* Power-save STA handling */
 			if (ucStaRecIndex != 0xff)
-				nicTxDirectCheckStaPsQ(prGlueInfo, prMsduInfo->ucStaRecIndex, prProcessingQue);
+				nicTxDirectCheckStaPsQ(prAdapter, ucStaRecIndex, prProcessingQue);
 
 			/* Absent BSS handling */
 			if (ucBssIndex != 0xff)
-				nicTxDirectCheckBssAbsentQ(prGlueInfo, prMsduInfo->ucBssIndex, prProcessingQue);
+				nicTxDirectCheckBssAbsentQ(prAdapter, ucBssIndex, prProcessingQue);
 
 			if (QUEUE_IS_EMPTY(prProcessingQue))
 				return WLAN_STATUS_SUCCESS;
@@ -3544,7 +3648,7 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 					QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc],
 							  (P_QUE_ENTRY_T) prMsduInfo);
 				}
-				mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + 1);
+				nicTxDirectStartCheckQTimer(prAdapter);
 				return WLAN_STATUS_SUCCESS;
 			}
 
@@ -3642,8 +3746,8 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 
 	if (u4StaPsBitmap)
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM; ++ucStaRecIndex) {
-			if (QUEUE_IS_NOT_EMPTY(prAdapter->rStaPsQueue)) {
-				nicTxDirectStartXmitMain(NULL, NULL, prGlueInfo, 0xff, ucStaRecIndex, 0xff);
+			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
+				nicTxDirectStartXmitMain(NULL, NULL, prAdapter, 0xff, ucStaRecIndex, 0xff);
 				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
 				DBGLOG(TX, INFO, "ucStaRecIndex: %u\n", ucStaRecIndex);
 			}
@@ -3653,8 +3757,8 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 
 	if (u4BssAbsentBitmap)
 		for (ucBssIndex = 0; ucBssIndex < HW_BSSID_NUM + 1; ++ucBssIndex) {
-			if (QUEUE_IS_NOT_EMPTY(prAdapter->rBssAbsentQueue)) {
-				nicTxDirectStartXmitMain(NULL, NULL, prGlueInfo, 0xff, 0xff, ucBssIndex);
+			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex])) {
+				nicTxDirectStartXmitMain(NULL, NULL, prAdapter, 0xff, 0xff, ucBssIndex);
 				u4BssAbsentBitmap &= ~BIT(ucBssIndex);
 				DBGLOG(TX, INFO, "ucBssIndex: %u\n", ucBssIndex);
 			}
@@ -3665,7 +3769,7 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 
 	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++)
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDirectHifQueue[ucHifTc]))
-			nicTxDirectStartXmitMain(NULL, NULL, prGlueInfo, ucHifTc, 0xff, 0xff);
+			nicTxDirectStartXmitMain(NULL, NULL, prAdapter, ucHifTc, 0xff, 0xff);
 
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 }
@@ -3722,7 +3826,7 @@ WLAN_STATUS nicTxDirectStartXmit(struct sk_buff *prSkb, P_GLUE_INFO_T prGlueInfo
 	}
 
 	while (1) {
-		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prGlueInfo, 0xff, 0xff, 0xff);
+		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff, 0xff, 0xff);
 		prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
 		if (prSkb != NULL) {
 			prMsduInfo = cnmPktAlloc(prAdapter, 0);
