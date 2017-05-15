@@ -2293,6 +2293,42 @@ BOOLEAN p2pFuncValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @brief This function is used to check the TKIP IE
+*
+*
+* @return none
+*/
+/*----------------------------------------------------------------------------*/
+BOOLEAN p2pFuncParseCheckForTKIPInfoElem(IN PUINT_8 pucBuf)
+{
+	UINT_8 aucWfaOui[] = VENDOR_OUI_WFA;
+	P_WPA_INFO_ELEM_T prWpaIE = (P_WPA_INFO_ELEM_T) NULL;
+	UINT_32 u4GroupKeyCipher = 0;
+
+	if (pucBuf == NULL)
+		return FALSE;
+
+	prWpaIE = (P_WPA_INFO_ELEM_T) pucBuf;
+
+	if (prWpaIE->ucLength <= ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE)
+		return FALSE;
+
+	if (prWpaIE->aucOui[0] != aucWfaOui[0] ||
+		prWpaIE->aucOui[1] != aucWfaOui[1] ||
+		prWpaIE->aucOui[2] != aucWfaOui[2])
+		return FALSE;
+
+	WLAN_GET_FIELD_32(&prWpaIE->u4GroupKeyCipherSuite, &u4GroupKeyCipher);
+
+	if (prWpaIE->ucOuiType == VENDOR_OUI_TYPE_WPA &&
+		u4GroupKeyCipher == WPA_CIPHER_SUITE_TKIP)
+		return TRUE;
+	else
+		return FALSE;
+}				/* p2pFuncParseCheckForP2PInfoElem */
+
+/*----------------------------------------------------------------------------*/
+/*!
 * @brief This function is used to check the P2P IE
 *
 *

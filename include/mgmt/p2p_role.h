@@ -107,6 +107,7 @@ typedef struct _MSG_P2P_BEACON_UPDATE_T {
 	PUINT_8 pucBcnHdr;
 	PUINT_8 pucBcnBody;
 	PUINT_8 pucAssocRespIE;
+	BOOLEAN fgIsWepCipher;
 	UINT_8 aucBuffer[1];	/* Header & Body & Extra IEs are put here. */
 } MSG_P2P_BEACON_UPDATE_T, *P_MSG_P2P_BEACON_UPDATE_T;
 

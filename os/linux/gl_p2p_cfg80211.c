@@ -1276,6 +1276,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			prP2pBcnUpdateMsg->pucBcnBody = NULL;
 		}
 
+		if ((settings->crypto.cipher_group == WLAN_CIPHER_SUITE_WEP40) ||
+			(settings->crypto.cipher_group == WLAN_CIPHER_SUITE_WEP104))
+			prP2pBcnUpdateMsg->fgIsWepCipher = TRUE;
+		else
+			prP2pBcnUpdateMsg->fgIsWepCipher = FALSE;
+
 		if (settings->beacon.assocresp_ies_len != 0 && settings->beacon.assocresp_ies != NULL) {
 			prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
 			kalMemCopy(pucBuffer, settings->beacon.assocresp_ies, settings->beacon.assocresp_ies_len);
