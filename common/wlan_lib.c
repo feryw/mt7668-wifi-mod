@@ -4858,6 +4858,9 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	} else if ((prEventNicCapability->ucHwNotSupportDBDC) && (prEventNicCapability->ucHwSetNss1x1)) {
 		prAdapter->rWifiFemCfg.u2WifiPath =
 			(WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1);
+	} else if ((prEventNicCapability->ucHwNotSupportDBDC) && (!prEventNicCapability->ucHwSetNss1x1)) {
+		prAdapter->rWifiFemCfg.u2WifiPath =
+			(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
 	} else
 		ASSERT(0);
 #endif
