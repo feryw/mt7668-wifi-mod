@@ -199,6 +199,44 @@ VOID rlmFsmEventUninit(P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief For association request, power capability
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+VOID rlmReqGeneratePowerCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
+{
+	PUINT_8 pucBuffer;
+	P_BSS_INFO_T prBssInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	/* We should add power capability IE in assoc/reassoc req if the spectrum
+	 * management bit is set to 1 in Capability Infor field, or the connection
+	 * will be rejected by Marvell APs in some TGn items. (e.g. 5.2.32).
+	 * Spectrum management related feature (802.11h) is for 5G band.
+	 */
+	if (!prBssInfo || prBssInfo->eBand != BAND_5G)
+		return;
+
+	pucBuffer = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
+
+	POWER_CAP_IE(pucBuffer)->ucId = ELEM_ID_PWR_CAP;
+	POWER_CAP_IE(pucBuffer)->ucLength = ELEM_MAX_LEN_POWER_CAP;
+	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = 15;
+	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = 20;
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+	pucBuffer += IE_SIZE(pucBuffer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief For probe request, association request
 *
 * \param[in]

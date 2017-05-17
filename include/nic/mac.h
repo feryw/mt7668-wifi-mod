@@ -878,6 +878,9 @@
 /* 7.3.2.14 Extended Supported Rates */
 #define ELEM_MAX_LEN_EXTENDED_SUP_RATES             255
 
+/* 7.3.2.16 Power Capability element */
+#define ELEM_MAX_LEN_POWER_CAP                      2
+
 /* 7.3.2.21 Measurement Request element */
 #define ELEM_RM_TYPE_BASIC_REQ                      0
 #define ELEM_RM_TYPE_CCA_REQ                        1
@@ -2601,6 +2604,8 @@ typedef struct _IE_MTK_OUI_T {
 #endif
 
 #define EXT_CAP_IE(fp)          ((P_EXT_CAP_T) fp)
+
+#define POWER_CAP_IE(fp)          ((P_IE_POWER_CAP_T) fp)
 
 #define HT_CAP_IE(fp)           ((P_IE_HT_CAP_T) fp)
 

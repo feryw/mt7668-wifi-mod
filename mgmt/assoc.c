@@ -85,6 +85,10 @@
 ********************************************************************************
 */
 APPEND_VAR_IE_ENTRY_T txAssocReqIETable[] = {
+#if CFG_SUPPORT_SPEC_MGMT
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_POWER_CAP), NULL, rlmReqGeneratePowerCapIE}
+	,			/* 33 */
+#endif
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
 	,			/* 45 */
 #if CFG_SUPPORT_WPS2
@@ -202,8 +206,11 @@ UINT_16 assocBuildCapabilityInfo(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prS
 {
 	UINT_32 u4NonHTPhyType;
 	UINT_16 u2CapInfo;
+	P_BSS_INFO_T prBssInfo;
 
 	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Set up our requested capabilities. */
 	u2CapInfo = CAP_INFO_ESS;
@@ -230,7 +237,12 @@ UINT_16 assocBuildCapabilityInfo(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prS
 		}
 
 #if CFG_SUPPORT_SPEC_MGMT
-		if (prAdapter->fgEnable5GBand == TRUE)
+		/* 802.11h spectrum management is for 5G band, so
+		 * now we only enable spectrum management bit for 5G case.
+		 * In TGn 5.2.22, spectrum management bit should set to 1
+		 * to pass the UCC's check.
+		 */
+		if (prBssInfo && prBssInfo->eBand == BAND_5G)
 			u2CapInfo |= CAP_INFO_SPEC_MGT;
 #endif
 

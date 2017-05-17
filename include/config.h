@@ -160,7 +160,7 @@
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
 #define CFG_SUPPORT_QUIET           0	/* Quiet (802.11h) */
-#define CFG_SUPPORT_SPEC_MGMT       0	/* Spectrum Management (802.11h): TPC and DFS */
+#define CFG_SUPPORT_SPEC_MGMT       1	/* Spectrum Management (802.11h): TPC and DFS */
 #else
 #define CFG_SUPPORT_QUIET           0	/* Quiet (802.11h) */
 #define CFG_SUPPORT_SPEC_MGMT       0	/* Spectrum Management (802.11h): TPC and DFS */
