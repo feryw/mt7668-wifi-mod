@@ -2829,7 +2829,9 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 
 	switch (request_state) {
 	case REGD_STATE_SET_WW_CORE:
-		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT))
+		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT)
+		    || old_state == REGD_STATE_SET_COUNTRY_USER
+		    || old_state == REGD_STATE_SET_COUNTRY_IE)
 			next_state = request_state;
 
 		break;
@@ -2837,7 +2839,8 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 	case REGD_STATE_SET_COUNTRY_USER:
 		/* Allow user to set multiple times */
 		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT)
-		    || old_state == REGD_STATE_SET_COUNTRY_USER)
+		    || old_state == REGD_STATE_SET_COUNTRY_USER
+		    || old_state == REGD_STATE_SET_COUNTRY_IE)
 			next_state = request_state;
 		else
 			DBGLOG(RLM, ERROR, "Invalid old state = %d\n", old_state);
