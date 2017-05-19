@@ -3308,6 +3308,13 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 				    prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection /* Use MFP */) {
 					/* MFP test plan 5.3.3.4 */
 					rsnSaQueryAction(prAdapter, prSwRfb);
+				} else if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
+					(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+					/* AP PMF */
+					if (rsnCheckBipKeyInstalled(prAdapter, prSwRfb->prStaRec)) {
+						/* MFP test plan 4.3.3.4 */
+						rsnApSaQueryAction(prAdapter, prSwRfb);
+					}
 				}
 			}
 		}

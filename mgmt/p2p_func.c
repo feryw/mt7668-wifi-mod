@@ -2435,6 +2435,8 @@ p2pFuncParseBeaconContent(IN P_ADAPTER_T prAdapter,
 	PUINT_8 pucIE = (PUINT_8) NULL;
 	UINT_16 u2Offset = 0;
 	P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo = (P_P2P_SPECIFIC_BSS_INFO_T) NULL;
+	UINT_8 i = 0;
+	RSN_INFO_T rRsnIe;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
@@ -2590,20 +2592,40 @@ p2pFuncParseBeaconContent(IN P_ADAPTER_T prAdapter,
 				}
 				break;
 			case ELEM_ID_RSN:	/* 48 *//* V */
-				{
-					RSN_INFO_T rRsnIe;
 
-					DBGLOG(P2P, TRACE, "RSN IE\n");
-					kalP2PSetCipher(prAdapter->prGlueInfo, IW_AUTH_CIPHER_CCMP,
-						(UINT_8) prP2pBssInfo->u4PrivateData);
+				DBGLOG(P2P, TRACE, "RSN IE\n");
+				kalP2PSetCipher(prAdapter->prGlueInfo, IW_AUTH_CIPHER_CCMP,
+					(UINT_8) prP2pBssInfo->u4PrivateData);
 
-					if (rsnParseRsnIE(prAdapter, RSN_IE(pucIE), &rRsnIe)) {
-						prP2pBssInfo->u4RsnSelectedGroupCipher = RSN_CIPHER_SUITE_CCMP;
-						prP2pBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
-						prP2pBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
-						prP2pBssInfo->u2RsnSelectedCapInfo = rRsnIe.u2RsnCap;
+				if (rsnParseRsnIE(prAdapter, RSN_IE(pucIE), &rRsnIe)) {
+					prP2pBssInfo->u4RsnSelectedGroupCipher = RSN_CIPHER_SUITE_CCMP;
+					prP2pBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
+					prP2pBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
+					prP2pBssInfo->u2RsnSelectedCapInfo = rRsnIe.u2RsnCap;
+				}
+
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				prP2pBssInfo->rApPmfCfg.fgMfpc = (rRsnIe.u2RsnCap & ELEM_WPA_CAP_MFPC) ? 1 : 0;
+				prP2pBssInfo->rApPmfCfg.fgMfpr = (rRsnIe.u2RsnCap & ELEM_WPA_CAP_MFPR) ? 1 : 0;
+
+				for (i = 0; i < rRsnIe.u4AuthKeyMgtSuiteCount; i++) {
+					if ((rRsnIe.au4AuthKeyMgtSuite[i] == RSN_AKM_SUITE_PSK_SHA256) ||
+						(rRsnIe.au4AuthKeyMgtSuite[i] == RSN_AKM_SUITE_802_1X_SHA256)) {
+						DBGLOG(RSN, INFO, "SHA256 support\n");
+						/* over-write u4RsnSelectedAKMSuite by SHA256 AKM */
+						prP2pBssInfo->u4RsnSelectedAKMSuite =
+							rRsnIe.au4AuthKeyMgtSuite[i];
+						prP2pBssInfo->rApPmfCfg.fgSha256 = TRUE;
+						break;
 					}
 				}
+				DBGLOG(RSN, ERROR, "bcn mfpc:%d, mfpr:%d, sha256:%d\n",
+					prP2pBssInfo->rApPmfCfg.fgMfpc,
+					prP2pBssInfo->rApPmfCfg.fgMfpr,
+					prP2pBssInfo->rApPmfCfg.fgSha256);
+#endif
+
 				break;
 			case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 *//* V */
 				/* ELEM_ID_SUP_RATES should be placed before ELEM_ID_EXTENDED_SUP_RATES. */

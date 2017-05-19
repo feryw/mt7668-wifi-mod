@@ -585,6 +585,7 @@ VOID p2pRoleFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_REC
 {
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	UINT_16 u2ReasonCode = 0;
+	BOOLEAN fgSendDeauth = FALSE; /* flag to send deauth when rx sta disassc/deauth */
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
@@ -650,9 +651,29 @@ VOID p2pRoleFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_REC
 			/* Delete client from client list. */
 			if (authProcessRxDeauthFrame(prSwRfb,
 						     prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+					if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
+						HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
+						/* if cipher mismatch, or incorrect encrypt, just drop */
+						DBGLOG(P2P, ERROR, "Rx deauth CM/CLM=1\n");
+						return;
+					}
+
+					/* 4.3.3.1 send unprotected deauth reason 6/7 */
+					DBGLOG(P2P, INFO, "deauth reason=6\n");
+					fgSendDeauth = TRUE;
+					u2ReasonCode = REASON_CODE_CLASS_2_ERR;
+					prStaRec->rPmfCfg.fgRxDeauthResp = TRUE;
+				}
+#endif
+
 				if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
 					/* Indicate disconnect to Host. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, u2ReasonCode);
+					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, fgSendDeauth,
+						u2ReasonCode);
 					/* Deactive BSS if PWR is IDLE and no peer */
 					if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
 						(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
@@ -678,6 +699,7 @@ VOID p2pRoleFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECOR
 {
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	UINT_16 u2ReasonCode = 0;
+	BOOLEAN fgSendDeauth = FALSE; /* flag to send deauth when rx sta disassc/deauth */
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
@@ -743,9 +765,29 @@ VOID p2pRoleFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECOR
 			if (assocProcessRxDisassocFrame(prAdapter,
 							prSwRfb,
 							prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+					if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
+						HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
+						/* if cipher mismatch, or incorrect encrypt, just drop */
+						DBGLOG(P2P, ERROR, "Rx disassoc CM/CLM=1\n");
+						return;
+					}
+
+					/* 4.3.3.1 send unprotected deauth reason 6/7 */
+					DBGLOG(P2P, INFO, "deauth reason=6\n");
+					fgSendDeauth = TRUE;
+					u2ReasonCode = REASON_CODE_CLASS_2_ERR;
+					prStaRec->rPmfCfg.fgRxDeauthResp = TRUE;
+				}
+#endif
+
 				if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
 					/* Indicate disconnect to Host. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, u2ReasonCode);
+					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, fgSendDeauth,
+						u2ReasonCode);
 					/* Deactive BSS if PWR is IDLE and no peer */
 					if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
 						(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {

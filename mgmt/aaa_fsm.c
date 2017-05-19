@@ -447,8 +447,10 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 	UINT_16 u2StatusCode = STATUS_CODE_RESERVED;
 	BOOLEAN fgReplyAssocResp = FALSE;
+	BOOLEAN fgSendSAQ = FALSE;
 
 	ASSERT(prAdapter);
+	DBGLOG(AAA, INFO, "aaaFsmRunEventRxAssoc\n");
 
 	do {
 
@@ -604,13 +606,24 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 			}
 #endif
 		} else {
-			prStaRec->u2AssocId = 0;	/* Invalid Association ID */
 
-			/* If (Re)association fail, remove sta record and use class error to handle sta */
-			prStaRec->eAuthAssocState = AA_STATE_IDLE;
+#if CFG_SUPPORT_802_11W
+			/* AP PMF */
+			/* don't change state, just send assoc resp (NO need TX done, TIE + code30) and then SAQ */
+			if (u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
+				DBGLOG(AAA, INFO, "AP send SAQ\n");
+				fgSendSAQ = TRUE;
+			} else
+#endif
+			{
+				prStaRec->u2AssocId = 0;	/* Invalid Association ID */
 
-			/* NOTE(Kevin): Better to change state here, not at TX Done */
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+				/* If (Re)association fail, remove sta record and use class error to handle sta */
+				prStaRec->eAuthAssocState = AA_STATE_IDLE;
+
+				/* NOTE(Kevin): Better to change state here, not at TX Done */
+				cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+			}
 		}
 
 		/* Update the record join time. */
@@ -622,6 +635,14 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 		/* NOTE: Ignore the return status for AAA */
 		/* 4 <4.2> Reply  Assoc Resp */
 		assocSendReAssocRespFrame(prAdapter, prStaRec);
+
+#if CFG_SUPPORT_802_11W
+		/* AP PMF */
+		if (fgSendSAQ) {
+			/* if PMF connection, and return code 30, send SAQ */
+			rsnApStartSaQuery(prAdapter, prStaRec);
+		}
+#endif
 
 	}
 
