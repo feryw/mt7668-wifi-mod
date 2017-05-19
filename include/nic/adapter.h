@@ -341,7 +341,6 @@ struct _BSS_INFO_T {
 				*/
 	BOOLEAN fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 
-	BOOLEAN fgIsWepCipherGroup;
 	UINT_32 u4RsnSelectedGroupCipher;
 	UINT_32 u4RsnSelectedPairwiseCipher;
 	UINT_32 u4RsnSelectedAKMSuite;

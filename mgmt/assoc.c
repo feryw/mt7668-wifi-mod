@@ -1090,7 +1090,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 	UINT_16 u2BSSBasicRateSet;
 	UINT_8 ucFixedFieldLength;
 	BOOLEAN fgIsUnknownBssBasicRate;
-	BOOLEAN fgIsHT = FALSE, fgIsTKIP = FALSE;
 	UINT_32 i;
 
 	ASSERT(prAdapter);
@@ -1183,7 +1182,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 			break;
 		case ELEM_ID_HT_CAP:
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
-			fgIsHT = TRUE;
 			break;
 		case ELEM_ID_VHT_CAP:
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
@@ -1201,9 +1199,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 #endif
 			break;
 		case ELEM_ID_VENDOR:
-			if (p2pFuncParseCheckForTKIPInfoElem(pucIE))
-				fgIsTKIP = TRUE;
-
 #if CFG_ENABLE_WIFI_DIRECT
 			{
 				if ((prAdapter->fgIsP2PRegistered)) {
@@ -1340,9 +1335,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 				      prStaRec->ucBssIndex);
 	}
 #endif
-
-	if (fgIsHT && fgIsTKIP && prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		u2StatusCode = STATUS_CODE_REQ_DECLINED;
 
 	*pu2StatusCode = u2StatusCode;
 
