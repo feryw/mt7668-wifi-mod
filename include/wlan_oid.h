@@ -1900,6 +1900,10 @@ typedef struct _PARAM_SCAN_REQUEST_ADV_T {
 	PARAM_SSID_T rSsid[CFG_SCAN_SSID_MAX_NUM];
 	UINT_32 u4IELength;
 	PUINT_8 pucIE;
+#if CFG_SCAN_CHANNEL_SPECIFIED
+	UINT_8 ucChannelListNum;
+	RF_CHANNEL_INFO_T arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+#endif
 } PARAM_SCAN_REQUEST_ADV_T, *P_PARAM_SCAN_REQUEST_ADV_T;
 
 /*--------------------------------------------------------------*/

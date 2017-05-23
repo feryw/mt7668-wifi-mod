@@ -152,6 +152,8 @@ CFG_ENABLE_EFUSE_MAC_ADDR=1
 
 #CFG_SUPPORT_DFS_MASTER=1
 
+CFG_SCAN_CHANNEL_SPECIFIED=1
+
 CFG_SUPPORT_ROAMING=0
 
 # Report all bss networks to cfg80211 when do p2p scan
@@ -233,6 +235,10 @@ endif
 
 ifneq ($(CFG_P2P_SCAN_REPORT_ALL_BSS),)
 PLATFORM_FLAGS += -DCFG_P2P_SCAN_REPORT_ALL_BSS=$(CFG_P2P_SCAN_REPORT_ALL_BSS)
+endif
+
+ifneq ($(CFG_SCAN_CHANNEL_SPECIFIED),)
+PLATFORM_FLAGS += -DCFG_SCAN_CHANNEL_SPECIFIED=$(CFG_SCAN_CHANNEL_SPECIFIED)
 endif
 
 ##############################################################

@@ -460,6 +460,19 @@ typedef struct _MONITOR_RADIOTAP_T {
 #endif
 
 /**
+ * kalCfg80211ToMtkBand - Band translation helper
+ *
+ * @band: cfg80211_band
+ *
+ * Translates cfg80211 band into internal band definition
+ */
+#if CFG_SCAN_CHANNEL_SPECIFIED
+#define kalCfg80211ToMtkBand(cfg80211_band) \
+	(cfg80211_band == KAL_BAND_2GHZ ? BAND_2G4 : \
+	 cfg80211_band == KAL_BAND_5GHZ ? BAND_5G : BAND_NULL)
+#endif
+
+/**
  * kalCfg80211ScanDone - abstraction of cfg80211_scan_done
  *
  * @request: the corresponding scan request (sanity checked by callers!)

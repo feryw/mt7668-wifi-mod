@@ -738,7 +738,13 @@ wlanoidSetBssidListScanAdv(IN P_ADAPTER_T prAdapter,
 	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
-				aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+#if CFG_SCAN_CHANNEL_SPECIFIED
+				aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
+					prScanRequest->ucChannelListNum, prScanRequest->arChnlInfoList,
+					pucIe, u4IeLength);
+#else
+				aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, 0, NULL, pucIe, u4IeLength);
+#endif
 			else
 				return WLAN_STATUS_FAILURE;
 		} else
@@ -747,9 +753,21 @@ wlanoidSetBssidListScanAdv(IN P_ADAPTER_T prAdapter,
 #endif
 	{
 		if (prAdapter->fgEnOnlineScan == TRUE)
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+#if CFG_SCAN_CHANNEL_SPECIFIED
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
+				prScanRequest->ucChannelListNum, prScanRequest->arChnlInfoList,
+				pucIe, u4IeLength);
+#else
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, 0, NULL, pucIe, u4IeLength);
+#endif
 		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+#if CFG_SCAN_CHANNEL_SPECIFIED
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
+				prScanRequest->ucChannelListNum, prScanRequest->arChnlInfoList,
+				pucIe, u4IeLength);
+#else
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, 0, NULL, pucIe, u4IeLength);
+#endif
 		else
 			return WLAN_STATUS_FAILURE;
 	}

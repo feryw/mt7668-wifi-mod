@@ -1232,6 +1232,13 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 				prScanReqMsg->ucChannelListNum = 1;
 				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum = ucChannel;
+#if CFG_SCAN_CHANNEL_SPECIFIED
+			} else if (is_valid_scan_chnl_cnt(prAisFsmInfo->ucScanChannelListNum)) {
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+				prScanReqMsg->ucChannelListNum = prAisFsmInfo->ucScanChannelListNum;
+				kalMemCopy(prScanReqMsg->arChnlInfoList, prAisFsmInfo->arScanChnlInfoList,
+					sizeof(RF_CHANNEL_INFO_T) * prScanReqMsg->ucChannelListNum);
+#endif
 			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_NULL) {
 				if (prAdapter->fgEnable5GBand == TRUE)
 					prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
@@ -3243,7 +3250,9 @@ VOID aisFsmScanRequest(IN P_ADAPTER_T prAdapter, IN P_PARAM_SSID_T prSsid, IN PU
 /*----------------------------------------------------------------------------*/
 VOID
 aisFsmScanRequestAdv(IN P_ADAPTER_T prAdapter,
-		     IN UINT_8 ucSsidNum, IN P_PARAM_SSID_T prSsid, IN PUINT_8 pucIe, IN UINT_32 u4IeLength)
+	IN UINT_8 ucSsidNum, IN P_PARAM_SSID_T prSsid,
+	IN UINT_8 ucChannelListNum, IN P_RF_CHANNEL_INFO_T prChnlInfoList,
+	IN PUINT_8 pucIe, IN UINT_32 u4IeLength)
 {
 	UINT_32 i;
 	P_CONNECTION_SETTINGS_T prConnSettings;
@@ -3281,6 +3290,15 @@ aisFsmScanRequestAdv(IN P_ADAPTER_T prAdapter,
 		} else {
 			prAisFsmInfo->u4ScanIELength = 0;
 		}
+
+#if CFG_SCAN_CHANNEL_SPECIFIED
+		if (ucChannelListNum) {
+			prAisFsmInfo->ucScanChannelListNum = ucChannelListNum;
+			kalMemCopy(prAisFsmInfo->arScanChnlInfoList, prChnlInfoList,
+				sizeof(RF_CHANNEL_INFO_T) * prAisFsmInfo->ucScanChannelListNum);
+		} else
+			prAisFsmInfo->ucScanChannelListNum = 0;
+#endif
 
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE

@@ -216,6 +216,11 @@ typedef struct _AIS_FSM_INFO_T {
 	UINT_32 u4ScanIELength;
 	UINT_8 aucScanIEBuf[MAX_IE_LENGTH];
 
+#if CFG_SCAN_CHANNEL_SPECIFIED
+	UINT_8 ucScanChannelListNum;
+	RF_CHANNEL_INFO_T arScanChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+#endif
+
 	/* Pending Request List */
 	LINK_T rPendingReqList;
 
@@ -233,7 +238,6 @@ typedef struct _AIS_FSM_INFO_T {
 
 	/* for roaming target */
 	PARAM_SSID_T rRoamingSSID;
-
 } AIS_FSM_INFO_T, *P_AIS_FSM_INFO_T;
 
 /*******************************************************************************
@@ -383,7 +387,9 @@ VOID aisFsmScanRequest(IN P_ADAPTER_T prAdapter, IN P_PARAM_SSID_T prSsid, IN PU
 
 VOID
 aisFsmScanRequestAdv(IN P_ADAPTER_T prAdapter,
-		     IN UINT_8 ucSsidNum, IN P_PARAM_SSID_T prSsid, IN PUINT_8 pucIe, IN UINT_32 u4IeLength);
+	IN UINT_8 ucSsidNum, IN P_PARAM_SSID_T prSsid,
+	IN UINT_8 ucChannelListNum, IN P_RF_CHANNEL_INFO_T prChnlInfoList,
+	IN PUINT_8 pucIe, IN UINT_32 u4IeLength);
 
 /*----------------------------------------------------------------------------*/
 /* Internal State Checking                                                    */

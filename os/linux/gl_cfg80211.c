@@ -793,6 +793,32 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	if (request->ie_len > 0)
 		rScanRequest.pucIE = (PUINT_8) (request->ie);
 
+#if CFG_SCAN_CHANNEL_SPECIFIED
+	DBGLOG(REQ, INFO, "scan channel num = %d\n", request->n_channels);
+
+	if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
+		DBGLOG(REQ, WARN, "scan channel num (%d) exceeds %d, do a full scan instead\n",
+			   request->n_channels, MAXIMUM_OPERATION_CHANNEL_LIST);
+		rScanRequest.ucChannelListNum = 0;
+	} else {
+		rScanRequest.ucChannelListNum = request->n_channels;
+		for (i = 0; i < request->n_channels; i++) {
+			rScanRequest.arChnlInfoList[i].eBand =
+				kalCfg80211ToMtkBand(request->channels[i]->band);
+			rScanRequest.arChnlInfoList[i].u4CenterFreq1 = request->channels[i]->center_freq;
+			rScanRequest.arChnlInfoList[i].u4CenterFreq2 = 0;
+			rScanRequest.arChnlInfoList[i].u2PriChnlFreq = request->channels[i]->center_freq;
+#if KERNEL_VERSION(3, 11, 0) <= CFG80211_VERSION_CODE
+			rScanRequest.arChnlInfoList[i].ucChnlBw = request->scan_width;
+#else
+			rScanRequest.arChnlInfoList[i].ucChnlBw = 0;
+#endif
+			rScanRequest.arChnlInfoList[i].ucChannelNum =
+				ieee80211_frequency_to_channel(request->channels[i]->center_freq);
+		}
+	}
+#endif
+
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetBssidListScanAdv,
 			   &rScanRequest, sizeof(PARAM_SCAN_REQUEST_ADV_T), FALSE, FALSE, FALSE, &u4BufLen);

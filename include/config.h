@@ -959,6 +959,16 @@
 #ifndef CFG_PRE_ALLOCATION_IO_BUFFER
 #define CFG_PRE_ALLOCATION_IO_BUFFER 0
 #endif
+
+
+/*------------------------------------------------------------------------------
+ * Support scan with channels specified
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SCAN_CHANNEL_SPECIFIED
+#define CFG_SCAN_CHANNEL_SPECIFIED 1
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
