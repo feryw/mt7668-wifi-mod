@@ -5232,7 +5232,7 @@ WLAN_STATUS wlanLoadManufactureData(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T pr
 				    NULL, sizeof(CMD_EDGE_TXPWR_LIMIT_T), (PUINT_8) &rCmdEdgeTxPwrLimit, NULL, 0);
 	}
 	/*8. Set 2.4G AC power */
-	if (prRegInfo->prOldEfuseMapping->uc11AcTxPwrValid2G) {
+	if (prRegInfo->prOldEfuseMapping && prRegInfo->prOldEfuseMapping->uc11AcTxPwrValid2G) {
 
 		CMD_TX_AC_PWR_T rCmdAcPwr;
 
@@ -6022,12 +6022,16 @@ wlanoidQueryStaStatistics(IN P_ADAPTER_T prAdapter,
 	P_STA_RECORD_T prStaRec, prTempStaRec;
 	P_PARAM_GET_STA_STATISTICS prQueryStaStatistics;
 	UINT_8 ucStaRecIdx;
-	P_QUE_MGT_T prQM = &prAdapter->rQM;
+	P_QUE_MGT_T prQM;
 	CMD_GET_STA_STATISTICS_T rQueryCmdStaStatistics;
 	UINT_8 ucIdx;
 	ENUM_WMM_ACI_T eAci;
 
 	DEBUGFUNC("wlanoidQueryStaStatistics");
+
+	if (prAdapter == NULL)
+		return WLAN_STATUS_FAILURE;
+	prQM = &prAdapter->rQM;
 
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
@@ -6036,7 +6040,7 @@ wlanoidQueryStaStatistics(IN P_ADAPTER_T prAdapter,
 		ASSERT(pvQueryBuffer);
 
 		/* 4 1. Sanity test */
-		if ((prAdapter == NULL) || (pu4QueryInfoLen == NULL))
+		if (pu4QueryInfoLen == NULL)
 			break;
 
 		if ((u4QueryBufferLen) && (pvQueryBuffer == NULL))
@@ -6489,8 +6493,10 @@ VOID wlanBindBssIdxToNetInterface(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucBssIn
 {
 	P_NET_INTERFACE_INFO_T prNetIfInfo;
 
-	if (ucBssIndex > MAX_BSS_INDEX)
+	if (ucBssIndex >= ARRAY_SIZE(prGlueInfo->arNetInterfaceInfo)) {
+		DBGLOG(INIT, ERROR, "Array index out of bound, ucBssIndex=%u\n", ucBssIndex);
 		return;
+	}
 
 	prNetIfInfo = &prGlueInfo->arNetInterfaceInfo[ucBssIndex];
 
@@ -7537,6 +7543,9 @@ WLAN_STATUS wlanCfgParseArgument(CHAR *cmdLine, INT_32 *argc, CHAR *argv[])
 	state.ptr = cmdLine;
 	state.nexttoken = 0;
 	state.maxSize = 0;
+#if CFG_SUPPORT_EASY_DEBUG
+	state.textsize = 0;
+#endif
 
 	if (kalStrnLen(cmdLine, 512) >= 512) {
 		ASSERT(0);
@@ -7577,6 +7586,9 @@ WLAN_STATUS wlanCfgParseArgumentLong(CHAR *cmdLine, INT_32 *argc, CHAR *argv[])
 	state.ptr = cmdLine;
 	state.nexttoken = 0;
 	state.maxSize = 0;
+#if CFG_SUPPORT_EASY_DEBUG
+	state.textsize = 0;
+#endif
 
 	if (kalStrnLen(cmdLine, 512) >= 512) {
 		ASSERT(0);
@@ -8553,12 +8565,7 @@ VOID wlanTxLifetimeTagPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 
 	case TX_PROF_TAG_DRV_TX_DONE:
 		if (prPktProfile->fgIsValid) {
-			BOOLEAN fgPrintCurPkt = FALSE;
-
 			prPktProfile->rHifTxDoneTimestamp = (OS_SYSTIME) kalGetTimeTick();
-
-			if (fgPrintCurPkt)
-				PRINT_PKT_PROFILE(prPktProfile, "C");
 
 #if CFG_ENABLE_PER_STA_STATISTICS
 			wlanTxLifetimeUpdateStaStats(prAdapter, prMsduInfo);
