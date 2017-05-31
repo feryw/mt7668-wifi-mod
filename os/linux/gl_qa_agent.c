@@ -2388,7 +2388,6 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + Len, i4Ret);
 
 exit:
-
 	kfree(Buffer);
 
 	return i4Ret;

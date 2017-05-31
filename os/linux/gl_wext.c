@@ -1343,7 +1343,7 @@ wext_get_ap(IN struct net_device *prNetDev,
 	/* } */
 
 	if (prGlueInfo->eParamMediaStateIndicated == PARAM_MEDIA_STATE_DISCONNECTED) {
-		memset(prAddr, 0, 6);
+		memset(prAddr, 0, sizeof(*prAddr));
 		return 0;
 	}
 
@@ -2381,7 +2381,7 @@ wext_set_txpow(IN struct net_device *prNetDev,
 		wlanSetAcpiState(prGlueInfo->prAdapter, ePowerState);
 	}
 
-	prGlueInfo->ePowerState = ePowerState;
+		prGlueInfo->ePowerState = ParamDeviceStateD0;
 
 	return ret;
 }				/* wext_set_txpow */
@@ -2957,7 +2957,8 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		}
 
 		/* PN */
-		memcpy(&prWpiKey->aucPN[0], &prIWEncExt->tx_seq[0], IW_ENCODE_SEQ_MAX_SIZE * 2);
+		memcpy(&prWpiKey->aucPN[0], &prIWEncExt->tx_seq[0], IW_ENCODE_SEQ_MAX_SIZE);
+		memcpy(&prWpiKey->aucPN[8], &prIWEncExt->rx_seq[0], IW_ENCODE_SEQ_MAX_SIZE);
 
 		/* BSSID */
 		memcpy(prWpiKey->aucAddrIndex, prIWEncExt->addr.sa_data, 6);
@@ -3115,6 +3116,12 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 				memcpy(((PUINT_8) prKey->aucKeyMaterial) + 16, prIWEncExt->key + 24, 8);
 				memcpy((prKey->aucKeyMaterial) + 24, prIWEncExt->key + 16, 8);
 			} else {
+				/* aucKeyMaterial is defined as a 32-elements array */
+				if (prIWEncExt->key_len > 32) {
+					DBGLOG(REQ, ERROR, "prIWEncExt->key_len: %d is too long!\n",
+						prIWEncExt->key_len);
+					return -EFAULT;
+				}
 				memcpy(prKey->aucKeyMaterial, prIWEncExt->key, prIWEncExt->key_len);
 			}
 
@@ -3622,13 +3629,19 @@ int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN
 	case SIOCSIWENCODEEXT:	/* 0x8B34, set extended encoding token & mode */
 		if (iwr->u.encoding.pointer) {
 			u4ExtraSize = iwr->u.encoding.length;
+
+			if (u4ExtraSize > sizeof(struct iw_encode_ext)) {
+				ret = -EINVAL;
+				break;
+			}
+
 			prExtraBuf = kalMemAlloc(u4ExtraSize, VIR_MEM_TYPE);
 			if (!prExtraBuf) {
 				ret = -ENOMEM;
 				break;
 			}
 
-			if (copy_from_user(prExtraBuf, iwr->u.encoding.pointer, iwr->u.encoding.length))
+			if (copy_from_user(prExtraBuf, iwr->u.encoding.pointer, u4ExtraSize))
 				ret = -EFAULT;
 		} else if (iwr->u.encoding.length != 0) {
 			ret = -EINVAL;

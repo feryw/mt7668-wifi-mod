@@ -2505,6 +2505,8 @@ INT_32 MT_ATEWriteEfuse(struct net_device *prNetDev, UINT_16 u2Offset, UINT_16 u
 	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
 	u4Index = u2Offset % EFUSE_BLOCK_SIZE;
 
+	if (u4Index > EFUSE_BLOCK_SIZE - 2)
+		return -EINVAL;
 
 	prGlueInfo->prAdapter->aucEepromVaule[u4Index] = u2Content;
 	prGlueInfo->prAdapter->aucEepromVaule[u4Index+1] = u2Content >> 8 & 0xff;

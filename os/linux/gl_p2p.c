@@ -493,6 +493,10 @@ BOOLEAN p2PAllocInfo(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIdex)
 	/* UINT_32 u4Idx = 0; */
 
 	ASSERT(prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(P2P, ERROR, "prGlueInfo error\n");
+		return FALSE;
+	}
 
 	prAdapter = prGlueInfo->prAdapter;
 	prWifiVar = &(prAdapter->rWifiVar);
@@ -501,9 +505,6 @@ BOOLEAN p2PAllocInfo(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIdex)
 	ASSERT(prWifiVar);
 
 	do {
-		if (prGlueInfo == NULL)
-			break;
-
 		if (prGlueInfo->prP2PInfo[ucIdex] == NULL) {
 			/*alloc memory for p2p info */
 			prGlueInfo->prP2PInfo[ucIdex] = kalMemAlloc(sizeof(GL_P2P_INFO_T), VIR_MEM_TYPE);
@@ -1141,8 +1142,10 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 		}
 	}
 
-	if (i == KAL_P2P_NUM)
+	if (i == KAL_P2P_NUM) {
 		DBGLOG(INIT, WARN, "fail to register wiphy to driver\n");
+		goto free_wiphy;
+	}
 
 	return TRUE;
 
