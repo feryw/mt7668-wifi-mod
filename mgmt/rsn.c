@@ -1311,15 +1311,7 @@ VOID rsnGenerateRSNIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 					(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eCurrentOPMode ==
 					(UINT_8) OP_MODE_ACCESS_POINT)) {
 			/* AP PMF */
-			if (prBssInfo->rApPmfCfg.fgMfpr) {
-				WLAN_SET_FIELD_16(cp, ELEM_WPA_CAP_MFPC | ELEM_WPA_CAP_MFPR);	/* Capabilities */
-				DBGLOG(RSN, TRACE, "AP RSN_AUTH_MFP - MFPC & MFPR\n");
-			} else if (prBssInfo->rApPmfCfg.fgMfpc) {
-				WLAN_SET_FIELD_16(cp, ELEM_WPA_CAP_MFPC);	/* Capabilities */
-				DBGLOG(RSN, TRACE, "AP RSN_AUTH_MFP - MFPC\n");
-			} else {
-				DBGLOG(RSN, TRACE, "!AP RSN_AUTH_MFP - No MFPC!\n");
-			}
+			/* for AP mode, keep origin RSN IE content w/o update */
 		}
 #else
 		/* Capabilities */
@@ -2532,6 +2524,7 @@ VOID rsnPmfGenerateTimeoutIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 	if ((rsnCheckBipKeyInstalled(prAdapter, prStaRec) == TRUE) &&
 		(prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY)) {
 
+		DBGLOG(RSN, INFO, "rsnPmfGenerateTimeoutIE TRUE\n");
 		prTimeout->ucId = ELEM_ID_TIMEOUT_INTERVAL;
 		prTimeout->ucLength = ELEM_MAX_LEN_TIMEOUT_IE;
 		prTimeout->ucType = IE_TIMEOUT_INTERVAL_TYPE_ASSOC_COMEBACK;
@@ -2609,7 +2602,7 @@ void rsnApStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec
 
 	ASSERT(prStaRec);
 
-	DBGLOG(RSN, INFO, "MFP: AP Start Sa Query\n");
+	DBGLOG(RSN, INFO, "MFP: AP Start Sa Query timer\n");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -2631,8 +2624,8 @@ void rsnApStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
 		prTxFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucBSSID);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
 
 	prTxFrame->ucCategory = CATEGORY_SA_QUERY_ACTION;
 	prTxFrame->ucAction = ACTION_SA_QUERY_REQUEST;
@@ -2647,6 +2640,8 @@ void rsnApStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec
 		/* if first SAQ request, random pick transaction id */
 		prStaRec->rPmfCfg.u2TransactionID = (UINT_16) (kalRandomNumber() & 0xFFFF);
 	}
+
+	DBGLOG(RSN, INFO, "SAQ transaction id:%d\n", prStaRec->rPmfCfg.u2TransactionID);
 
 	/* trnsform U16 to U8 array */
 	prTxFrame->ucTransId[0] = ((prStaRec->rPmfCfg.u2TransactionID & 0xff00) >> 8);
@@ -2741,26 +2736,26 @@ void rsnApSaQueryRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	P_STA_RECORD_T prStaRec;
 	P_ACTION_SA_QUERY_FRAME prTxFrame;
 
-	prBssInfo = prAdapter->prAisBssInfo;
-	ASSERT(prBssInfo);
-
 	if (!prSwRfb)
-		return;
-
-	prRxFrame = (P_ACTION_SA_QUERY_FRAME) prSwRfb->pvHeader;
-	if (!prRxFrame)
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)		/* Todo:: for not AIS check */
 		return;
 
-	DBGLOG(RSN, INFO, "IEEE 802.11: Received SA Query Request from " MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ASSERT(prBssInfo);
+
+	prRxFrame = (P_ACTION_SA_QUERY_FRAME) prSwRfb->pvHeader;
+	if (!prRxFrame)
+		return;
+
+	DBGLOG(RSN, INFO, "IEEE 802.11: AP Received SA Query Request from " MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 
 	DBGLOG_MEM8(RSN, INFO, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
 
 	if (!rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(RSN, INFO, "IEEE 802.11: Ignore SA Query Request non-PMF STA "
+		DBGLOG(RSN, INFO, "IEEE 802.11: AP Ignore SA Query Request non-PMF STA "
 		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 		return;
 	}
@@ -2772,12 +2767,24 @@ void rsnApSaQueryRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	if (!prMsduInfo)
 		return;
 
+	/* drop cipher mismatch */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
+			HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
+			/* if cipher mismatch, or incorrect encrypt, just drop */
+			DBGLOG(RSN, ERROR, "drop SAQ req CM/CLM=1\n");
+			return;
+		}
+	}
+
 	prTxFrame = (P_ACTION_SA_QUERY_FRAME)
 	    ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		prTxFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+		DBGLOG(RSN, INFO, "AP SAQ resp set FC PF bit\n");
+	}
 	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
 	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucBSSID);
 	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
@@ -2797,7 +2804,7 @@ void rsnApSaQueryRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 		     WLAN_MAC_MGMT_HEADER_LEN, WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL, MSDU_RATE_MODE_AUTO);
 
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(RSN, INFO, "SAQ Set MSDU_OPT_PROTECTED_FRAME\n");
+		DBGLOG(RSN, INFO, "AP SAQ resp set MSDU_OPT_PROTECTED_FRAME\n");
 		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
 	}
 
@@ -2825,6 +2832,7 @@ void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	prRxFrame = (P_ACTION_SA_QUERY_FRAME) prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
+	DBGLOG(RSN, TRACE, "AP PMF SAQ action enter from " MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 	if (prSwRfb->u2PacketLen < ACTION_SA_QUERY_TR_ID_LEN) {
 		DBGLOG(RSN, INFO, "IEEE 802.11: Too short SA Query Action frame (len=%lu)\n",
 		       (unsigned long)prSwRfb->u2PacketLen);
@@ -2832,7 +2840,7 @@ void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	}
 
 	if (prRxFrame->ucAction == ACTION_SA_QUERY_REQUEST) {
-		rsnSaQueryRequest(prAdapter, prSwRfb);
+		rsnApSaQueryRequest(prAdapter, prSwRfb);
 		return;
 	}
 
@@ -2849,10 +2857,10 @@ void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	/* transform to network byte order */
 	u2SwapTrID = htons(prStaRec->rPmfCfg.u2TransactionID);
 	if (kalMemCmp((UINT_8 *)&u2SwapTrID, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN) == 0) {
-		DBGLOG(RSN, INFO, "Reply to SA Query received\n");
+		DBGLOG(RSN, INFO, "AP Reply to SA Query received\n");
 		rsnApStopSaQuery(prAdapter, prStaRec);
 	} else {
-		DBGLOG(RSN, INFO, "IEEE 802.11: No matching SA Query transaction identifier found\n");
+		DBGLOG(RSN, INFO, "IEEE 802.11: AP No matching SA Query transaction identifier found\n");
 	}
 
 }

@@ -2070,6 +2070,7 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 		    IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode)
 {
 	BOOLEAN fgReplyAuth = TRUE;
+	BOOLEAN fgPmfConn = FALSE;
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 	P_WLAN_AUTH_FRAME_T prAuthFrame = (P_WLAN_AUTH_FRAME_T) NULL;
 
@@ -2119,6 +2120,15 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 			/* NOTE(Kevin): Better to change state here, not at TX Done */
 			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 		} else {
+#if CFG_SUPPORT_802_11W
+			/* AP PMF. if PMF connection, do not reset state & FSM */
+			fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
+			if (fgPmfConn) {
+				DBGLOG(P2P, WARN, "PMF Connction, return false\n");
+				return FALSE;
+			}
+#endif
+
 			prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 
 			if ((prStaRec->ucStaState > STA_STATE_1) && (IS_STA_IN_P2P(prStaRec))) {
@@ -2636,6 +2646,7 @@ p2pFuncParseBeaconContent(IN P_ADAPTER_T prAdapter,
 					prP2pBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
 					prP2pBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
 					prP2pBssInfo->u2RsnSelectedCapInfo = rRsnIe.u2RsnCap;
+					DBGLOG(RSN, TRACE, "RsnIe CAP:0x%x\n", rRsnIe.u2RsnCap);
 				}
 
 #if CFG_SUPPORT_802_11W
