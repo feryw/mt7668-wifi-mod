@@ -1191,7 +1191,7 @@ VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
 	}
 }
 
-static VOID halWpdmaSetup(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+VOID halWpdmaSetup(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
 	struct mt66xx_chip_info *chip_info = prGlueInfo->prAdapter->chip_info;
 
