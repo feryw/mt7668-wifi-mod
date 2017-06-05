@@ -1269,9 +1269,6 @@ WLAN_STATUS bssProcessProbeRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 	/* 4 <2> Check network conditions before reply Probe Response Frame (Consider Concurrent) */
 	for (ucBssIndex = 0; ucBssIndex <= P2P_DEV_BSS_INDEX; ucBssIndex++) {
 
-		if ((ucBssIndex >= BSS_INFO_NUM) && (ucBssIndex != P2P_DEV_BSS_INDEX))
-			continue;
-
 		if (!IS_NET_ACTIVE(prAdapter, ucBssIndex))
 			continue;
 
