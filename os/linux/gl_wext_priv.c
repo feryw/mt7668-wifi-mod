@@ -4223,7 +4223,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				"%-20s%s%ld.%1ld dBm\n", "MAC TX Power", " = ",
 				TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) >> 1,
 				5 * (TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) % 2));
-
+#if 0
 		if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector2 == 0xFFFFFFFF)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "Beamform Enable", " = ", "N/A");
@@ -4247,6 +4247,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				"%-20s%s%d\n", "Sounding Pkt", " = ",
 				TX_VECTOR_GET_NO_SOUNDING(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? FALSE : TRUE);
 		}
+#endif
 	}
 
     /* RX Reorder */
@@ -4365,6 +4366,16 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				prQueryStaStatistics->ucRateEntryIdx);
 #endif
 		}
+
+		if (prQueryStaStatistics->fgIsForceTxStream == 0)
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "Force Tx Stream", " = ", "N/A");
+		else
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "Force Tx Stream", " = ", prQueryStaStatistics->fgIsForceTxStream);
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Force SE off", " = ", prQueryStaStatistics->fgIsForceSeOff);
 	}
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
