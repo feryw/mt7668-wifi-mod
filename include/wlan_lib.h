@@ -143,6 +143,7 @@
 
 
 #define WLAN_OID_TIMEOUT_THRESHOLD                  2000	/* OID timeout (in ms) */
+#define WLAN_OID_TIMEOUT_THRESHOLD_MAX             10000	/* OID max timeout (in ms) */
 #define WLAN_OID_TIMEOUT_THRESHOLD_IN_RESETTING      300	/* OID timeout during chip-resetting  (in ms) */
 
 #define WLAN_OID_NO_ACK_THRESHOLD                   3
@@ -1064,7 +1065,7 @@ WLAN_STATUS wlanProcessQueuedSwRfb(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 
 WLAN_STATUS wlanProcessQueuedMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead);
 
-BOOLEAN wlanoidTimeoutCheck(IN P_ADAPTER_T prAdapter, IN PFN_OID_HANDLER_FUNC pfnOidHandler);
+BOOLEAN wlanoidTimeoutCheck(IN P_ADAPTER_T prAdapter, IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN UINT_32 u4Timeout);
 
 VOID wlanoidClearTimeoutCheck(IN P_ADAPTER_T prAdapter);
 

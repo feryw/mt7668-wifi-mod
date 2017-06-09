@@ -886,6 +886,13 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 	 IN PVOID pvInfoBuf,
 	 IN UINT_32 u4InfoBufLen, IN BOOL fgRead, IN BOOL fgWaitResp, IN BOOL fgCmd, OUT PUINT_32 pu4QryInfoLen);
 
+WLAN_STATUS
+kalIoctlTimeout(IN P_GLUE_INFO_T prGlueInfo,
+	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	 IN PVOID pvInfoBuf,
+	 IN UINT_32 u4InfoBufLen, IN BOOL fgRead, IN BOOL fgWaitResp, IN BOOL fgCmd, IN INT_32 i4OidTimeout,
+	 OUT PUINT_32 pu4QryInfoLen);
+
 VOID kalHandleAssocInfo(IN P_GLUE_INFO_T prGlueInfo, IN P_EVENT_ASSOC_INFO prAssocInfo);
 
 #if CFG_ENABLE_FW_DOWNLOAD

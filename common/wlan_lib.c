@@ -4001,7 +4001,7 @@ WLAN_STATUS wlanProcessQueuedMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T
 *         FALSE
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN wlanoidTimeoutCheck(IN P_ADAPTER_T prAdapter, IN PFN_OID_HANDLER_FUNC pfnOidHandler)
+BOOLEAN wlanoidTimeoutCheck(IN P_ADAPTER_T prAdapter, IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN UINT_32 u4Timeout)
 {
 	PFN_OID_HANDLER_FUNC *apfnOidHandlerWOTimeoutCheck;
 	UINT_32 i;
@@ -4021,7 +4021,7 @@ BOOLEAN wlanoidTimeoutCheck(IN P_ADAPTER_T prAdapter, IN PFN_OID_HANDLER_FUNC pf
 		u4OidTimeout = WLAN_OID_TIMEOUT_THRESHOLD_IN_RESETTING;
 		DBGLOG(INIT, INFO, "Decrease OID timeout to %ums due to NoACK/CHIP-RESET\n", u4OidTimeout);
 	} else {
-		u4OidTimeout = WLAN_OID_TIMEOUT_THRESHOLD;
+		u4OidTimeout = u4Timeout;
 	}
 
 	/* Set OID timer for timeout check */

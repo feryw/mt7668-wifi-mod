@@ -356,6 +356,7 @@ typedef struct _GL_IO_REQ_T {
 	PUINT_32 pu4QryInfoLen;
 	WLAN_STATUS rStatus;
 	UINT_32 u4Flag;
+	UINT_32 u4Timeout;
 } GL_IO_REQ_T, *P_GL_IO_REQ_T;
 
 #if CFG_ENABLE_BT_OVER_WIFI

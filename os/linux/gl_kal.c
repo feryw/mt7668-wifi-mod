@@ -2049,6 +2049,41 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 	 IN PVOID pvInfoBuf,
 	 IN UINT_32 u4InfoBufLen, IN BOOL fgRead, IN BOOL fgWaitResp, IN BOOL fgCmd, OUT PUINT_32 pu4QryInfoLen)
 {
+	return kalIoctlTimeout(prGlueInfo,
+							 pfnOidHandler,
+							 pvInfoBuf,
+							 u4InfoBufLen, fgRead, fgWaitResp, fgCmd, -1,
+							 pu4QryInfoLen);
+}
+
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is used to transfer linux ioctl to OID, and  we
+* need to specify the behavior of the OID by ourself
+*
+* @param prGlueInfo         Pointer to the glue structure
+* @param pvInfoBuf          Data buffer
+* @param u4InfoBufLen       Data buffer length
+* @param fgRead             Is this a read OID
+* @param fgWaitResp         does this OID need to wait for values
+* @param fgCmd              does this OID compose command packet
+* @param i4OidTimeout       timeout for this OID
+* @param pu4QryInfoLen      The data length of the return values
+*
+* @retval TRUE      Success to extract information
+* @retval FALSE     Fail to extract correct information
+*/
+/*----------------------------------------------------------------------------*/
+
+WLAN_STATUS
+kalIoctlTimeout(IN P_GLUE_INFO_T prGlueInfo,
+	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	 IN PVOID pvInfoBuf,
+	 IN UINT_32 u4InfoBufLen, IN BOOL fgRead, IN BOOL fgWaitResp, IN BOOL fgCmd, IN INT_32 i4OidTimeout,
+	 OUT PUINT_32 pu4QryInfoLen)
+{
 	P_GL_IO_REQ_T prIoReq = NULL;
 	WLAN_STATUS ret = WLAN_STATUS_SUCCESS;
 
@@ -2098,6 +2133,12 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 	prIoReq->fgRead = fgRead;
 	prIoReq->fgWaitResp = fgWaitResp;
 	prIoReq->rStatus = WLAN_STATUS_FAILURE;
+
+	if (i4OidTimeout >= 0 && i4OidTimeout <= WLAN_OID_TIMEOUT_THRESHOLD_MAX)
+		prIoReq->u4Timeout = (UINT_32)i4OidTimeout;
+	else
+		prIoReq->u4Timeout = WLAN_OID_TIMEOUT_THRESHOLD;
+
 
 	/* <5> Reset the status of pending OID */
 	prGlueInfo->rPendStatus = WLAN_STATUS_FAILURE;
@@ -2941,7 +2982,9 @@ int main_thread(void *data)
 					else
 						DBGLOG(INIT, WARN, "SKIP multiple OID complete!\n");
 				} else {
-					wlanoidTimeoutCheck(prGlueInfo->prAdapter, prIoReq->pfnOidHandler);
+					wlanoidTimeoutCheck(prGlueInfo->prAdapter,
+										prIoReq->pfnOidHandler,
+										prIoReq->u4Timeout);
 				}
 			}
 
