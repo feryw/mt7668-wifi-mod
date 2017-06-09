@@ -5034,7 +5034,7 @@ WLAN_STATUS wlanLoadManufactureData_5G(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T
 		/* dumpMemory8(&rCmdEdgeTxPwrLimit,4); */
 	}
 
-	kalPrint("wlanLoadManufactureData_5G");
+	DEBUGFUNC("wlanLoadManufactureData_5G");
 
 	/*2.set channel offset for 8 sub-band */
 	if (prRegInfo->prOldEfuseMapping->uc5GChannelOffsetVaild) {
