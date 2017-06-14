@@ -2544,7 +2544,9 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 
 			if ((prBssDesc->eBSSType == eBSSType)
 #if CFG_ENABLE_WIFI_DIRECT
-			    || ((eBSSType == BSS_TYPE_P2P_DEVICE) && (prBssDesc->fgIsP2PReport == TRUE))
+			    || ((eBSSType == BSS_TYPE_P2P_DEVICE) &&
+				    (prBssDesc->fgIsP2PReport == TRUE ||
+				     prAdapter->p2p_scan_report_all_bss))
 #endif
 			    ) {
 
@@ -2567,7 +2569,7 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 					}
 				} else {
 #if CFG_ENABLE_WIFI_DIRECT
-					if (prBssDesc->fgIsP2PReport == TRUE) {
+					if (prBssDesc->fgIsP2PReport == TRUE || prAdapter->p2p_scan_report_all_bss) {
 #endif
 						rChannelInfo.ucChannelNum = prBssDesc->ucChannelNum;
 						rChannelInfo.eBand = prBssDesc->eBand;

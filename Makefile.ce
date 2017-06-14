@@ -154,6 +154,9 @@ CFG_ENABLE_EFUSE_MAC_ADDR=1
 
 CFG_SUPPORT_ROAMING=0
 
+# Report all bss networks to cfg80211 when do p2p scan
+CFG_P2P_SCAN_REPORT_ALL_BSS=0
+
 # Support to change sta, p2p, ap interface names
 # y: enable, n: disable
 # eg. insmod wlan_mt7668_usb.ko sta=wlan p2p=p2p ap=ap
@@ -226,6 +229,10 @@ endif
 
 ifneq ($(CFG_SUPPORT_DFS_MASTER),)
 PLATFORM_FLAGS += -DCFG_SUPPORT_DFS_MASTER=$(CFG_SUPPORT_DFS_MASTER)
+endif
+
+ifneq ($(CFG_P2P_SCAN_REPORT_ALL_BSS),)
+PLATFORM_FLAGS += -DCFG_P2P_SCAN_REPORT_ALL_BSS=$(CFG_P2P_SCAN_REPORT_ALL_BSS)
 endif
 
 ##############################################################

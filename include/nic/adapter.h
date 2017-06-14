@@ -1053,6 +1053,7 @@ struct _ADAPTER_T {
 
 #if CFG_ENABLE_WIFI_DIRECT
 	BOOLEAN fgIsP2PRegistered;
+	BOOLEAN p2p_scan_report_all_bss; /* flag to report all networks in p2p scan */
 	ENUM_NET_REG_STATE_T rP2PNetRegState;
 	/* BOOLEAN             fgIsWlanLaunched; */
 	P_P2P_INFO_T prP2pInfo;
