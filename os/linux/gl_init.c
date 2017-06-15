@@ -2027,6 +2027,7 @@ WLAN_STATUS wlanDownloadBufferBin(P_ADAPTER_T prAdapter)
 	UINT_32 chip_id;
 	UINT_8 aucEeprom[32];
 	WLAN_STATUS retWlanStat = WLAN_STATUS_FAILURE;
+	INT_32 i4OidTimeout = -1;
 
 	if (prAdapter->fgIsSupportPowerOnSendBufferModeCMD == TRUE) {
 		DBGLOG(INIT, INFO, "Start Efuse Buffer Mode ..\n");
@@ -2096,11 +2097,18 @@ WLAN_STATUS wlanDownloadBufferBin(P_ADAPTER_T prAdapter)
 		prSetEfuseBufModeInfo->ucCmdType = 0x1 | (prAdapter->rWifiVar.ucCalTimingCtrl << 4);
 		prSetEfuseBufModeInfo->ucCount   = 0xFF; /* ucCmdType 1 don't care the ucCount */
 
-		rStatus = kalIoctl(prGlueInfo,
+		if (!prAdapter->rWifiVar.ucCalTimingCtrl) {
+			/* Full channel RF-cal mode. Need 6000ms */
+			i4OidTimeout = 6000;
+		}
+
+		rStatus = kalIoctlTimeout(prGlueInfo,
 							wlanoidSetEfusBufferMode,
 							(PVOID)prSetEfuseBufModeInfo,
 							sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T),
-							FALSE, TRUE, TRUE, &u4BufLen);
+							FALSE, TRUE, TRUE,
+							i4OidTimeout,
+							&u4BufLen);
 
 	}
 
