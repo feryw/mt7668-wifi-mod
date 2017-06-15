@@ -1057,7 +1057,7 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 				prBssDesc = ((P_AIS_FSM_INFO_T)
 					     (&(prGlueInfo->prAdapter->rWifiVar.rAisFsmInfo)))->prTargetBssDesc;
 
-				if (prBssDesc != NULL) {
+				if (prChannel && prBssDesc != NULL) {
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 					bss = cfg80211_inform_bss(priv_to_wiphy(prGlueInfo),
 								prChannel,
