@@ -1914,7 +1914,7 @@ p2pRoleFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
 
-	if (prP2pRoleFsmInfo != NULL) {
+	if (prP2pRoleFsmInfo == NULL) {
 		DBGLOG(P2P, TRACE, "prP2pRoleFsmInfo is NULL\n");
 		goto error;
 	}
