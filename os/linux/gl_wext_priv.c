@@ -4051,6 +4051,11 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 	static UINT_32 au4AmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
 	P_RX_CTRL_T prRxCtrl;
 	UINT_32 u4InstantRxPer[ENUM_BAND_NUM];
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	INT_16 i2Wf0AvgPwr;
+	INT_16 i2Wf1AvgPwr;
+	UINT_32 u4BufLen = 0;
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -4186,12 +4191,21 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi2),
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d %d %d %d\n", "NOISE", " = ",
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC0),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC1),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC2),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC3));
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
+
+	rStatus = kalIoctl(prAdapter->prGlueInfo,
+			   wlanoidQuerySwCtrlRead,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n", rStatus, rSwCtrlInfo.u4Data);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		i2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
+		i2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d %d\n", "NOISE", " = ", i2Wf0AvgPwr, i2Wf1AvgPwr);
+	}
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "LinkSpeed", " = ", u2LinkSpeed);
