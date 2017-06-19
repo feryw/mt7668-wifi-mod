@@ -693,6 +693,8 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucTxGf;
 	UINT_8 ucRxGf;
 
+	UINT_8 ucMCS32;
+
 	UINT_8 ucTxopPsTx;
 	UINT_8 ucSigTaRts;
 	UINT_8 ucDynBwRts;
