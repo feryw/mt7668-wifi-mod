@@ -326,7 +326,7 @@ p2pDevStateAbort_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 			LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink),
 					 prP2pOffChnlTxPkt, P_P2P_OFF_CHNL_TX_REQ_INFO_T);
 
-			if (!prP2pOffChnlTxPkt)
+			if (prP2pOffChnlTxPkt)
 				kalP2PIndicateMgmtTxStatus(prAdapter->prGlueInfo,
 						   prP2pOffChnlTxPkt->prMgmtTxMsdu, FALSE);
 			else
