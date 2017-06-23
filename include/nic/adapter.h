@@ -809,6 +809,7 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	UINT_8 ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	UINT_8 ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	UINT_8 ucWowPwsMode; /* when enter wow, automatically enter wow power-saving profile */
 
 	UINT_8 u4SwTestMode;
 	UINT_8	ucCtrlFlagAssertPath;

@@ -1364,3 +1364,7 @@ INT_32 wlanGetFileContent(P_ADAPTER_T prAdapter,
 #if CFG_SUPPORT_ANT_SELECT
 WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter);
 #endif
+
+VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo);
+VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo);
+

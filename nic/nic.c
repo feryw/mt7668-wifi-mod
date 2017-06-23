@@ -1330,6 +1330,8 @@ WLAN_STATUS nicDeactivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID), prBssInfo->ucBMCWlanIndex);
 #endif
 	rCmdActivateCtrl.ucOwnMacAddrIndex = prBssInfo->ucOwnMacIndex;
+	/* 20170628, if deactive bssid, do not reset NetworkType, otherwise we cannot free bcn */
+	rCmdActivateCtrl.ucNetworkType = (UINT_8) prBssInfo->eNetworkType;
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_BSS_ACTIVATE_CTRL,
@@ -1686,6 +1688,47 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	    );
 
 }				/* end of wlanoidSetAcpiDevicePowerStateMode() */
+
+WLAN_STATUS
+nicConfigPowerSaveWowProfile(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, PARAM_POWER_MODE ePwrMode,
+	BOOLEAN fgEnCmdEvent, BOOLEAN fgSuspend) {
+
+	CMD_PS_PROFILE_T rPowerSaveMode;
+
+	if (fgSuspend) {
+
+		rPowerSaveMode.ucBssIndex = ucBssIndex;
+		rPowerSaveMode.ucPsProfile = ePwrMode;
+
+		/* if suspend, config power save mode w/o update arPowerSaveMode[ucBssIndex] */
+		return wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_POWER_SAVE_MODE,
+			TRUE,
+			FALSE,
+			TRUE,
+			(fgEnCmdEvent ? nicCmdEventSetCommon : NULL),
+			(fgEnCmdEvent ? nicOidCmdTimeoutCommon : NULL),
+			sizeof(CMD_PS_PROFILE_T),
+			(PUINT_8)&rPowerSaveMode,
+			NULL, sizeof(PARAM_POWER_MODE)
+			);
+
+	} else {
+
+		/* if resume, restore power save profile */
+		return wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_POWER_SAVE_MODE,
+			TRUE,
+			FALSE,
+			TRUE,
+			(fgEnCmdEvent ? nicCmdEventSetCommon : NULL),
+			(fgEnCmdEvent ? nicOidCmdTimeoutCommon : NULL),
+			sizeof(CMD_PS_PROFILE_T),
+			(PUINT_8)&(prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex]),
+			NULL, sizeof(PARAM_POWER_MODE)
+			);
+	}
+}
 
 WLAN_STATUS nicEnterCtiaMode(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent)
 {

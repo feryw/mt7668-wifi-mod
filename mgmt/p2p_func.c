@@ -617,7 +617,8 @@ VOID p2pFuncStopComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo)
 		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		/* Reset current OPMode */
-		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
+		/* 20170628, remove reset opmode, otherwise we cannot free P2P beacon buffer */
+		/* prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE; */
 	} while (FALSE);
 
 }				/* p2pFuncStopComplete */

@@ -6816,6 +6816,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucAdvPws = (UINT_8) wlanCfgGetUint32(prAdapter, "AdvPws", FEATURE_ENABLED);
 	prWifiVar->ucWowOnMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOnMdtim", 1);
 	prWifiVar->ucWowOffMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOffMdtim", 3);
+	prWifiVar->ucWowPwsMode = (UINT_8) wlanCfgGetUint32(prAdapter, "WowPwsMode", Param_PowerModeFast_PSP);
 
 #if CFG_WOW_SUPPORT
 	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
@@ -9430,4 +9431,78 @@ WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter)
 					FALSE, FALSE, TRUE, &u4BufLen);
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is a wrapper to send power-saving mode command
+*        when AIS enter wow, and send WOW command
+*        Also let GC/GO/AP enter deactivate state to enter TOP sleep
+*
+* @param prGlueInfo                     Pointer of prGlueInfo Data Structure
+*
+* @return VOID
+*/
+/*----------------------------------------------------------------------------*/
+VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
+{
+	UINT_8 idx;
+	PARAM_POWER_MODE ePwrMode;
+	P_BSS_INFO_T prBssInfo;
+
+	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
+	/* Send power-saving cmd when enter wow state, even w/o cfg80211 support */
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
+			/* AIS bss enter wow power mode, default fast power-saving */
+			ePwrMode = prGlueInfo->prAdapter->rWifiVar.ucWowPwsMode;
+			idx = prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+			nicConfigPowerSaveWowProfile(prGlueInfo->prAdapter, idx, ePwrMode, FALSE, TRUE);
+			DBGLOG(HAL, STATE, "Suspend wow power save idx:%d, mode:%d\n", idx, ePwrMode);
+
+			DBGLOG(HAL, STATE, "enter WOW flow\n");
+			kalWowProcess(prGlueInfo, TRUE);
+		}
+	}
+
+	for (idx = 0; idx < MAX_BSS_INDEX; idx++) {
+		prBssInfo = prGlueInfo->prAdapter->aprBssInfo[idx];
+		if (!prBssInfo)
+			continue;
+
+		/* Stop GO/GC/AP bss to let TOP sleep */
+		if ((idx != prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex) &&
+			IS_BSS_ACTIVE(prBssInfo)) {
+			nicPmIndicateBssAbort(prGlueInfo->prAdapter, idx);
+			nicDeactivateNetwork(prGlueInfo->prAdapter, idx);
+			nicUpdateBss(prGlueInfo->prAdapter, idx);
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is to restore power-saving mode command when AIS leave wow
+*        But ignore GC/GO/AP role
+*
+* @param prGlueInfo                     Pointer of prGlueInfo Data Structure
+*
+* @return VOID
+*/
+/*----------------------------------------------------------------------------*/
+VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
+{
+	PARAM_POWER_MODE ePwrMode = Param_PowerModeCAM;
+
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
+			DBGLOG(HAL, STATE, "leave WOW flow. AIS BssIndex:%d\n",
+				prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+			kalWowProcess(prGlueInfo, FALSE);
+
+			/* resume AIS power-saving cmd when leave wow state, ignore ePwrMode input */
+			nicConfigPowerSaveWowProfile(prGlueInfo->prAdapter,
+				prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, ePwrMode, FALSE, FALSE);
+		}
+	}
+}
 

@@ -247,15 +247,7 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
-	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
-			DBGLOG(HAL, EVENT, "enter WOW flow\n");
-			kalWowProcess(prGlueInfo, TRUE);
-		}
-
-		/* else: do nothing, and FW enter LMAC sleep */
-	}
+	wlanSuspendPmHandle(prGlueInfo);
 
 	halUSBPreSuspendCmd(prGlueInfo->prAdapter);
 
@@ -300,13 +292,7 @@ int mtk_usb_resume(struct usb_interface *intf)
 	prGlueInfo->rHifInfo.state = USB_STATE_LINK_UP;
 	halEnableInterrupt(prGlueInfo->prAdapter);
 
-	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW leave */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
-			DBGLOG(HAL, EVENT, "leave WOW flow\n");
-			kalWowProcess(prGlueInfo, FALSE);
-		}
-	}
+	wlanResumePmHandle(prGlueInfo);
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done!\n");
 

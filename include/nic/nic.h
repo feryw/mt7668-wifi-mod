@@ -279,6 +279,10 @@ VOID nicUninitMGMT(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS
 nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, PARAM_POWER_MODE ePwrMode, BOOLEAN fgEnCmdEvent);
 
+WLAN_STATUS
+nicConfigPowerSaveWowProfile(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, PARAM_POWER_MODE ePwrMode,
+	BOOLEAN fgEnCmdEvent, BOOLEAN fgSuspend);
+
 WLAN_STATUS nicEnterCtiaMode(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
 WLAN_STATUS nicEnterTPTestMode(IN P_ADAPTER_T prAdapter, IN UINT_8 ucFuncMask);
 
