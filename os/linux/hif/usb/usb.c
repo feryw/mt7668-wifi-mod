@@ -343,12 +343,12 @@ int mtk_usb_reset_resume(struct usb_interface *intf)
 *         non-zero   if fail, the return value of usb_control_msg()
 */
 /*----------------------------------------------------------------------------*/
-BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
+int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
 			    IN UINT_32 TransferBufferLength)
 {
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
-
+	void *xfer_buf;
 	/* refer to RTUSB_VendorRequest */
 	int ret = 0;
 
@@ -356,11 +356,11 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 
 	if (in_interrupt()) {
 		DBGLOG(REQ, ERROR, "BUG: mtk_usb_vendor_request is called from invalid context\n");
-		return FALSE;
+		return -EFAULT;
 	}
 
 	if (prHifInfo->state != USB_STATE_LINK_UP)
-		return FALSE;
+		return -EFAULT;
 
 
 #if 0
@@ -368,21 +368,39 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 		return FALSE;
 #endif
 
+	if (unlikely(TransferBufferLength > prHifInfo->vendor_req_buf_sz)) {
+		DBGLOG(REQ, ERROR, "len %u exceeds limit %zu\n", TransferBufferLength,
+			prHifInfo->vendor_req_buf_sz);
+		return -E2BIG;
+	}
+
+	if (unlikely(TransferBuffer && !prHifInfo->vendor_req_buf)) {
+		DBGLOG(REQ, ERROR, "NULL vendor_req_buf\n");
+		return -EFAULT;
+	}
+
+	/* use heap instead of old stack memory */
+	xfer_buf = (TransferBuffer) ? prHifInfo->vendor_req_buf : NULL;
+
 	mutex_lock(&prHifInfo->vendor_req_sem);
 
-	if (RequestType == DEVICE_VENDOR_REQUEST_OUT)
-		ret =
-		    usb_control_msg(prHifInfo->udev,
-				    usb_sndctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
-				    RequestType, Value, Index, TransferBuffer, TransferBufferLength,
-				    VENDOR_TIMEOUT_MS);
-	else if (RequestType == DEVICE_VENDOR_REQUEST_IN)
-		ret =
-		    usb_control_msg(prHifInfo->udev,
-				    usb_rcvctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
-				    RequestType, Value, Index, TransferBuffer, TransferBufferLength,
-				    VENDOR_TIMEOUT_MS);
-
+	if (RequestType == DEVICE_VENDOR_REQUEST_OUT) {
+		if (xfer_buf)
+			memcpy(xfer_buf, TransferBuffer, TransferBufferLength);
+		ret = usb_control_msg(prHifInfo->udev,
+				      usb_sndctrlpipe(prHifInfo->udev, uEndpointAddress),
+				      Request, RequestType, Value, Index,
+				      xfer_buf, TransferBufferLength,
+				      VENDOR_TIMEOUT_MS);
+	} else if (RequestType == DEVICE_VENDOR_REQUEST_IN) {
+		ret = usb_control_msg(prHifInfo->udev,
+				      usb_rcvctrlpipe(prHifInfo->udev, uEndpointAddress),
+				      Request, RequestType, Value, Index,
+				      xfer_buf, TransferBufferLength,
+				      VENDOR_TIMEOUT_MS);
+		if (xfer_buf && (ret > 0))
+			memcpy(TransferBuffer, xfer_buf, TransferBufferLength);
+	}
 	mutex_unlock(&prHifInfo->vendor_req_sem);
 
 	return (ret == TransferBufferLength) ? 0 : ret;
@@ -757,6 +775,13 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	spin_lock_init(&prHifInfo->rRxDataQLock);
 
 	mutex_init(&prHifInfo->vendor_req_sem);
+	prHifInfo->vendor_req_buf = kzalloc(VND_REQ_BUF_SIZE, GFP_KERNEL);
+	if (!prHifInfo->vendor_req_buf) {
+		DBGLOG(HAL, ERROR, "kzalloc vendor_req_buf %zu error\n",
+			VND_REQ_BUF_SIZE);
+		goto error;
+	}
+	prHifInfo->vendor_req_buf_sz = VND_REQ_BUF_SIZE;
 
 #if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
@@ -1030,7 +1055,10 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 	kfree(prHifInfo->prRxDataReqHead);
 
 	mutex_destroy(&prHifInfo->vendor_req_sem);
-}				/* end of glClearHifInfo() */
+	kfree(prHifInfo->vendor_req_buf);
+	prHifInfo->vendor_req_buf = NULL;
+	prHifInfo->vendor_req_buf_sz = 0;
+} /* end of glClearHifInfo() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1204,7 +1232,8 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 				       sizeof(*pu4Value));
 
 		if (ret || ucRetryCount)
-			DBGLOG(HAL, ERROR, "usb_control_msg() status: %x retry: %u\n", (unsigned int)ret, ucRetryCount);
+			DBGLOG(HAL, ERROR, "usb_control_msg() status: %d retry: %u\n",
+				ret, ucRetryCount);
 
 
 		ucRetryCount++;
@@ -1248,7 +1277,7 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 				       sizeof(u4Value));
 
 		if (ret || ucRetryCount)
-			DBGLOG(HAL, ERROR, "usb_control_msg() status: %x retry: %u\n", (unsigned int)ret, ucRetryCount);
+			DBGLOG(HAL, ERROR, "usb_control_msg() status: %d retry: %u\n", ret, ucRetryCount);
 
 		ucRetryCount++;
 		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)

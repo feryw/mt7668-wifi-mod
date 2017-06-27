@@ -185,6 +185,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define VND_REQ_REG_WRITE               (0x66)
 #define VND_REQ_FEATURE_SET             (0x91)
 #define FEATURE_SET_WVALUE_RESUME       (0x5)
+#define VND_REQ_BUF_SIZE		(16)
 
 #define USB_TX_CMD_QUEUE_MASK           (BITS(2, 4))   /* For H2CDMA Tx CMD mapping */
 
@@ -284,6 +285,9 @@ typedef struct _GL_HIF_INFO_T {
 	BUF_CTRL_T rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
 
 	struct mutex vendor_req_sem;
+	void *vendor_req_buf;
+	UINT_32 vendor_req_buf_sz;
+
 	BOOLEAN fgIntReadClear;
 	BOOLEAN fgMbxReadClear;
 	BOOLEAN fgEventEpDetected;
@@ -348,7 +352,7 @@ VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 
 VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 
-BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
+int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
 			    IN UINT_32 TransferBufferLength);
 
