@@ -6874,6 +6874,10 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->fgTdlsBufferSTASleep = (BOOLEAN) wlanCfgGetUint32(prAdapter, "TdlsBufferSTASleep", FEATURE_DISABLED);
 	/* Support USB Whole chip reset recover */
 	prWifiVar->fgChipResetRecover = (BOOLEAN) wlanCfgGetUint32(prAdapter, "ChipResetRecover", FEATURE_ENABLED);
+
+#if CFG_SUPPORT_ANT_SELECT
+	prWifiVar->ucSpeIdxCtrl = (UINT_8) wlanCfgGetUint32(prAdapter, "SpeIdxCtrl", 0);
+#endif
 }
 
 VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)
@@ -9256,11 +9260,59 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter)
 }
 #endif
 
+UINT_8  wlanGetAntPathType(
+	IN P_ADAPTER_T prAdapter,
+	IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor
+	)
+{
+	UINT_8 ucFianlWfPathType = eWfPathFavor;
+#if CFG_SUPPORT_ANT_SELECT
+	UINT_8 ucNss = prAdapter->rWifiVar.ucNSS;
+	UINT_8 ucSpeIdxCtrl = prAdapter->rWifiVar.ucSpeIdxCtrl;
+
+	if (ucSpeIdxCtrl == 0)
+		ucFianlWfPathType = ENUM_WF_0_ONE_STREAM_PATH_FAVOR;
+	else if (ucSpeIdxCtrl == 1)
+		ucFianlWfPathType = ENUM_WF_1_ONE_STREAM_PATH_FAVOR;
+	else if (ucSpeIdxCtrl == 2) {
+		if (ucNss > 1)
+			ucFianlWfPathType = ENUM_WF_0_1_DUP_STREAM_PATH_FAVOR;
+		else
+			ucFianlWfPathType = ENUM_WF_NON_FAVOR;
+	} else
+		ucFianlWfPathType = ENUM_WF_NON_FAVOR;
+#endif
+	return ucFianlWfPathType;
+}
+
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_ANT_SELECT == 1))
 UINT_8
-wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
+wlanAntPathFavorSelect(
+	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor
+	)
 {
 	UINT_8 ucRetValSpeIdx = 0;
-#if CFG_SISO_SW_DEVELOP
+
+	if ((eWfPathFavor == ENUM_WF_NON_FAVOR) ||
+		(eWfPathFavor == ENUM_WF_0_ONE_STREAM_PATH_FAVOR) ||
+		(eWfPathFavor == ENUM_WF_0_1_TWO_STREAM_PATH_FAVOR))
+		ucRetValSpeIdx = ANTENNA_WF0;
+	else if (eWfPathFavor == ENUM_WF_0_1_DUP_STREAM_PATH_FAVOR)
+		ucRetValSpeIdx = 0x18;
+	else if (eWfPathFavor == ENUM_WF_1_ONE_STREAM_PATH_FAVOR)
+		ucRetValSpeIdx = ANTENNA_WF1;
+	else
+		ucRetValSpeIdx = ANTENNA_WF0;
+
+	return ucRetValSpeIdx;
+}
+#endif
+
+UINT_8
+wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor)
+{
+	UINT_8 ucRetValSpeIdx = 0;
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_ANT_SELECT == 1))
 	P_BSS_INFO_T prBssInfo;
 	ENUM_BAND_T eBand = BAND_NULL;
 
@@ -9287,7 +9339,7 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
 			} else
-				ucRetValSpeIdx = 0x0;
+				ucRetValSpeIdx = wlanAntPathFavorSelect(eWfPathFavor);
 		} else if (eBand == BAND_5G) {
 			if (IS_WIFI_5G_SISO(prAdapter)) {
 				if (IS_WIFI_5G_WF0_SUPPORT(prAdapter))
@@ -9295,9 +9347,9 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
 			} else
-				ucRetValSpeIdx = 0x0;
+				ucRetValSpeIdx = wlanAntPathFavorSelect(eWfPathFavor);
 		} else
-			ucRetValSpeIdx = 0x0;
+			ucRetValSpeIdx = wlanAntPathFavorSelect(eWfPathFavor);
 	}
 	DBGLOG(INIT, INFO, "SpeIdx:%d,D:%d,G=%d,B=%d,Bss=%d\n",
 						ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,

@@ -918,6 +918,14 @@ typedef enum _ENUM_TX_PROFILING_TAG_T {
 	TX_PROF_TAG_MAC_TX_DONE
 } ENUM_TX_PROFILING_TAG_T, *P_ENUM_TX_PROFILING_TAG_T;
 
+enum ENUM_WF_PATH_FAVOR_T {
+	ENUM_WF_NON_FAVOR = 0xff,
+	ENUM_WF_0_ONE_STREAM_PATH_FAVOR = 0,
+	ENUM_WF_1_ONE_STREAM_PATH_FAVOR = 1,
+	ENUM_WF_0_1_TWO_STREAM_PATH_FAVOR = 2,
+	ENUM_WF_0_1_DUP_STREAM_PATH_FAVOR = 3,
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -1343,7 +1351,9 @@ VOID wlanClearPendingInterrupt(IN P_ADAPTER_T prAdapter);
 extern INT_32 mtk_wcn_wmt_wifi_fem_cfg_report(PVOID pvInfoBuf);
 #endif
 
-UINT_8 wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+UINT_8  wlanGetAntPathType(IN P_ADAPTER_T prAdapter, IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor);
+
+UINT_8 wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor);
 
 UINT_8 wlanGetSupportNss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
 
