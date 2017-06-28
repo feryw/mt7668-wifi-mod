@@ -2220,6 +2220,8 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_STA_KEEP_CNT    "KEEPCOUNTER"
 #define CMD_STAT_RESET_CNT      "RESETCOUNTER"
 #define CMD_STAT_NOISE_SEL      "NOISESELECT"
+#define CMD_STAT_GROUP_SEL      "GROUP"
+
 
 #define CMD_SET_TXPOWER			"SET_TXPOWER"
 #define CMD_COUNTRY				"COUNTRY"
@@ -2566,62 +2568,62 @@ static int priv_driver_get_stat(IN struct net_device *prNetDev, IN char *pcComma
 			rRssi = RCPI_TO_dBm(rQueryStaStatistics.ucRcpi);
 			u2LinkSpeed = rQueryStaStatistics.u2LinkSpeed == 0 ? 0 : rQueryStaStatistics.u2LinkSpeed/2;
 
-			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nSTA Stat:\n");
+			i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nSTA Stat:\n");
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"CurrentTemperature            = %d\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx success                    = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx fail count                 = %ld, PER=%ld.%1ld%%\n", 0, 0, 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx success                    = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx with CRC                   = %ld, PER=%ld.%1ld%%\n", 0, 0, 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx with PhyErr                = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx with PlcpErr               = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx drop due to out of resource= %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx duplicate frame            = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"False CCA                     = %lu\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"RSSI                          = %d %d %d %d\n", 0, 0, 0, 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Last TX Rate	       = %s, %s, %s, %s, %s\n", "NA", "NA", "NA", "NA", "NA");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Last RX Rate	       = %s, %s, %s, %s, %s\n", "NA", "NA", "NA", "NA", "NA");
 
 			for (i = 0; i < 2 /* band num */; i++) {
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"BandIdx:	       = %d\n", i);
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "\tRange:  1   2~5   6~15   16~22   23~33   34~49   50~57   58~64\n");
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"\t\t%d \t%d \t%d \t%d \t%d \t%d \t%d \t%d\n",
 					0, 0, 0, 0, 0, 0, 0, 0);
 			}
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx success	       = %ld\n",
 				rQueryStaStatistics.u4TransmitCount - rQueryStaStatistics.u4TransmitFailCount);
 
 			u4Per = rQueryStaStatistics.u4TransmitFailCount == 0 ? 0 :
 				(1000 * (rQueryStaStatistics.u4TransmitFailCount)) /
 				rQueryStaStatistics.u4TransmitCount;
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx fail count	       = %ld, PER=%ld.%1ld%%\n",
 				rQueryStaStatistics.u4TransmitFailCount, u4Per/10, u4Per%10);
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"RSSI		       = %d\n", rRssi);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"LinkSpeed	       = %d\n", u2LinkSpeed);
 		}
 	} else
-		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
 
 	return i4BytesWritten;
 }
@@ -2678,7 +2680,7 @@ static int priv_driver_get_sta_statistics(IN struct net_device *prNetDev, IN cha
 		} else {
 			DBGLOG(RSN, INFO, "not connect to ais ap %x\n",
 				prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP);
-			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
+			i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
 			return i4BytesWritten;
 		}
 
@@ -2697,30 +2699,30 @@ static int priv_driver_get_sta_statistics(IN struct net_device *prNetDev, IN cha
 		rRssi = RCPI_TO_dBm(rQueryStaStatistics.ucRcpi);
 		u2LinkSpeed = rQueryStaStatistics.u2LinkSpeed == 0 ? 0 : rQueryStaStatistics.u2LinkSpeed/2;
 
-		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nSTA Stat:\n");
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nSTA Stat:\n");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"Tx total cnt           = %ld\n",
 			rQueryStaStatistics.u4TransmitCount);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"Tx success	       = %ld\n",
 			rQueryStaStatistics.u4TransmitCount - rQueryStaStatistics.u4TransmitFailCount);
 
 		u4Per = rQueryStaStatistics.u4TransmitCount == 0 ? 0 :
 			(1000 * (rQueryStaStatistics.u4TransmitFailCount)) /
 			rQueryStaStatistics.u4TransmitCount;
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"Tx fail count	       = %ld, PER=%ld.%1ld%%\n",
 			rQueryStaStatistics.u4TransmitFailCount, u4Per/10, u4Per%10);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"RSSI		       = %d\n", rRssi);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"LinkSpeed	       = %d\n", u2LinkSpeed);
 
 	} else
-		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
 
 	return i4BytesWritten;
 
@@ -2785,34 +2787,34 @@ static int priv_driver_get_bss_statistics(IN struct net_device *prNetDev, IN cha
 				   sizeof(rQueryBssStatistics), TRUE, FALSE, TRUE, &u4BufLen);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
-			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nStat:\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nStat:\n");
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "CurrentTemperature    = -\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx success	       = %ld\n",
 				rQueryBssStatistics.u4TransmitCount - rQueryBssStatistics.u4TransmitFailCount);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx fail count	       = %ld\n", rQueryBssStatistics.u4TransmitFailCount);
 #if 0
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx success	       = %ld\n", 0);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx with CRC	       = %ld\n", prStatistics->rFCSErrorCount.QuadPart);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "Rx with PhyErr	     = 0\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "Rx with PlcpErr	     = 0\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "Rx drop due to out of resource	= 0\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx duplicate frame    = %ld\n", prStatistics->rFrameDuplicateCount.QuadPart);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "False CCA	     = 0\n");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"RSSI		       = %d\n", i4Rssi);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Last TX Rate	       = %s, %s, %s, %s, %s\n", "NA", "NA", "NA", "NA", "NA");
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Last RX Rate	       = %s, %s, %s, %s, %s\n", "NA", "NA", "NA", "NA", "NA");
 #endif
 
@@ -2961,43 +2963,43 @@ INT_32 priv_driver_rate_to_string(IN char *pcCommand, IN int i4TotalLen, UINT_8 
 		nss = HW_TX_RATE_TO_NSS(prHwWlanInfo->rWtblRateInfo.au2RateCode[i]) + 1;
 		stbc = HW_TX_RATE_TO_STBC(prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRate index[%d] ", i);
 
 		if (prHwWlanInfo->rWtblRateInfo.ucRateIdx == i) {
 			if (TxRx == 0)
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "[Last RX Rate] ");
 			else
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "[Last TX Rate] ");
 		} else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "               ");
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
 		else if (txmode == TX_RATE_MODE_OFDM)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", hw_rate_ofdm_str(rate));
 		else {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"NSS%d_MCS%d, ", nss, rate);
 		}
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, ", HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]);
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? "LP" : "SP");
 		else if (txmode == TX_RATE_MODE_OFDM)
 			;
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap) == 0 ? "LGI" : "SGI");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s%s %s\n", HW_TX_MODE_STR[txmode],
 			stbc ? "STBC" : " ",
 			priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0 ? "BCC" : "LDPC");
@@ -3014,97 +3016,97 @@ static INT_32 priv_driver_dump_helper_wtbl_info(IN char *pcCommand, IN int i4Tot
 
 	ASSERT(pcCommand);
 
-	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nwtbl:\n");
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nwtbl:\n");
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"Dump WTBL info of WLAN_IDX	    = %d\n", prHwWlanInfo->u4Index);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tAddr="MACSTR"\n", MAC2STR(prHwWlanInfo->rWtblTxConfig.aucPA));
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tMUAR_Idx	 = %d\n", prHwWlanInfo->rWtblSecConfig.ucMUARIdx);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\trc_a1/rc_a2:%d/%d\n", prHwWlanInfo->rWtblSecConfig.fgRCA1,  prHwWlanInfo->rWtblSecConfig.fgRCA2);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tKID:%d/RCID:%d/RKV:%d/RV:%d/IKV:%d/WPI_FLAG:%d\n", prHwWlanInfo->rWtblSecConfig.ucKeyID,
 		prHwWlanInfo->rWtblSecConfig.fgRCID, prHwWlanInfo->rWtblSecConfig.fgRKV,
 		prHwWlanInfo->rWtblSecConfig.fgRV, prHwWlanInfo->rWtblSecConfig.fgIKV,
 		prHwWlanInfo->rWtblSecConfig.fgEvenPN);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\tGID_SU:NA");
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tsw/DIS_RHTR:%d/%d\n", prHwWlanInfo->rWtblTxConfig.fgSW,  prHwWlanInfo->rWtblTxConfig.fgDisRxHdrTran);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tHT/VHT/HT-LDPC/VHT-LDPC/DYN_BW/MMSS:%d/%d/%d/%d/%d/%d\n",
 		prHwWlanInfo->rWtblTxConfig.fgIsHT,  prHwWlanInfo->rWtblTxConfig.fgIsVHT,
 		prHwWlanInfo->rWtblTxConfig.fgLDPC, prHwWlanInfo->rWtblTxConfig.fgVhtLDPC,
 		prHwWlanInfo->rWtblTxConfig.fgDynBw, prHwWlanInfo->rWtblPeerCap.ucMMSS);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tFCAP/G2/G4/G8/G16/CBRN:%d/%d/%d/%d/%d/%d\n",
 		prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability, prHwWlanInfo->rWtblPeerCap.fgG2,
 		prHwWlanInfo->rWtblPeerCap.fgG4, prHwWlanInfo->rWtblPeerCap.fgG8, prHwWlanInfo->rWtblPeerCap.fgG16,
 		prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tHT-TxBF(tibf/tebf):%d/%d, VHT-TxBF(tibf/tebf):%d/%d, PFMU_IDX=%d\n",
 		prHwWlanInfo->rWtblTxConfig.fgTIBF, prHwWlanInfo->rWtblTxConfig.fgTEBF,
 		prHwWlanInfo->rWtblTxConfig.fgVhtTIBF, prHwWlanInfo->rWtblTxConfig.fgVhtTEBF,
 		prHwWlanInfo->rWtblTxConfig.ucPFMUIdx);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\tSPE_IDX=NA\n");
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tBA Enable:0x%x, BAFail Enable:%d\n", prHwWlanInfo->rWtblBaConfig.ucBaEn,
 		prHwWlanInfo->rWtblTxConfig.fgBAFEn);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tQoS Enable:%d\n", prHwWlanInfo->rWtblTxConfig.fgIsQoS);
 	if (prHwWlanInfo->rWtblTxConfig.fgIsQoS) {
 		for (i = 0; i < 8; i += 2) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\t\tBA WinSize: TID 0 - %d, TID 1 - %d\n",
 				(prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> (i * 3)) & BITS(0, 2),
 				(prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> ((i + 1) * 3)) & BITS(0, 2));
 		}
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tpartial_aid:%d\n", prHwWlanInfo->rWtblTxConfig.u2PartialAID);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\twpi_even:%d\n", prHwWlanInfo->rWtblSecConfig.fgEvenPN);
-	i4BytesWritten += scnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tAAD_OM/CipherSuit:%d/%d\n", prHwWlanInfo->rWtblTxConfig.fgAADOM,
 		prHwWlanInfo->rWtblSecConfig.ucCipherSuit);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\taf:%d\n", prHwWlanInfo->rWtblPeerCap.ucAmpduFactor);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\trdg_ba:%d/rdg capability:%d\n", prHwWlanInfo->rWtblTxConfig.fgRdgBA,
 		prHwWlanInfo->rWtblTxConfig.fgRDG);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tcipher_suit:%d\n", prHwWlanInfo->rWtblSecConfig.ucCipherSuit);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tFromDS:%d\n", prHwWlanInfo->rWtblTxConfig.fgIsFromDS);
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tToDS:%d\n", prHwWlanInfo->rWtblTxConfig.fgIsToDS);
 #if 0
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tRCPI = %d %d %d %d\n", prHwWlanInfo->rWtblRxCounter.ucRxRcpi0,
 		prHwWlanInfo->rWtblRxCounter.ucRxRcpi1,
 		prHwWlanInfo->rWtblRxCounter.ucRxRcpi2,
 		prHwWlanInfo->rWtblRxCounter.ucRxRcpi3);
 #endif
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tRSSI = %d %d %d %d\n", RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi1),
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi2),
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\tRate Info\n");
 
 	i4BytesWritten += priv_driver_rate_to_string(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, 1,
 		prHwWlanInfo);
 
 #if 0
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\t===Key======\n");
 	for (i = 0; i < 32; i += 8) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\t0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
 			prHwWlanInfo->rWtblKeyConfig.aucKey[i + 0], prHwWlanInfo->rWtblKeyConfig.aucKey[i + 1],
 			prHwWlanInfo->rWtblKeyConfig.aucKey[i + 2], prHwWlanInfo->rWtblKeyConfig.aucKey[i + 3],
@@ -3239,7 +3241,7 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 	pucMacAddr = wlanGetStaAddrByWlanIdx(prGlueInfo->prAdapter, ucWlanIndex);
 	if (pucMacAddr) {
 		COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr, pucMacAddr);
-		/* i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		/* i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		*	"\tAddr="MACSTR"\n", MAC2STR(rQueryStaStatistics.aucMacAddr));
 		*/
 
@@ -3252,27 +3254,27 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 			rRssi = RCPI_TO_dBm(rQueryStaStatistics.ucRcpi);
 			u2LinkSpeed = rQueryStaStatistics.u2LinkSpeed == 0 ? 0 : rQueryStaStatistics.u2LinkSpeed/2;
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "\n\nSTA Stat:\n");
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx total cnt           = %ld\n",
 				rQueryStaStatistics.u4TransmitCount);
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx success	       = %ld\n",
 				rQueryStaStatistics.u4TransmitCount - rQueryStaStatistics.u4TransmitFailCount);
 
 			u4Per = rQueryStaStatistics.u4TransmitCount == 0 ? 0 :
 				(1000 * (rQueryStaStatistics.u4TransmitFailCount)) /
 				rQueryStaStatistics.u4TransmitCount;
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Tx fail count	       = %ld, PER=%ld.%1ld%%\n",
 				rQueryStaStatistics.u4TransmitFailCount, u4Per/10, u4Per%10);
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"RSSI		       = %d\n", rRssi);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"LinkSpeed	       = %d\n", u2LinkSpeed);
 		}
 	}
@@ -3333,36 +3335,36 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 	}
 
 	if (prHwMibInfo->u4Index < 2) {
-		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nmib state:\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\n\nmib state:\n");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"Dump MIB info of IDX         = %d\n", prHwMibInfo->u4Index);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Rx Related Counters===\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx with CRC=%ld\n", prHwMibInfo->rHwMibCnt.u4RxFcsErrCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx drop due to out of resource=%ld\n", prHwMibInfo->rHwMibCnt.u4RxFifoFullCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx Mpdu=%ld\n", prHwMibInfo->rHwMibCnt.u4RxMpduCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx AMpdu=%ld\n", prHwMibInfo->rHwMibCnt.u4RxAMPDUCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx PF Drop=%ld\n", prHwMibInfo->rHwMibCnt.u4PFDropCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx Len Mismatch=%ld\n", prHwMibInfo->rHwMibCnt.u4RxLenMismatchCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx data indicate total=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx data retain total=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx drop by SW total=%ld\n", RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx reorder miss=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx reorder within=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx reorder ahead=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx reorder behind=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 
 		do {
@@ -3373,111 +3375,111 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 					RX_DATA_MSDU_IN_AMSDU_COUNT) * 100,
 					RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tRx avg MSDU in AMSDU=%1ld.%02ld\n", u4AmsduCntx100 / 100, u4AmsduCntx100 % 100);
 		} while (FALSE);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx total MSDU in AMSDU=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx AMSDU=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx AMSDU miss=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx no StaRec drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_NO_STA_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx inactive BSS drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_INACTIVE_BSS_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx HS20 drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_HS20_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx low SwRfb drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_LESS_SW_RFB_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx dupicate drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_DUPICATE_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx MIC err drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_MIC_ERROR_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx BAR handle=%ld\n", RX_GET_CNT(prRxCtrl, RX_BAR_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx non-interest drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_NO_INTEREST_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx type err drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx class err drop=%ld\n", RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT));
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Phy/Timing Related Counters===\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tChannelIdleCnt=%ld\n", prHwMibInfo->rHwMibCnt.u4ChannelIdleCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tCCA_NAV_Tx_Time=%ld\n", prHwMibInfo->rHwMibCnt.u4CcaNavTx);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx_MDRDY_CNT=%ld\n", prHwMibInfo->rHwMibCnt.u4MdrdyCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tCCK_MDRDY=%ld, OFDM_MDRDY=0x%lx, OFDM_GREEN_MDRDY=0x%lx\n",
 			prHwMibInfo->rHwMibCnt.u4CCKMdrdyCnt, prHwMibInfo->rHwMibCnt.u4OFDMLGMixMdrdy,
 			prHwMibInfo->rHwMibCnt.u4OFDMGreenMdrdy);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tPrim CCA Time=%ld\n", prHwMibInfo->rHwMibCnt.u4PCcaTime);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tSec CCA Time=%ld\n", prHwMibInfo->rHwMibCnt.u4SCcaTime);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tPrim ED Time=%ld\n", prHwMibInfo->rHwMibCnt.u4PEDTime);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Tx Related Counters(Generic)===\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tBeaconTxCnt=%ld\n", prHwMibInfo->rHwMibCnt.u4BeaconTxCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tTx 40MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx40MHzCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tTx 80MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx80MHzCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tTx 160MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx160MHzCnt);
 		for (i = 0; i < BSSID_NUM; i++) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\t===BSSID[%d] Related Counters===\n", i);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tBA Miss Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4BaMissedCnt[i]);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tRTS Tx Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4RtsTxCnt[i]);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tFrame Retry Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4FrameRetryCnt[i]);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tFrame Retry 2 Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4FrameRetry2Cnt[i]);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tRTS Retry Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4RtsRetryCnt[i]);
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\tAck Failed Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4AckFailedCnt[i]);
 		}
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===AMPDU Related Counters===\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tTx AMPDU_Pkt_Cnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u2TxAmpduCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tTx AMPDU_MPDU_Pkt_Cnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tAMPDU SuccessCnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tAMPDU Tx success      = %ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
 
 		u4Per = prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt == 0 ? 0 :
 			(1000 * (prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt - prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt)) /
 			prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt;
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tAMPDU Tx fail count   = %ld, PER=%ld.%1ld%%\n",
 			prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt - prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt,
 			u4Per/10, u4Per%10);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "\tTx Agg\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "\tRange:  1    2~5   6~15    16~22   23~33    34~49    50~57    58~64\n");
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\t\t%d \t%d \t%d \t%d \t%d \t%d \t%d \t%d\n",
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange1AmpduCnt, prHwMibInfo->rHwTxAmpduMts.u2TxRange2AmpduCnt,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange3AmpduCnt, prHwMibInfo->rHwTxAmpduMts.u2TxRange4AmpduCnt,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange5AmpduCnt, prHwMibInfo->rHwTxAmpduMts.u2TxRange6AmpduCnt,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange7AmpduCnt, prHwMibInfo->rHwTxAmpduMts.u2TxRange8AmpduCnt);
 	} else
-		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\nClear All Statistics\n");
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen, "%s", "\nClear All Statistics\n");
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -3805,14 +3807,14 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 		stbc = HW_TX_RATE_TO_STBC(prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
 
 		if (fgDumpAll) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rate index[%d]    ", i);
 
 			if (prHwWlanInfo->rWtblRateInfo.ucRateIdx == i) {
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "--> ");
 			} else {
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "    ");
 			}
 		}
@@ -3821,34 +3823,34 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 			if (prHwWlanInfo->rWtblRateInfo.ucRateIdx != i)
 				continue;
 			else
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s", "Last TX Rate", " = ");
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s", "AR TX Rate", " = ");
 		}
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
 		else if (txmode == TX_RATE_MODE_OFDM)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", hw_rate_ofdm_str(rate));
 		else if ((txmode == TX_RATE_MODE_HTMIX) || (txmode == TX_RATE_MODE_HTGF))
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"MCS%d, ", rate);
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"NSS%d_MCS%d, ", nsts, rate);
 
 		if (prQueryStaStatistics->ucSkipAr) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] : HW_TX_RATE_BW[4]);
 		} else {
 			if ((txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM))
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s, ", HW_TX_RATE_BW[0]);
 			else
 				if (i > prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN)
-					i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					  i4TotalLen - i4BytesWritten, "%s, ",
 					  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 						(prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability > BW_20 ?
@@ -3856,7 +3858,7 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]) :
 						HW_TX_RATE_BW[4]);
 				else
-					i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					  i4TotalLen - i4BytesWritten, "%s, ",
 					  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] :
@@ -3864,27 +3866,27 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 		}
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? "LP" : "SP");
 		else if (txmode == TX_RATE_MODE_OFDM)
 			;
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap) == 0 ? "LGI" : "SGI");
 
 		if (prQueryStaStatistics->ucSkipAr) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0 ? "BCC" : "LDPC");
 		} else if (prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]] == 0xFF) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s   (--)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
 				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
 		} else {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s   (%d)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
@@ -3898,6 +3900,41 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 
 	return i4BytesWritten;
 }
+
+
+INT_32 priv_driver_last_rx_rssi(P_ADAPTER_T prAdapter, IN char *pcCommand, IN int i4TotalLen,
+	IN UINT_8 ucWlanIdx)
+{
+	INT_32 i4RSSI0 = 0, i4RSSI1 = 0, i4RSSI2 = 0, i4RSSI3;
+	INT_32 i4BytesWritten = 0;
+	UINT_32 u4RxVector3 = 0;
+	UINT_8 ucStaIdx;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) == WLAN_STATUS_SUCCESS) {
+		u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
+		DBGLOG(REQ, LOUD, "****** RX Vector3 = 0x%08x ******\n", u4RxVector3);
+	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last RX RSSI", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	i4RSSI0 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI0_MASK) >> RX_VT_RCPI0_OFFSET);
+	i4RSSI1 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET);
+
+	if (prAdapter->rWifiVar.ucNSS > 2) {
+		i4RSSI2 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI2_MASK) >> RX_VT_RCPI2_OFFSET);
+		i4RSSI3 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI3_MASK) >> RX_VT_RCPI3_OFFSET);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d %d %d %d\n", "Last RX Data RSSI", " = ", i4RSSI0, i4RSSI1, i4RSSI2, i4RSSI3);
+	} else
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d %d\n", "Last RX Data RSSI", " = ", i4RSSI0, i4RSSI1);
+
+	return i4BytesWritten;
+}
+
 
 INT_32 priv_driver_rx_rate_info(P_ADAPTER_T prAdapter, IN char *pcCommand, IN int i4TotalLen,
 	IN UINT_8 ucWlanIdx)
@@ -3913,7 +3950,7 @@ INT_32 priv_driver_rx_rate_info(P_ADAPTER_T prAdapter, IN char *pcCommand, IN in
 		DBGLOG(REQ, LOUD, "****** RX Vector0 = 0x%08x ******\n", u4RxVector0);
 		DBGLOG(REQ, LOUD, "****** RX Vector1 = 0x%08x ******\n", u4RxVector1);
 	} else {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s", "Last RX Rate", " = NOT SUPPORT");
 		return i4BytesWritten;
 	}
@@ -3934,43 +3971,43 @@ INT_32 priv_driver_rx_rate_info(P_ADAPTER_T prAdapter, IN char *pcCommand, IN in
 		nsts += 1;
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s", "Last RX Rate", " = ");
 
 	if (txmode == TX_RATE_MODE_CCK)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
 	else if (txmode == TX_RATE_MODE_OFDM)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, ", hw_rate_ofdm_str(rate));
 	else if ((txmode == TX_RATE_MODE_HTMIX) || (txmode == TX_RATE_MODE_HTGF))
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"MCS%d, ", rate);
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"NSS%d_MCS%d, ", nsts, rate);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s, ", frmode < 4 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
 
 	if (txmode == TX_RATE_MODE_CCK)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, ", rate < 4 ? "LP" : "SP");
 	else if (txmode == TX_RATE_MODE_OFDM)
 		;
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s,", sgi == 0 ? "LGI" : "SGI");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", stbc == 0 ? " " : " STBC, ");
 
 	if (mu) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, %s, %s (%d)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 			ldpc == 0 ? "BCC" : "LDPC", "MU", groupid);
 	} else {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, %s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 			ldpc == 0 ? "BCC" : "LDPC");
 	}
@@ -3994,38 +4031,38 @@ INT_32 priv_driver_tx_vector_info(IN char *pcCommand, IN int i4TotalLen,
 	txpwr = TX_VECTOR_GET_TX_PWR(prTxV);
 
 	if (prTxV->u4TxVector1 == 0xFFFFFFFF) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "TX Info", " = ", "N/A");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%s\n", "Last TX Rate", " = ", "N/A");
 	} else {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s", "TX Info", " = ");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last TX Rate", " = ");
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
 		else if (txmode == TX_RATE_MODE_OFDM)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", hw_rate_ofdm_str(rate));
 		else if ((txmode == TX_RATE_MODE_HTMIX) || (txmode == TX_RATE_MODE_HTGF))
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"MCS%d, ", rate);
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"NSS%d_MCS%d, ", nsts, rate);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s, ", frmode < 4 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
 
 		if (txmode == TX_RATE_MODE_CCK)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? "LP" : "SP");
 		else if (txmode == TX_RATE_MODE_OFDM)
 			;
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", sgi == 0 ? "LGI" : "SGI");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
 	}
@@ -4034,13 +4071,14 @@ INT_32 priv_driver_tx_vector_info(IN char *pcCommand, IN int i4TotalLen,
 }
 
 static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcCommand, IN int i4TotalLen,
-	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo, P_PARAM_GET_STA_STATISTICS prQueryStaStatistics, BOOLEAN fgResetCnt)
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo, P_PARAM_GET_STA_STATISTICS prQueryStaStatistics, BOOLEAN fgResetCnt,
+	UINT_32 u4StatGroup)
 {
 	INT_32 i4BytesWritten = 0;
-	PARAM_RSSI rRssi;
+	PARAM_RSSI rRssi = 0;
 	UINT_16 u2LinkSpeed;
 	UINT_32 u4Per, u4RxPer[ENUM_BAND_NUM], u4AmpduPer[ENUM_BAND_NUM], u4InstantPer;
-	UINT_8 ucDbdcIdx, ucStaIdx;
+	UINT_8 ucDbdcIdx, ucStaIdx, ucNss;
 	UINT_8 ucSkipAr;
 	static UINT_32 u4TotalTxCnt, u4TotalFailCnt;
 	static UINT_32 u4Rate1TxCnt, u4Rate1FailCnt;
@@ -4059,6 +4097,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
+	ucNss = prAdapter->rWifiVar.ucNSS;
 
 	if (ucSkipAr) {
 		u4TotalTxCnt += prHwWlanInfo->rWtblTxCounter.u2CurBwTxCnt +
@@ -4107,318 +4146,390 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4FcsError));
 	}
 
-	rRssi = RCPI_TO_dBm(prQueryStaStatistics->ucRcpi);
+	/* get Beacon RSSI */
+	rStatus = kalIoctl(prAdapter->prGlueInfo,
+			   wlanoidQueryRssi, &rRssi, sizeof(rRssi), TRUE, FALSE, FALSE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
+
 	u2LinkSpeed = (prQueryStaStatistics->u2LinkSpeed == 0) ? 0 : prQueryStaStatistics->u2LinkSpeed / 2;
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "\n\nSTA Stat:\n");
+	/* =========== Group 0x0001 =========== */
+	if (u4StatGroup & 0x0001) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "\n----- STA Stat (Group 0x01) -----\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "CurrTemperature", " = ",
-		prQueryStaStatistics->ucTemperature);
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CurrTemperature", " = ",
+			prQueryStaStatistics->ucTemperature);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Tx Total cnt", " = ", ucSkipAr ?
-		(u4TotalTxCnt):(prQueryStaStatistics->u4TransmitCount));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Tx Total cnt", " = ", ucSkipAr ?
+			(u4TotalTxCnt):(prQueryStaStatistics->u4TransmitCount));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Tx Fail Cnt", " = ", ucSkipAr ?
-		(u4TotalFailCnt):(prQueryStaStatistics->u4TransmitFailCount));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Tx Fail Cnt", " = ", ucSkipAr ?
+			(u4TotalFailCnt):(prQueryStaStatistics->u4TransmitFailCount));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Rate1 Tx Cnt", " = ", ucSkipAr ?
-		(u4Rate1TxCnt):(prQueryStaStatistics->u4Rate1TxCnt));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rate1 Tx Cnt", " = ", ucSkipAr ?
+			(u4Rate1TxCnt):(prQueryStaStatistics->u4Rate1TxCnt));
 
-	if (ucSkipAr)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "Rate1 Fail Cnt", " = ",
-			u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer/10, u4InstantPer%10);
-	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d%%\n", "Rate1 Fail Cnt", " = ",
-			prQueryStaStatistics->u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer);
-
-	if ((ucSkipAr) && (fgResetCnt)) {
-		u4TotalTxCnt = 0;
-		u4TotalFailCnt = 0;
-		u4Rate1TxCnt = 0;
-		u4Rate1FailCnt = 0;
-	}
-
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "----- MIB Info -----\n");
-
-	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"[DBDC_%d] :\n", ucDbdcIdx);
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "RX Success", " = ", au4RxMpduCnt[ucDbdcIdx]);
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "RX with CRC", " = ",
-			au4FcsError[ucDbdcIdx], u4RxPer[ucDbdcIdx]/10, u4RxPer[ucDbdcIdx]%10,
-			u4InstantRxPer[ucDbdcIdx]/10, u4InstantRxPer[ucDbdcIdx]%10);
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "RX drop FIFO full", " = ", au4RxFifoCnt[ucDbdcIdx]);
-#if 0
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "AMPDU Tx success", " = ", au4AmpduTxSfCnt[ucDbdcIdx]);
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d, PER = %d.%1d%%\n", "AMPDU Tx fail count", " = ",
-			(au4AmpduTxSfCnt[ucDbdcIdx] - au4AmpduTxAckSfCnt[ucDbdcIdx]),
-			u4AmpduPer[ucDbdcIdx]/10, u4AmpduPer[ucDbdcIdx]%10);
-#endif
-	}
-
-	if (fgResetCnt) {
-		kalMemZero(au4RxMpduCnt, sizeof(au4RxMpduCnt));
-		kalMemZero(au4FcsError, sizeof(au4RxMpduCnt));
-		kalMemZero(au4RxFifoCnt, sizeof(au4RxMpduCnt));
-		kalMemZero(au4AmpduTxSfCnt, sizeof(au4RxMpduCnt));
-		kalMemZero(au4AmpduTxAckSfCnt, sizeof(au4RxMpduCnt));
-	}
-
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "--------------------\n");
-
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d %d %d %d\n", "RSSI", " = ",
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi1),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi2),
-		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
-
-	rSwCtrlInfo.u4Data = 0;
-	rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
-
-	rStatus = kalIoctl(prAdapter->prGlueInfo,
-			   wlanoidQuerySwCtrlRead,
-			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
-
-	DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n", rStatus, rSwCtrlInfo.u4Data);
-	if (rStatus == WLAN_STATUS_SUCCESS) {
-		i2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
-		i2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s%d %d\n", "NOISE", " = ", i2Wf0AvgPwr, i2Wf1AvgPwr);
-	}
-
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "LinkSpeed", " = ", u2LinkSpeed);
-
-	/* Last TX Rate */
-	i4BytesWritten += priv_driver_tx_rate_info(pcCommand + i4BytesWritten,
-		i4TotalLen - i4BytesWritten, FALSE, prHwWlanInfo, prQueryStaStatistics);
-
-	/* Last RX Rate */
-	i4BytesWritten += priv_driver_rx_rate_info(prAdapter, pcCommand + i4BytesWritten,
-		i4TotalLen - i4BytesWritten, (UINT_8)(prHwWlanInfo->u4Index));
-
-	/* TxV */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "----- TXV Info -----\n");
-
-	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"[DBDC_%d] :\n", ucDbdcIdx);
-
-		i4BytesWritten += priv_driver_tx_vector_info(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, &prQueryStaStatistics->rTxVector[ucDbdcIdx]);
-
-		if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector1 == 0xFFFFFFFF)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "MAC TX Power", " = ", "N/A");
+		if (ucSkipAr)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "Rate1 Fail Cnt", " = ",
+				u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer/10, u4InstantPer%10);
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%ld.%1ld dBm\n", "MAC TX Power", " = ",
-				TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) >> 1,
-				5 * (TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) % 2));
-#if 0
-		if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector2 == 0xFFFFFFFF)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "Beamform Enable", " = ", "N/A");
-		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Beamform Enable", " = ",
-				TX_VECTOR_GET_BF_EN(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? TRUE : FALSE);
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d%%\n", "Rate1 Fail Cnt", " = ",
+				prQueryStaStatistics->u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer);
 
-		if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector4 == 0xFFFFFFFF) {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Dynamic BW", " = ", "N/A");
+		if ((ucSkipAr) && (fgResetCnt)) {
+			u4TotalTxCnt = 0;
+			u4TotalFailCnt = 0;
+			u4Rate1TxCnt = 0;
+			u4Rate1FailCnt = 0;
+		}
+	}
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Sounding Pkt", " = ", "N/A");
+	/* =========== Group 0x0002 =========== */
+	if (u4StatGroup & 0x0002) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "----- MIB Info (Group 0x02) -----\n");
+
+		if (!prAdapter->rWifiVar.fgDbDcModeEn) {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX Success", " = ", au4RxMpduCnt[ENUM_BAND_0]);
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "RX with CRC", " = ",
+				au4FcsError[ENUM_BAND_0], u4RxPer[ENUM_BAND_0]/10, u4RxPer[ENUM_BAND_0]%10,
+				u4InstantRxPer[ENUM_BAND_0]/10, u4InstantRxPer[ENUM_BAND_0]%10);
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX drop FIFO full", " = ", au4RxFifoCnt[ENUM_BAND_0]);
 		} else {
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Dynamic BW", " = ",
-				TX_VECTOR_GET_DYN_BW(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? TRUE : FALSE);
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"[DBDC_%d] :\n", ucDbdcIdx);
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Sounding Pkt", " = ",
-				TX_VECTOR_GET_NO_SOUNDING(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? FALSE : TRUE);
-		}
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "RX Success", " = ", au4RxMpduCnt[ucDbdcIdx]);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "RX with CRC", " = ",
+					au4FcsError[ucDbdcIdx], u4RxPer[ucDbdcIdx]/10, u4RxPer[ucDbdcIdx]%10,
+					u4InstantRxPer[ucDbdcIdx]/10, u4InstantRxPer[ucDbdcIdx]%10);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "RX drop FIFO full", " = ", au4RxFifoCnt[ucDbdcIdx]);
+#if 0
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "AMPDU Tx success", " = ", au4AmpduTxSfCnt[ucDbdcIdx]);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d, PER = %d.%1d%%\n", "AMPDU Tx fail count", " = ",
+					(au4AmpduTxSfCnt[ucDbdcIdx] - au4AmpduTxAckSfCnt[ucDbdcIdx]),
+					u4AmpduPer[ucDbdcIdx]/10, u4AmpduPer[ucDbdcIdx]%10);
 #endif
+			}
+		}
+
+		if (fgResetCnt) {
+			kalMemZero(au4RxMpduCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4FcsError, sizeof(au4RxMpduCnt));
+			kalMemZero(au4RxFifoCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4AmpduTxSfCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4AmpduTxAckSfCnt, sizeof(au4RxMpduCnt));
+		}
 	}
 
-    /* RX Reorder */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "------ RX Info -----\n");
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Rx reorder miss", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Rx reorder within", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Rx reorder ahead", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "Rx reorder behind", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+	/* =========== Group 0x0004 =========== */
+	if (u4StatGroup & 0x0004) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "----- Last Rx Info (Group 0x04) -----\n");
 
-	/* AR info */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "------ AR Info -----\n");
+		rSwCtrlInfo.u4Data = 0;
+		rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
 
-	if (!prQueryStaStatistics->ucSkipAr) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "RateTable", " = ", prQueryStaStatistics->ucArTableIdx < RATE_TBL_MAX ?
-			RATE_TBLE[prQueryStaStatistics->ucArTableIdx] : RATE_TBLE[RATE_TBL_MAX]);
+		rStatus = kalIoctl(prAdapter->prGlueInfo,
+				   wlanoidQuerySwCtrlRead,
+				   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
 
-		if (wlanGetStaIdxByWlanIdx(prAdapter, (UINT_8)(prHwWlanInfo->u4Index), &ucStaIdx) ==
-			WLAN_STATUS_SUCCESS){
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "2G Support 256QAM TX", " = ",
-				(prAdapter->arStaRec[ucStaIdx].u4Flags & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ?
-				1 : 0);
+		DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n", rStatus, rSwCtrlInfo.u4Data);
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			i2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
+			i2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+						"%-20s%s%d %d\n", "NOISE", " = ", i2Wf0AvgPwr, i2Wf1AvgPwr);
 		}
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d%%\n", "Rate1 instantPer", " = ", u4InstantPer);
+		/* Last RX Rate */
+		i4BytesWritten += priv_driver_rx_rate_info(prAdapter, pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, (UINT_8)(prHwWlanInfo->u4Index));
 
-		if (prQueryStaStatistics->ucAvePer == 0xFF) {
-#if 0
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "average RSSI", " = ", "N/A");
+		/* Last RX RSSI */
+		i4BytesWritten += priv_driver_last_rx_rssi(prAdapter, pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, (UINT_8)(prHwWlanInfo->u4Index));
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Rate1 AvePer", " = ", "N/A");
-#endif
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Train Down", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Train Up", " = ", "N/A");
-#if 0
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Highest Rate Cnt", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Lowest Rate Cnt", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "SGI Pass Cnt", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR State Prev", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR State Curr", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR Action Type", " = ", "N/A");
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Rate Entry Idx", " = ", "N/A");
-#endif
-		} else {
-#if 0
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "average RSSI", " = ", rRssi);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d%%\n", "Rate1 AvePer", " = ", prQueryStaStatistics->ucAvePer);
-#endif
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d -> %d\n", "Train Down", " = ",
-				(prQueryStaStatistics->u2TrainDown) & BITS(0, 7),
-				((prQueryStaStatistics->u2TrainDown) >> 8) & BITS(0, 7));
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d -> %d\n", "Train Up", " = ",
-				(prQueryStaStatistics->u2TrainUp) & BITS(0, 7),
-				((prQueryStaStatistics->u2TrainUp) >> 8) & BITS(0, 7));
-#if 0
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Highest Rate Cnt", " = ", prQueryStaStatistics->ucHighestRateCnt);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Lowest Rate Cnt", " = ", prQueryStaStatistics->ucLowestRateCnt);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "SGI Pass Cnt", " = ", prQueryStaStatistics->ucTxSgiDetectPassCnt);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR State Prev", " = ",
-				prQueryStaStatistics->ucArStatePrev < 3 ?
-				AR_STATE[prQueryStaStatistics->ucArStatePrev] : AR_STATE[3]);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR State Curr", " = ",
-				prQueryStaStatistics->ucArStateCurr < 3 ?
-				AR_STATE[prQueryStaStatistics->ucArStateCurr] : AR_STATE[3]);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "AR Action Type", " = ",
-				prQueryStaStatistics->ucArActionType < 16 ?
-				AR_ACTION[prQueryStaStatistics->ucArActionType] : AR_ACTION[16]);
-
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d -> %d\n", "Rate Entry Idx", " = ",
-				(prQueryStaStatistics->ucRateEntryIdxPrev == AR_RATE_ENTRY_INDEX_NULL) ?
-				(prQueryStaStatistics->ucRateEntryIdx) : (prQueryStaStatistics->ucRateEntryIdxPrev),
-				prQueryStaStatistics->ucRateEntryIdx);
-#endif
-		}
-
-		if (prQueryStaStatistics->fgIsForceTxStream == 0)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%s\n", "Force Tx Stream", " = ", "N/A");
+		/* Last RX Resp RSSI */
+		if (ucNss > 2)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d %d %d %d\n", "Tx Response RSSI", " = ",
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi1),
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi2),
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Force Tx Stream", " = ", prQueryStaStatistics->fgIsForceTxStream);
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d %d\n", "Tx Response RSSI", " = ",
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
+				RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi1));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Force SE off", " = ", prQueryStaStatistics->fgIsForceSeOff);
+		/* Last Beacon RSSI */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "Beacon RSSI", " = ", rRssi);
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-20s%s%d\n", "CBRN", " = ", prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
+	/* =========== Group 0x0008 =========== */
+	if (u4StatGroup & 0x0008) {
+		/* TxV */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "----- Last TX Info (Group 0x08) -----\n");
 
-	/* Rate1~Rate8 */
-	i4BytesWritten += priv_driver_tx_rate_info(pcCommand + i4BytesWritten,
-		i4TotalLen - i4BytesWritten, TRUE, prHwWlanInfo, prQueryStaStatistics);
+		if (!prAdapter->rWifiVar.fgDbDcModeEn) {
+			i4BytesWritten += priv_driver_tx_vector_info(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, &prQueryStaStatistics->rTxVector[ENUM_BAND_0]);
 
-    /* Tx Agg */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", "------ TX AGG -----\n");
+			if (prQueryStaStatistics->rTxVector[ENUM_BAND_0].u4TxVector1 == 0xFFFFFFFF)
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Chip Out TX Power", " = ", "N/A");
+			else
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%ld.%1ld dBm\n", "Chip Out TX Power", " = ",
+					TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ENUM_BAND_0]) >> 1,
+					5 * (TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ENUM_BAND_0]) % 2));
+		} else {
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"[DBDC_%d] :\n", ucDbdcIdx);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%-12s%s", "Range:", "1     2~5     6~15    16~22    23~33    34~49    50~57    58~64\n");
+				i4BytesWritten += priv_driver_tx_vector_info(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, &prQueryStaStatistics->rTxVector[ucDbdcIdx]);
 
-	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"DBDC%d:", ucDbdcIdx);
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%7d%8d%9d%9d%9d%9d%9d%9d\n",
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange1AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange2AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange3AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange4AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange5AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange6AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange7AmpduCnt,
-			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange8AmpduCnt);
+				if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector1 == 0xFFFFFFFF)
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%s\n", "Chip Out TX Power", " = ", "N/A");
+				else
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%ld.%1ld dBm\n", "ChipOut TX Power", " = ",
+					TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) >> 1,
+					5 * (TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) % 2));
+#if 0
+				if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector2 == 0xFFFFFFFF)
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%s\n", "Beamform Enable", " = ", "N/A");
+				else
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%d\n", "Beamform Enable", " = ",
+					TX_VECTOR_GET_BF_EN(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? 1 : 0);
+
+				if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector4 == 0xFFFFFFFF) {
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					"%-20s%s%s\n", "Dynamic BW", " = ", "N/A");
+
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%s\n", "Sounding Pkt", " = ", "N/A");
+				} else {
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%d\n", "Dynamic BW", " = ",
+					TX_VECTOR_GET_DYN_BW(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? 1 : 0);
+
+					i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%-20s%s%d\n", "Sounding Pkt", " = ",
+					TX_VECTOR_GET_NO_SOUNDING(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? 1 : 0);
+				}
+#endif
+			}
+		}
+	}
+
+	/* =========== Group 0x0010 =========== */
+	if (u4StatGroup & 0x0010) {
+	    /* RX Reorder */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "------ RX Reorder (Group 0x10) -----\n");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rx reorder miss", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rx reorder within", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rx reorder ahead", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rx reorder behind", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+	}
+
+	/* =========== Group 0x0020 =========== */
+	if (u4StatGroup & 0x0020) {
+		/* AR info */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "------ AR Info (Group 0x20) -----\n");
+
+		/* Last TX Rate */
+		i4BytesWritten += priv_driver_tx_rate_info(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, FALSE, prHwWlanInfo, prQueryStaStatistics);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "LinkSpeed", " = ", u2LinkSpeed);
+
+		if (!prQueryStaStatistics->ucSkipAr) {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "RateTable", " = ", prQueryStaStatistics->ucArTableIdx < RATE_TBL_MAX ?
+				RATE_TBLE[prQueryStaStatistics->ucArTableIdx] : RATE_TBLE[RATE_TBL_MAX]);
+
+			if (wlanGetStaIdxByWlanIdx(prAdapter, (UINT_8)(prHwWlanInfo->u4Index), &ucStaIdx) ==
+				WLAN_STATUS_SUCCESS){
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "2G Support 256QAM TX", " = ",
+					(prAdapter->arStaRec[ucStaIdx].u4Flags & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ?
+					1 : 0);
+			}
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d%%\n", "Rate1 instantPer", " = ", u4InstantPer);
+
+			if (prQueryStaStatistics->ucAvePer == 0xFF) {
+#if 0
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "average RSSI", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Rate1 AvePer", " = ", "N/A");
+#endif
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Train Down", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Train Up", " = ", "N/A");
+#if 0
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Highest Rate Cnt", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Lowest Rate Cnt", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "SGI Pass Cnt", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR State Prev", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR State Curr", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR Action Type", " = ", "N/A");
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Rate Entry Idx", " = ", "N/A");
+#endif
+			} else {
+#if 0
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "average RSSI", " = ", rRssi);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d%%\n", "Rate1 AvePer", " = ", prQueryStaStatistics->ucAvePer);
+#endif
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d -> %d\n", "Train Down", " = ",
+					(prQueryStaStatistics->u2TrainDown) & BITS(0, 7),
+					((prQueryStaStatistics->u2TrainDown) >> 8) & BITS(0, 7));
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d -> %d\n", "Train Up", " = ",
+					(prQueryStaStatistics->u2TrainUp) & BITS(0, 7),
+					((prQueryStaStatistics->u2TrainUp) >> 8) & BITS(0, 7));
+#if 0
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "Highest Rate Cnt", " = ",
+					prQueryStaStatistics->ucHighestRateCnt);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "Lowest Rate Cnt", " = ", prQueryStaStatistics->ucLowestRateCnt);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "SGI Pass Cnt", " = ",
+					prQueryStaStatistics->ucTxSgiDetectPassCnt);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR State Prev", " = ",
+					prQueryStaStatistics->ucArStatePrev < 3 ?
+					AR_STATE[prQueryStaStatistics->ucArStatePrev] : AR_STATE[3]);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR State Curr", " = ",
+					prQueryStaStatistics->ucArStateCurr < 3 ?
+					AR_STATE[prQueryStaStatistics->ucArStateCurr] : AR_STATE[3]);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "AR Action Type", " = ",
+					prQueryStaStatistics->ucArActionType < 16 ?
+					AR_ACTION[prQueryStaStatistics->ucArActionType] : AR_ACTION[16]);
+
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d -> %d\n", "Rate Entry Idx", " = ",
+					(prQueryStaStatistics->ucRateEntryIdxPrev == AR_RATE_ENTRY_INDEX_NULL) ?
+					(prQueryStaStatistics->ucRateEntryIdx) :
+					(prQueryStaStatistics->ucRateEntryIdxPrev),
+					prQueryStaStatistics->ucRateEntryIdx);
+#endif
+			}
+
+			if (prQueryStaStatistics->fgIsForceTxStream == 0)
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Force Tx Stream", " = ", "N/A");
+			else
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "Force Tx Stream", " = ",
+					prQueryStaStatistics->fgIsForceTxStream);
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "Force SE off", " = ", prQueryStaStatistics->fgIsForceSeOff);
+		}
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CBRN", " = ", prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
+
+		/* Rate1~Rate8 */
+		i4BytesWritten += priv_driver_tx_rate_info(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, TRUE, prHwWlanInfo, prQueryStaStatistics);
+	}
+
+	/* =========== Group 0x0040 =========== */
+	if (u4StatGroup & 0x0040) {
+	    /* Tx Agg */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", "------ TX AGG (Group 0x40) -----\n");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-12s%s", "Range:", "1     2~5     6~15    16~22    23~33    34~49    50~57    58~64\n");
+
+		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"DBDC%d:", ucDbdcIdx);
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%7d%8d%9d%9d%9d%9d%9d%9d\n",
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange1AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange2AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange3AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange4AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange5AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange6AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange7AmpduCnt,
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange8AmpduCnt);
+		}
 	}
 
 	return i4BytesWritten;
@@ -4429,7 +4540,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_ADAPTER_T prAdapter = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-	UINT_32 u4BufLen = 0;
+	UINT_32 u4BufLen = 0, u4Ret, u4StatGroup = 0xFFFFFFFF;
 	INT_32 i4BytesWritten = 0;
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
@@ -4453,24 +4564,38 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= 3) {
-		if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0) {
-			wlanHwAddrToBin(apcArgv[2], &aucMacAddr[0]);
-			fgResetCnt = TRUE;
-		} else if (strnicmp(apcArgv[2], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0) {
-			wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
-			fgResetCnt = TRUE;
+		if (strnicmp(apcArgv[1], CMD_STAT_GROUP_SEL, strlen(CMD_STAT_GROUP_SEL)) == 0) {
+			u4Ret = kalkStrtou32(apcArgv[2], 0, &(u4StatGroup));
+			if (u4Ret)
+				DBGLOG(REQ, LOUD, "parse get_mcr error (Address) u4Ret=%d\n", u4Ret);
+			if (u4StatGroup == 0)
+				u4StatGroup = 0xFFFFFFFF;
+
+			if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
+				ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+			else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex))
+				return i4BytesWritten;
 		} else {
-			wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
-			fgResetCnt = FALSE;
+			if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0) {
+				wlanHwAddrToBin(apcArgv[2], &aucMacAddr[0]);
+				fgResetCnt = TRUE;
+			} else if (strnicmp(apcArgv[2], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0) {
+				wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
+				fgResetCnt = TRUE;
+			} else {
+				wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
+				fgResetCnt = FALSE;
+			}
+
+			if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, &aucMacAddr[0], &ucWlanIndex))
+				return i4BytesWritten;
 		}
 
-		if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, &aucMacAddr[0], &ucWlanIndex))
-			return i4BytesWritten;
 	} else {
 		/* Get AIS AP address for no argument */
 		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
 			ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
-		else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex)) /* try get a peer */
+		else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex))
 			return i4BytesWritten;
 
 		if (i4Argc == 2) {
@@ -4526,7 +4651,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 
 	if (pucMacAddr) {
 		i4BytesWritten = priv_driver_dump_stat_info(prAdapter, pcCommand, i4TotalLen,
-			prHwWlanInfo, prQueryStaStatistics, fgResetCnt);
+			prHwWlanInfo, prQueryStaStatistics, fgResetCnt, u4StatGroup);
 	}
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -4571,184 +4696,184 @@ static INT_32 priv_driver_dump_stat2_info(P_ADAPTER_T prAdapter, IN char *pcComm
 		prUmacStat2GetInfo->u2PseSrvPgLmac2Group5 +
 		prUmacStat2GetInfo->u2PseSrvPgPleGroup6;
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- Stat2 Info -----\n");
 
 
 	/* Rev Page number Info. */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PLE Reservation Page Info. -----\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Hif0 Group0 RevPage", " = ",
 		prUmacStat2GetInfo->u2PleRevPgHif0Group0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Cpu Group2 RevPage", " = ",
 		prUmacStat2GetInfo->u2PleRevPgCpuGroup2);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Total RevPage", " = ",
 		u2PleTotalRevPage);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PLE Source Page Info. ----------\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Hif0 Group0 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PleSrvPgHif0Group0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Cpu Group2 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PleSrvPgCpuGroup2);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Ple Total SrcPage", " = ",
 		u2PleTotalSrcPage);
 
 	/* umac MISC Info. */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PLE Misc Info. -----------------\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "ple Total Page Number", " = ",
 		prUmacStat2GetInfo->u2PleTotalPageNum);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "ple Free Page Number", " = ",
 		prUmacStat2GetInfo->u2PleFreePageNum);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "ple FFA Page Number", " = ",
 		prUmacStat2GetInfo->u2PleFfaNum);
 
 	/* PSE Info. */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PSE Reservation Page Info. -----\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Hif0 Group0 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgHif0Group0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Hif1 Group1 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgHif1Group1);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Cpu Group2 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgCpuGroup2);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac0 Group3 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgLmac0Group3);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac1 Group4 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgLmac1Group4);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac2 Group5 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgLmac2Group5);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Ple Group6 RevPage", " = ",
 		prUmacStat2GetInfo->u2PseRevPgPleGroup6);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Total RevPage", " = ",
 		u2PseTotalRevPage);
 
 	/* PSE Info. */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PSE Source Page Info. ----------\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Hif0 Group0 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgHif0Group0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Hif1 Group1 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgHif1Group1);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Cpu Group2 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgCpuGroup2);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac0 Group3 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgLmac0Group3);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac1 Group4 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgLmac1Group4);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Lmac2 Group5 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgLmac2Group5);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Ple Group6 SrcPage", " = ",
 		prUmacStat2GetInfo->u2PseSrvPgPleGroup6);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "Pse Total SrcPage", " = ",
 		u2PseTotalSrcPage);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n----- PSE Misc Info. -----------------\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "pse Total Page Number", " = ",
 		prUmacStat2GetInfo->u2PseTotalPageNum);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "pse Free Page Number", " = ",
 		prUmacStat2GetInfo->u2PseFreePageNum);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-26s%s%d\n", "pse FFA Page Number", " = ",
 		prUmacStat2GetInfo->u2PseFfaNum);
 
 
 	/* driver info */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n\n----- DRV Stat -----------------------\n\n");
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Pending Data", " = ",
 				prQueryDrvStatistics->i4TxPendingFrameNum);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Pending Sec", " = ",
 				prQueryDrvStatistics->i4TxPendingSecurityFrameNum);
 #if 0
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%s\n", "Tx Pending Cmd Number", " = ",
 				prQueryDrvStatistics->i4TxPendingCmdNum);
 #endif
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Tx Pending For-pkt Number", " = ",
 				prQueryDrvStatistics->i4PendingFwdFrameCount);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "MsduInfo Available Number", " = ",
 				prQueryDrvStatistics->u4MsduNumElem);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "MgmtTxRing Pending Number", " = ",
 				prQueryDrvStatistics->u4TxMgmtTxringQueueNumElem);
 
 	/* Driver Rx Info. */
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Rx Free Sw Rfb Number", " = ",
 				prQueryDrvStatistics->u4RxFreeSwRfbMsduNumElem);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Rx Received Sw Rfb Number", " = ",
 				prQueryDrvStatistics->u4RxReceivedRfbNumElem);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%-26s%s%d\n", "Rx Indicated Sw Rfb Number", " = ",
 				prQueryDrvStatistics->u4RxIndicatedNumElem);
 
@@ -4897,98 +5022,98 @@ static INT_32 priv_driver_dump_rx_stat_info(P_ADAPTER_T prAdapter, IN char *pcCo
 		fgSkipRxV = TRUE;
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%s", "\n\nRX Stat:\n");
 #if 0
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "PER0", " = ",
 		g_HqaRxStat.PER0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "PER1", " = ",
 		g_HqaRxStat.PER1);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "RX OK0", " = ",
 		g_HqaRxStat.RXOK0);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "RX OK1", " = ",
 		g_HqaRxStat.RXOK1);
 #endif
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "MAC Mdrdy0", " = ",
 		au4MacMdrdy[ENUM_BAND_0]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "MAC Mdrdy1", " = ",
 		au4MacMdrdy[ENUM_BAND_1]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "FCS Err0", " = ",
 		au4FcsError[ENUM_BAND_0]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "FCS Err1", " = ",
 		au4FcsError[ENUM_BAND_1]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK PD Cnt B0", " = ",
 		htonl(g_HqaRxStat.CCK_PD));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK PD Cnt B1", " = ",
 		htonl(g_HqaRxStat.CCK_PD_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK SIG Err B0", " = ",
 		htonl(g_HqaRxStat.CCK_SIG_Err));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK SIG Err B1", " = ",
 		htonl(g_HqaRxStat.CCK_SIG_Err_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM PD Cnt B0", " = ",
 		htonl(g_HqaRxStat.OFDM_PD));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM PD Cnt B1", " = ",
 		htonl(g_HqaRxStat.OFDM_PD_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM TAG Error", " = ",
 		htonl(g_HqaRxStat.OFDM_TAG_Err));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK SFD Err B0", " = ",
 		htonl(g_HqaRxStat.CCK_SFD_Err));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK SFD Err B1", " = ",
 		htonl(g_HqaRxStat.CCK_SFD_Err_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM SIG Err B0", " = ",
 		htonl(g_HqaRxStat.OFDM_SIG_Err));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM SIG Err B1", " = ",
 		htonl(g_HqaRxStat.OFDM_SIG_Err_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK FCS Err B0", " = ",
 		htonl(g_HqaRxStat.FCSErr_CCK));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK FCS Err B1", " = ",
 		htonl(g_HqaRxStat.CCK_FCS_Err_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM FCS Err B0", " = ",
 		htonl(g_HqaRxStat.FCSErr_OFDM));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM FCS Err B1", " = ",
 		htonl(g_HqaRxStat.OFDM_FCS_Err_Band1));
 
@@ -4996,44 +5121,44 @@ static INT_32 priv_driver_dump_rx_stat_info(P_ADAPTER_T prAdapter, IN char *pcCo
 		u4FAGCRssiIBR0 = (u4RxVector2 & BITS(16, 23)) >> 16;
 		u4FAGCRssiWBR0 = (u4RxVector2 & BITS(24, 31)) >> 24;
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "FAGC RSSI W", " = ",
 			(u4FAGCRssiWBR0 >= 128) ? (u4FAGCRssiWBR0 - 256) : (u4FAGCRssiWBR0));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "FAGC RSSI I", " = ",
 			(u4FAGCRssiIBR0 >= 128) ? (u4FAGCRssiIBR0 - 256) : (u4FAGCRssiIBR0));
 	} else{
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "FAGC RSSI W", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "FAGC RSSI I", " = ", "N/A");
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK MDRDY B0", " = ",
 		htonl(g_HqaRxStat.PhyMdrdyCCK));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "CCK MDRDY B1", " = ",
 		htonl(g_HqaRxStat.PHY_CCK_MDRDY_Band1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM MDRDY B0", " = ",
 		htonl(g_HqaRxStat.PhyMdrdyOFDM));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OFDM MDRDY B1", " = ",
 		htonl(g_HqaRxStat.PHY_OFDM_MDRDY_Band1));
 
 	if (!fgSkipRxV) {
 #if 0
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Driver RX Cnt0", " = ",
 			htonl(g_HqaRxStat.DriverRxCount));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Driver RX Cnt1", " = ",
 			htonl(g_HqaRxStat.DriverRxCount1));
 #endif
@@ -5048,112 +5173,112 @@ static INT_32 priv_driver_dump_rx_stat_info(P_ADAPTER_T prAdapter, IN char *pcCo
 			u4Foe = (u4Foe * foe_const) >> 15;
 		}
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Freq Offset From RX", " = ", u4Foe);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX SNR (dB)", " = ",
 			((u4RxVector4 & BITS(26, 31)) >> 26) - 16);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RCPI RX0", " = ",
 			u4RxVector3 & BITS(0, 7));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RCPI RX1", " = ",
 			(u4RxVector3 & BITS(8, 15)) >> 8);
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RCPI RX2", " = ",
 			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ? (0) : ((u4RxVector3 & BITS(16, 23)) >> 16));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RCPI RX3", " = ",
 			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ? (0) : ((u4RxVector3 & BITS(24, 31)) >> 24));
 	} else{
 #if 0
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "Driver RX Cnt0", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "Driver RX Cnt1", " = ", "N/A");
 #endif
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "Freq Offset From RX", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RX SNR (dB)", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RCPI RX0", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RCPI RX1", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RCPI RX2", " = ", "N/A");
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RCPI RX3", " = ", "N/A");
 	}
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI IB R0", " = ",
 		htonl(g_HqaRxStat.InstRssiIBR0));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI WB R0", " = ",
 		htonl(g_HqaRxStat.InstRssiWBR0));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI IB R1", " = ",
 		htonl(g_HqaRxStat.InstRssiIBR1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI WB R1", " = ",
 		htonl(g_HqaRxStat.InstRssiWBR1));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI IB R2", " = ",
 		htonl(g_HqaRxStat.InstRssiIBR2));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI WB R2", " = ",
 		htonl(g_HqaRxStat.InstRssiWBR2));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI IB R3", " = ",
 		htonl(g_HqaRxStat.InstRssiIBR3));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Inst RSSI WB R3", " = ",
 		htonl(g_HqaRxStat.InstRssiWBR3));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "ACI Hit Lower", " = ",
 		htonl(g_HqaRxStat.ACIHitLower));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "ACI Hit Higher", " = ",
 		htonl(g_HqaRxStat.ACIHitUpper));
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OutOf Resource Pkt0", " = ",
 		au4OutOfResource[ENUM_BAND_0]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "OutOf Resource Pkt1", " = ",
 		au4OutOfResource[ENUM_BAND_1]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Len Mismatch Cnt B0", " = ",
 		au4LengthMismatch[ENUM_BAND_0]);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Len Mismatch Cnt B1", " = ",
 		au4LengthMismatch[ENUM_BAND_1]);
 #if 0
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "MU RX Cnt", " = ",
 		htonl(g_HqaRxStat.MRURxCount));
 #endif
@@ -5320,37 +5445,37 @@ static int priv_driver_get_sta_curr_ar_rate(IN struct net_device *prNetDev, IN c
 
 	/* Mode: [CCK | OFDM | HT | VHT] */
 	if (txmode == TX_RATE_MODE_CCK)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"CCK-");
 	else if (txmode == TX_RATE_MODE_OFDM)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"OFDM-");
 	else if (txmode == TX_RATE_MODE_HTGF || txmode == TX_RATE_MODE_HTMIX)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"HT-");
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"VHT-");
 	/* Spatial Streams: [1SS | 2SS | N/A] */
 	if (prQueryStaStatistics->ucArTableIdx == RATE_TBL_N_2SS ||
 		prQueryStaStatistics->ucArTableIdx == RATE_TBL_AC_2SS)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"2SS-");
 	else if (prQueryStaStatistics->ucArTableIdx == RATE_TBL_N ||
 		prQueryStaStatistics->ucArTableIdx == RATE_TBL_AC)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"1SS-");
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"N/A-");
 
 	/* BW mode: [BW20 | BW40 | BW80 | BW160/BW8080] */
 	if ((txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM))
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s-", HW_TX_RATE_BW[0]);
 	else
 		if (idx > prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN)
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			  i4TotalLen - i4BytesWritten, "%s-",
 			  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 				(prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability > BW_20 ?
@@ -5358,17 +5483,17 @@ static int priv_driver_get_sta_curr_ar_rate(IN struct net_device *prNetDev, IN c
 				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]) :
 				HW_TX_RATE_BW[4]);
 		else
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			  i4TotalLen - i4BytesWritten, "%s-",
 			  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 				HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] :
 				HW_TX_RATE_BW[4]);
 	/* GI mode: [LGI | SGI | X] */
 	if (txmode == TX_RATE_MODE_CCK || txmode == TX_RATE_MODE_OFDM)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"N/A-");
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s-", priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap) == 0 ?
 			"LGI" : "SGI");
 	/* Rate index: [1M | 2M | 5.5M | 11M |
@@ -5376,13 +5501,13 @@ static int priv_driver_get_sta_curr_ar_rate(IN struct net_device *prNetDev, IN c
 	 *				MCS# ]
 	 */
 	if (txmode == TX_RATE_MODE_CCK)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
 	else if (txmode == TX_RATE_MODE_OFDM)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", hw_rate_ofdm_str(rate));
 	else
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"MCS%d", rate);
 
 out_get_curr_ar_rate:
@@ -5455,7 +5580,7 @@ static int priv_driver_set_acl_policy(IN struct net_device *prNetDev, IN char *p
 
 	DBGLOG(REQ, TRACE, "ucBssIdx[%hhu] ACL Policy=%d\n", ucBssIdx, prBssInfo->rACL.ePolicy);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"ucBssIdx[%hhu] ACL Policy=%d\n", ucBssIdx, prBssInfo->rACL.ePolicy);
 
 	/* check if the change in ACL affects any existent association */
@@ -5564,7 +5689,7 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev, IN char *pc
 	DBGLOG(REQ, TRACE, "add mac addr [" MACSTR "] to ACL(%d).\n",
 		MAC2STR(prBssInfo->rACL.rEntry[i-1].aucAddr), i);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"add mac addr [" MACSTR "] to ACL(%d)\n", MAC2STR(prBssInfo->rACL.rEntry[i-1].aucAddr), i);
 
 	/* Check if the change in ACL affects any existent association. */
@@ -5635,7 +5760,7 @@ static int priv_driver_del_acl_entry(IN struct net_device *prNetDev, IN char *pc
 			memset(&prBssInfo->rACL.rEntry[i], 0x00, sizeof(PARAM_CUSTOM_ACL_ENTRY));
 			DBGLOG(REQ, TRACE, "delete this mac [" MACSTR "]\n", MAC2STR(aucMacAddr));
 
-			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"delete this mac [" MACSTR "] from ACL(%d)\n", MAC2STR(aucMacAddr), i+1);
 			break;
 		}
@@ -5697,13 +5822,13 @@ static int priv_driver_show_acl_entry(IN struct net_device *prNetDev, IN char *p
 	DBGLOG(REQ, TRACE, "ACL Policy = %d\n", prBssInfo->rACL.ePolicy);
 	DBGLOG(REQ, TRACE, "Total ACLs = %d\n", prBssInfo->rACL.u4Num);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"ACL Policy = %d, Total ACLs = %d\n", prBssInfo->rACL.ePolicy, prBssInfo->rACL.u4Num);
 
 	for (i = 0; i < prBssInfo->rACL.u4Num; i++) {
 		DBGLOG(REQ, TRACE, "ACL(%d): [" MACSTR "]\n", i+1, MAC2STR(prBssInfo->rACL.rEntry[i].aucAddr));
 
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"ACL(%d): [" MACSTR "]\n", i+1, MAC2STR(prBssInfo->rACL.rEntry[i].aucAddr));
 	}
 
@@ -5752,7 +5877,7 @@ static int priv_driver_clear_acl_entry(IN struct net_device *prNetDev, IN char *
 	DBGLOG(REQ, TRACE, "ACL Policy = %d\n", prBssInfo->rACL.ePolicy);
 	DBGLOG(REQ, TRACE, "Total ACLs = %d\n", prBssInfo->rACL.u4Num);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"ACL Policy = %d, Total ACLs = %d\n", prBssInfo->rACL.ePolicy, prBssInfo->rACL.u4Num);
 
 	/* check if the change in ACL affects any existent association */

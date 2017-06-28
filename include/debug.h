@@ -312,7 +312,7 @@ typedef enum _ENUM_DBG_ASSERT_PATH_T {
 #define LOGBUF(_pucBuf, _maxLen, _curLen, _Fmt, ...) \
 	do { \
 		if (_pucBuf) \
-			(_curLen) += kalSnprintf((_pucBuf) + (_curLen), (_maxLen) - (_curLen), _Fmt, ##__VA_ARGS__); \
+			(_curLen) += kalScnprintf((_pucBuf) + (_curLen), (_maxLen) - (_curLen), _Fmt, ##__VA_ARGS__); \
 		else \
 			DBGLOG(SW4, INFO, _Fmt, ##__VA_ARGS__); \
 	} while (0)
