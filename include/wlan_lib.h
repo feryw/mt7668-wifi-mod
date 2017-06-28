@@ -1361,4 +1361,6 @@ INT_32 wlanGetFileContent(P_ADAPTER_T prAdapter,
 	const PUINT_8 pcFileName, PUINT_8 pucBuf,
 	UINT_32 u4MaxFileLen, PUINT_32 pu4ReadFileLen, BOOL bReqFw);
 
-
+#if CFG_SUPPORT_ANT_SELECT
+WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter);
+#endif

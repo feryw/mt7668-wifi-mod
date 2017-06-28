@@ -9404,3 +9404,30 @@ INT_32 wlanGetFileContent(P_ADAPTER_T prAdapter,
 				u4MaxFileLen, pu4ReadFileLen);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is to update some info before connected,
+*        some decision need some info before bss info update
+*
+* @param prAdapter      Pointer of Adapter Data Structure
+*
+* @return WLAN_STATUS_SUCCESS
+*/
+/*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_ANT_SELECT
+WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter)
+{
+	UINT_32 u4BufLen = 0;
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	rSwCtrlInfo.u4Id = 0xa0640001;
+	rSwCtrlInfo.u4Data = prAdapter->rWifiVar.ucNSS;
+
+	return kalIoctl(prGlueInfo,
+					wlanoidSetSwCtrlWrite,
+					&rSwCtrlInfo, sizeof(rSwCtrlInfo),
+					FALSE, FALSE, TRUE, &u4BufLen);
+}
+#endif
+

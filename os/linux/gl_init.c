@@ -2451,6 +2451,11 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
 
+#if CFG_SUPPORT_ANT_SELECT
+    /* update some info needed before connected */
+		wlanUpdateExtInfo(prGlueInfo->prAdapter);
+#endif
+
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
 		DBGLOG(INIT, TRACE, "init MET procfs...\n");
 		i4Status = kalMetInitProcfs(prGlueInfo);
