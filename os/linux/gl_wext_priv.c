@@ -4558,8 +4558,8 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	UINT_8 aucMacAddr[MAC_ADDR_LEN];
 	UINT_8 ucWlanIndex;
 	PUINT_8 pucMacAddr = NULL;
-	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo;
-	P_PARAM_GET_STA_STATISTICS prQueryStaStatistics;
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo = NULL;
+	P_PARAM_GET_STA_STATISTICS prQueryStaStatistics = NULL;
 	BOOLEAN fgResetCnt = FALSE;
 	BOOLEAN fgRxCCSel = FALSE;
 
@@ -4582,10 +4582,12 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 			if (u4StatGroup == 0)
 				u4StatGroup = 0xFFFFFFFF;
 
-			if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
+			if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP) {
 				ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
-			else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex))
-				return i4BytesWritten;
+			} else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex)) {
+				DBGLOG(REQ, INFO, "Can't find the wlan index of MAC addr %pM!\n", aucMacAddr);
+				goto out;
+			}
 		} else {
 			if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0) {
 				wlanHwAddrToBin(apcArgv[2], &aucMacAddr[0]);
@@ -4598,16 +4600,20 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 				fgResetCnt = FALSE;
 			}
 
-			if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, &aucMacAddr[0], &ucWlanIndex))
-				return i4BytesWritten;
+			if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, &aucMacAddr[0], &ucWlanIndex)) {
+				DBGLOG(REQ, INFO, "Can't find the wlan index of MAC addr %pM!\n", aucMacAddr);
+				goto out;
+			}
 		}
 
 	} else {
 		/* Get AIS AP address for no argument */
-		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
+		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP) {
 			ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
-		else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex))
-			return i4BytesWritten;
+		} else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL, &ucWlanIndex)) {
+			DBGLOG(REQ, INFO, "No connected peer found!\n");
+			goto out;
+		}
 
 		if (i4Argc == 2) {
 			if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0)
@@ -4618,8 +4624,11 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	}
 
 	prHwWlanInfo = (P_PARAM_HW_WLAN_INFO_T)kalMemAlloc(sizeof(PARAM_HW_WLAN_INFO_T), VIR_MEM_TYPE);
-	if (!prHwWlanInfo)
-		return -1;
+	if (!prHwWlanInfo) {
+		DBGLOG(REQ, ERROR, "Allocate memory for prHwWlanInfo failed!\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 
 	prHwWlanInfo->u4Index = ucWlanIndex;
 	if (fgRxCCSel == TRUE)
@@ -4635,19 +4644,31 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 					prHwWlanInfo, sizeof(PARAM_HW_WLAN_INFO_T), TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
-		return -1;
+		DBGLOG(REQ, ERROR, "Query prHwWlanInfo failed!\n");
+		i4BytesWritten = -1;
+		goto out;
 	}
 
 	/* Get Statistics info */
 	prQueryStaStatistics =
 		(P_PARAM_GET_STA_STATISTICS)kalMemAlloc(sizeof(PARAM_GET_STA_STA_STATISTICS), VIR_MEM_TYPE);
-	if (!prQueryStaStatistics)
-		return -1;
+	if (!prQueryStaStatistics) {
+		DBGLOG(REQ, ERROR, "Allocate memory for prQueryStaStatistics failed!\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 
 	prQueryStaStatistics->ucResetCounter = fgResetCnt;
 
 	pucMacAddr = wlanGetStaAddrByWlanIdx(prGlueInfo->prAdapter, ucWlanIndex);
+
+	if (!pucMacAddr) {
+		DBGLOG(REQ, ERROR, "Couldn't find the MAC addr of WlanIndex %d!\n",
+			ucWlanIndex);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
 	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, pucMacAddr);
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -4656,8 +4677,9 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 					sizeof(PARAM_GET_STA_STA_STATISTICS), TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		kalMemFree(prQueryStaStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_STA_STA_STATISTICS));
-		return -1;
+		DBGLOG(REQ, ERROR, "Query prQueryStaStatistics failed!\n");
+		i4BytesWritten = -1;
+		goto out;
 	}
 
 	if (pucMacAddr) {
@@ -4666,9 +4688,12 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	}
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
-	kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
-	kalMemFree(prQueryStaStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_STA_STA_STATISTICS));
+out:
+	if (prHwWlanInfo)
+		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
 
+	if (prQueryStaStatistics)
+		kalMemFree(prQueryStaStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_STA_STA_STATISTICS));
 
 	if (fgResetCnt)
 		nicRxClearStatistics(prGlueInfo->prAdapter);
