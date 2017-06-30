@@ -535,7 +535,7 @@ batchConvertResult(IN P_EVENT_BATCH_RESULT_T prEventBatchResult,
 	P_EVENT_BATCH_RESULT_T pBr;
 
 	nsize = 0;
-	nleft = u4MaxBufferLen - 5;	/* -5 for "----\n" */
+	nleft = u4MaxBufferLen;
 
 	pBr = prEventBatchResult;
 	scancount = 0;
@@ -544,9 +544,10 @@ batchConvertResult(IN P_EVENT_BATCH_RESULT_T prEventBatchResult,
 		pBr++;
 	}
 
-	nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "scancount=%ld\nnextcount=%ld\n", scancount, scancount);
+	nsize1 = scnprintf(text1, TMP_TEXT_LEN_S, "scancount=%ld\nnextcount=%ld\n", scancount, scancount);
 	if (nsize1 < nleft) {
-		p += nsize1 = kalSprintf(p, "%s", text1);
+		nsize1 = scnprintf(p, nleft, "%s", text1);
+		p += nsize1;
 		nleft -= nsize1;
 	} else
 		goto short_buf;
@@ -563,9 +564,10 @@ batchConvertResult(IN P_EVENT_BATCH_RESULT_T prEventBatchResult,
 		nleft -= 5;	/* -5 for "####\n" */
 
 		/* We only support one round scan result now. */
-		nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "apcount=%d\n", pBr->ucScanCount);
+		nsize1 = scnprintf(text1, TMP_TEXT_LEN_S, "apcount=%d\n", pBr->ucScanCount);
 		if (nsize1 < nleft) {
-			p += nsize1 = kalSprintf(p, "%s", text1);
+			nsize1 = scnprintf(p, nleft, "%s", text1);
+			p += nsize1;
 			nleft -= nsize1;
 		} else
 			goto short_buf;
@@ -573,18 +575,18 @@ batchConvertResult(IN P_EVENT_BATCH_RESULT_T prEventBatchResult,
 		for (i = 0; i < pBr->ucScanCount; i++) {
 			prEntry = &pBr->arBatchResult[i];
 
-			nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "bssid=" MACSTR "\n",
+			nsize1 = scnprintf(text1, TMP_TEXT_LEN_S, "bssid=" MACSTR "\n",
 						MAC2STR(prEntry->aucBssid));
 			kalMemCopy(ssid,
 				   prEntry->aucSSID,
 				   (prEntry->ucSSIDLen < ELEM_MAX_LEN_SSID ? prEntry->ucSSIDLen : ELEM_MAX_LEN_SSID));
 			ssid[(prEntry->ucSSIDLen <
 			      (ELEM_MAX_LEN_SSID - 1) ? prEntry->ucSSIDLen : (ELEM_MAX_LEN_SSID - 1))] = '\0';
-			nsize2 = kalSnprintf(text2, TMP_TEXT_LEN_L, "ssid=%s\n", ssid);
+			nsize2 = scnprintf(text2, TMP_TEXT_LEN_L, "ssid=%s\n", ssid);
 
 			freq = batchChannelNum2Freq(prEntry->ucFreq);
 			nsize3 =
-			    kalSnprintf(text3, TMP_TEXT_LEN_L,
+			    scnprintf(text3, TMP_TEXT_LEN_L,
 					"freq=%lu\nlevel=%d\ndist=%lu\ndistSd=%lu\n====\n", freq,
 					prEntry->cRssi, prEntry->u4Dist, prEntry->u4Distsd);
 
@@ -608,13 +610,21 @@ batchConvertResult(IN P_EVENT_BATCH_RESULT_T prEventBatchResult,
 		}
 
 		nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "%s", "####\n");
-		p += kalSprintf(p, "%s", text1);
+		if (nsize1 < nleft) {
+			nsize1 = scnprintf(p, nleft, "%s", text1);
+			p += nsize1;
+			nleft -= nsize1;
+		} else
+			goto short_buf;
 
 		pBr++;
 	}
 
-	nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "%s", "----\n");
-	kalSprintf(p, "%s", text1);
+	nsize1 = scnprintf(text1, TMP_TEXT_LEN_S, "%s", "----\n");
+	if (nsize1 < nleft)
+		scnprintf(p, nleft, "%s", text1);
+	else
+		goto short_buf;
 
 	*pu4RetLen = u4MaxBufferLen - nleft;
 	DBGLOG(SCN, TRACE, "total len = %d (max len = %d)\n", *pu4RetLen, u4MaxBufferLen);

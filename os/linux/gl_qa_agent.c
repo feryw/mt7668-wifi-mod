@@ -2024,16 +2024,21 @@ static INT_32 HQA_WriteEEPROM(struct net_device *prNetDev,
 		uacEEPROMImage[Offset + 1] = u4WriteData >> 8 & 0xff;
 	} else {
 
-	prGlueInfo->prAdapter->aucEepromVaule[u4Index] = u4WriteData & 0xff; /* Note: u4WriteData is UINT_16 */
-	prGlueInfo->prAdapter->aucEepromVaule[u4Index+1] = u4WriteData >> 8 & 0xff;
+		if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
+			DBGLOG(INIT, ERROR, "MT6632 : efuse Offset error\n");
+			return -EINVAL;
+		}
 
-	kalMemCopy(rAccessEfuseInfoWrite.aucData, prGlueInfo->prAdapter->aucEepromVaule, 16);
-	rAccessEfuseInfoWrite.u4Address = (Offset / EFUSE_BLOCK_SIZE)*EFUSE_BLOCK_SIZE;
+		prGlueInfo->prAdapter->aucEepromVaule[u4Index] = u4WriteData & 0xff; /* Note: u4WriteData is UINT_16 */
+		prGlueInfo->prAdapter->aucEepromVaule[u4Index+1] = u4WriteData >> 8 & 0xff;
 
-	rStatus = kalIoctl(prGlueInfo,
-				wlanoidQueryProcessAccessEfuseWrite,
-				&rAccessEfuseInfoWrite,
-				sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), FALSE, FALSE, TRUE, &u4BufLen);
+		kalMemCopy(rAccessEfuseInfoWrite.aucData, prGlueInfo->prAdapter->aucEepromVaule, 16);
+		rAccessEfuseInfoWrite.u4Address = (Offset / EFUSE_BLOCK_SIZE)*EFUSE_BLOCK_SIZE;
+
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseWrite,
+					&rAccessEfuseInfoWrite,
+					sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), FALSE, FALSE, TRUE, &u4BufLen);
 	}
 #endif
 
@@ -2233,6 +2238,8 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse == TRUE) {
 
 		Buffer = kmalloc(sizeof(UINT_8)*(EFUSE_BLOCK_SIZE), GFP_KERNEL);
+		if (!Buffer)
+			return -ENOMEM;
 		kalMemSet(Buffer, 0, sizeof(UINT_8)*(EFUSE_BLOCK_SIZE));
 
 		kalMemCopy((UINT_8 *)Buffer, (UINT_8 *)HqaCmdFrame->Data + 4, Len);
@@ -2287,6 +2294,13 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 				u4Index = Offset % EFUSE_BLOCK_SIZE;
 				DBGLOG(INIT, INFO, "MT6632:QA_AGENT HQA_WriteBulkEEPROM Wr,u4Index=%x,Buffer=%x\n",
 						u4Index, testBuffer);
+
+				if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
+					DBGLOG(INIT, ERROR, "MT6632 : efuse Offset error\n");
+					i4Ret = -EINVAL;
+					goto exit;
+				}
+
 
 				*Buffer = ntohs(*Buffer);
 				DBGLOG(INIT, INFO, "MT6632 : Buffer[0]=%x, Buffer[0]&0xff=%x\n"
@@ -2372,6 +2386,10 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	}
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + Len, i4Ret);
+
+exit:
+
+	kfree(Buffer);
 
 	return i4Ret;
 }
@@ -4607,6 +4625,8 @@ static INT_32 HQA_BssInfoUpdate(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4652,6 +4672,8 @@ static INT_32 HQA_DevInfoUpdate(struct net_device *prNetDev,
 	i4Ret = Set_DevInfoUpdate(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -4781,6 +4803,8 @@ static INT_32 HQA_TxBfProfileTagInValid(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4806,6 +4830,8 @@ static INT_32 HQA_TxBfProfileTagPfmuIdx(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_PfmuIdx(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -4833,6 +4859,8 @@ static INT_32 HQA_TxBfProfileTagBfType(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4859,6 +4887,8 @@ static INT_32 HQA_TxBfProfileTagBw(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4884,6 +4914,8 @@ static INT_32 HQA_TxBfProfileTagSuMu(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_SuMu(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -4927,6 +4959,8 @@ static INT_32 HQA_TxBfProfileTagMemAlloc(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4963,6 +4997,8 @@ static INT_32 HQA_TxBfProfileTagMatrix(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -4995,6 +5031,8 @@ static INT_32 HQA_TxBfProfileTagSnr(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5020,6 +5058,8 @@ static INT_32 HQA_TxBfProfileTagSmtAnt(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_SmartAnt(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5047,6 +5087,8 @@ static INT_32 HQA_TxBfProfileTagSeIdx(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5072,6 +5114,8 @@ static INT_32 HQA_TxBfProfileTagRmsdThrd(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_RmsdThrd(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5110,6 +5154,8 @@ static INT_32 HQA_TxBfProfileTagMcsThrd(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5135,6 +5181,8 @@ static INT_32 HQA_TxBfProfileTagTimeOut(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_TimeOut(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5162,6 +5210,8 @@ static INT_32 HQA_TxBfProfileTagDesiredBw(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5187,6 +5237,8 @@ static INT_32 HQA_TxBfProfileTagDesiredNc(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTag_DesiredNc(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5214,6 +5266,8 @@ static INT_32 HQA_TxBfProfileTagDesiredNr(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5239,6 +5293,8 @@ static INT_32 HQA_TxBfProfileTagWrite(struct net_device *prNetDev,
 	i4Ret = Set_TxBfProfileTagWrite(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5282,6 +5338,8 @@ static INT_32 HQA_TxBfProfileTagRead(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + sizeof(PFMU_PROFILE_TAG1) + sizeof(PFMU_PROFILE_TAG2), i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5315,6 +5373,8 @@ static INT_32 HQA_StaRecCmmUpdate(struct net_device *prNetDev,
 	i4Ret = Set_StaRecCmmUpdate(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5414,6 +5474,8 @@ static INT_32 HQA_StaRecBfUpdate(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5468,6 +5530,8 @@ static INT_32 HQA_BFProfileDataRead(struct net_device *prNetDev,
 	}
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + offset, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5532,6 +5596,8 @@ static INT_32 HQA_BFProfileDataWrite(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5572,6 +5638,8 @@ static INT_32 HQA_BFSounding(struct net_device *prNetDev, IN union iwreq_data *p
 	i4Ret = Set_Trigger_Sounding_Proc(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5632,6 +5700,8 @@ static INT_32 HQA_TxBfTxApply(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5689,6 +5759,8 @@ static INT_32 HQA_ManualAssoc(struct net_device *prNetDev,
 	i4Ret = Set_TxBfManualAssoc(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5761,6 +5833,8 @@ static INT_32 HQA_MUGetInitMCS(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5824,6 +5898,8 @@ static INT_32 HQA_MUCalInitMCS(struct net_device *prNetDev,
 	i4Ret = Set_MUCalInitMCS(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5891,6 +5967,8 @@ static INT_32 HQA_MUCalLQ(struct net_device *prNetDev, IN union iwreq_data *prIw
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5907,6 +5985,8 @@ static INT_32 HQA_MUGetLQ(struct net_device *prNetDev, IN union iwreq_data *prIw
 
 	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
 
+	kalMemSet(u4LqReport, 0, (NUM_OF_USER * NUM_OF_MODUL));
+
 	i4Ret = Set_MUGetLQ(prNetDev, prInBuf);
 
 	for (i = 0; i < NUM_OF_USER * NUM_OF_MODUL; i++) {
@@ -5915,6 +5995,8 @@ static INT_32 HQA_MUGetLQ(struct net_device *prNetDev, IN union iwreq_data *prIw
 	}
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -5942,6 +6024,8 @@ static INT_32 HQA_MUSetSNROffset(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5968,6 +6052,8 @@ static INT_32 HQA_MUSetZeroNss(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -5993,6 +6079,8 @@ static INT_32 HQA_MUSetSpeedUpLQ(struct net_device *prNetDev,
 	i4Ret = Set_MUSetSpeedUpLQ(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 
@@ -6109,6 +6197,8 @@ static INT_32 HQA_MUSetGroup(struct net_device *prNetDev, IN union iwreq_data *p
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -6152,6 +6242,8 @@ static INT_32 HQA_MUGetQD(struct net_device *prNetDev, IN union iwreq_data *prIw
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	kfree(prInBuf);
+
 	return i4Ret;
 }
 
@@ -6177,6 +6269,8 @@ static INT_32 HQA_MUSetEnable(struct net_device *prNetDev,
 	i4Ret = Set_MUSetEnable(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -6215,6 +6309,8 @@ static INT_32 HQA_MUSetGID_UP(struct net_device *prNetDev,
 	i4Ret = Set_MUSetGID_UP(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }
@@ -6265,6 +6361,8 @@ static INT_32 HQA_MUTriggerTx(struct net_device *prNetDev,
 	i4Ret = Set_MUTriggerTx(prNetDev, prInBuf);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+
+	kfree(prInBuf);
 
 	return i4Ret;
 }

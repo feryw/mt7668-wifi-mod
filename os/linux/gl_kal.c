@@ -200,6 +200,7 @@ WLAN_STATUS kalFirmwareOpen(IN P_GLUE_INFO_T prGlueInfo, IN PPUINT_8 apucNameTab
 		if (ret) {
 			DBGLOG(INIT, TRACE, "Request FW image: %s failed, errno[%d]\n",
 			       apucNameTable[ucNameIdx], fgResult);
+			RELEASE_FIRMWARE(fw_entry);
 			continue;
 		} else {
 			DBGLOG(INIT, TRACE, "Request FW image: %s done\n", apucNameTable[ucNameIdx]);
@@ -236,7 +237,7 @@ error_open:
 /*----------------------------------------------------------------------------*/
 WLAN_STATUS kalFirmwareClose(IN P_GLUE_INFO_T prGlueInfo)
 {
-	release_firmware(fw_entry);
+	RELEASE_FIRMWARE(fw_entry);
 
 	return WLAN_STATUS_SUCCESS;
 }

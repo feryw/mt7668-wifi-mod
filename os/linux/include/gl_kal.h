@@ -505,6 +505,12 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define REQUEST_FIRMWARE(_fw, _name, _dev) \
 	request_firmware(_fw, _name, _dev)
 
+#define RELEASE_FIRMWARE(_fw) \
+	do { \
+		release_firmware(_fw); \
+		_fw = NULL; \
+	} while (0)
+
 /*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
