@@ -2331,6 +2331,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #endif
 #define CMD_SET_ADV_PWS			"SET_ADV_PWS"
 #define CMD_SET_MDTIM			"SET_MDTIM"
+#define CMD_SET_LISTEN_DTIM_INTERVAL	"SET_LISTEN_DTIM_INTERVAL"
 
 #define CMD_SET_DBDC			"SET_DBDC"
 
@@ -7777,6 +7778,36 @@ static int priv_driver_set_mdtim(IN struct net_device *prNetDev, IN char *pcComm
 
 }
 
+static int priv_driver_set_listen_dtim_interval(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Ret = 0;
+	UINT_8 ucInterval = 0;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	/* iwpriv wlan0 driver "set_listen_dtim_interval x */
+	if (i4Argc >= 2) {
+
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucInterval);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse apcArgv1 error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
+		prGlueInfo->prAdapter->rWifiVar.ucListenDtimInterval = ucInterval;
+		DBGLOG(REQ, INFO, "Listen Interval(DTIM) :%d\n", &prGlueInfo->prAdapter->rWifiVar.ucListenDtimInterval);
+	}
+
+	return 0;
+}
+
 int priv_driver_set_suspend_mode(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -9485,6 +9516,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_adv_pws(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_MDTIM, strlen(CMD_SET_MDTIM)) == 0)
 			i4BytesWritten = priv_driver_set_mdtim(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_LISTEN_DTIM_INTERVAL, strlen(CMD_SET_LISTEN_DTIM_INTERVAL)) == 0)
+			i4BytesWritten = priv_driver_set_listen_dtim_interval(prNetDev, pcCommand, i4TotalLen);
 #if CFG_SUPPORT_QA_TOOL
 		else if (strnicmp(pcCommand, CMD_GET_RX_STATISTICS, strlen(CMD_GET_RX_STATISTICS)) == 0)
 			i4BytesWritten = priv_driver_get_rx_statistics(prNetDev, pcCommand, i4TotalLen);

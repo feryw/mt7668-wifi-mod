@@ -6817,6 +6817,8 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucWowOnMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOnMdtim", 1);
 	prWifiVar->ucWowOffMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOffMdtim", 3);
 	prWifiVar->ucWowPwsMode = (UINT_8) wlanCfgGetUint32(prAdapter, "WowPwsMode", Param_PowerModeFast_PSP);
+	prWifiVar->ucListenDtimInterval =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "ListenDtimInt", DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD);
 
 #if CFG_WOW_SUPPORT
 	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);

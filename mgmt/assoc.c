@@ -448,10 +448,10 @@ assocComposeReAssocReqFrameHeaderAndFF(IN P_ADAPTER_T prAdapter,
 	WLAN_SET_FIELD_16(&prAssocFrame->u2CapInfo, u2CapInfo);
 
 	/* Calculate the listen interval for the maximum power mode. Currently, we
-	*  set it to the value 2 times DTIM period.
+	*  set it to the value 2 times DTIM period by default.
 	*/
 	if (prStaRec->ucDTIMPeriod) {
-		u2ListenInterval = prStaRec->ucDTIMPeriod * DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD;
+		u2ListenInterval = prStaRec->ucDTIMPeriod * prAdapter->rWifiVar.ucListenDtimInterval;
 	} else {
 		DBGLOG(SAA, TRACE, "Use default listen interval\n");
 		u2ListenInterval = DEFAULT_LISTEN_INTERVAL;
