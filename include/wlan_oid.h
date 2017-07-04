@@ -724,9 +724,9 @@ typedef struct _PARAM_CUSTOM_SET_RDD_REPORT_T {
 	UINT_8 ucDbdcIdx; /* 0:Band 0, 1: Band1 */
 } PARAM_CUSTOM_SET_RDD_REPORT_T, *P_PARAM_CUSTOM_SET_RDD_REPORT_T;
 
-typedef struct _PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T {
+struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
 	UINT_8 ucRadarDetectMode; /* 0:Switch channel, 1: Don't switch channel */
-} PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T, *P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T;
+};
 #endif
 
 typedef struct _PARAM_CUSTOM_ACCESS_RX_STAT {

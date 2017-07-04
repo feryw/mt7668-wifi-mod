@@ -12117,7 +12117,7 @@ WLAN_STATUS
 wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
 			 OUT PUINT_32 pu4SetInfoLen)
 {
-	P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T prSetRadarDetectMode;
+	struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE *prSetRadarDetectMode;
 	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
 	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
 
@@ -12126,11 +12126,11 @@ wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, I
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T);
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE *);
 
 	ASSERT(pvSetBuffer);
 
-	prSetRadarDetectMode = (P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T) pvSetBuffer;
+	prSetRadarDetectMode = (struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE *) pvSetBuffer;
 
 	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 					sizeof(*prCmdRddOnOffCtrl));

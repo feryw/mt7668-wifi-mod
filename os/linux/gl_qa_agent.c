@@ -282,7 +282,7 @@ static INT_32 ResponseToQA(HQA_CMD_FRAME *HqaCmdFrame,
 
 	if (copy_to_user(prIwReqData->data.pointer, (UCHAR *) (HqaCmdFrame), prIwReqData->data.length)) {
 		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT copy_to_user() fail in %s\n", __func__);
-		return (-EFAULT);
+		return -EFAULT;
 	}
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA command(0x%04x)[Magic number(0x%08x)] is done\n",
 	       ntohs(HqaCmdFrame->Id), ntohl(HqaCmdFrame->MagicNo));
@@ -2245,7 +2245,7 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 		kalMemCopy((UINT_8 *)Buffer, (UINT_8 *)HqaCmdFrame->Data + 4, Len);
 
 #if 0
-		for (u4Loop = 0; u4Loop < (Len)/2 ; u4Loop++) {
+		for (u4Loop = 0; u4Loop < (Len)/2; u4Loop++) {
 
 			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
 				u4Loop, Buffer[u4Loop]);
@@ -7485,8 +7485,7 @@ static INT_32 hqa_ext_cmds(struct net_device *prNetDev, IN union iwreq_data *prI
 			i4Ret = (*hqa_ext_cmd_set[i4Idx]) (prNetDev, prIwReqData, HqaCmdFrame);
 		else
 			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds cmd idx %d is NULL : %d\n", i4Idx);
-	}
-	else
+	} else
 		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n", i4Idx);
 
 	return i4Ret;

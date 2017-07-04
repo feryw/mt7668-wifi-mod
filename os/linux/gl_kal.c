@@ -123,8 +123,8 @@ static UINT_32 pvIoBufferUsage;
 #if CFG_ENABLE_FW_DOWNLOAD
 
 #if (defined(CONFIG_UIDGID_STRICT_TYPE_CHECKS) || (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)))
-#define  KUIDT_VALUE(v) v.val
-#define  KGIDT_VALUE(v) v.val
+#define  KUIDT_VALUE(v) (v.val)
+#define  KGIDT_VALUE(v) (v.val)
 #else
 #define  KUIDT_VALUE(v) v
 #define  KGIDT_VALUE(v) v

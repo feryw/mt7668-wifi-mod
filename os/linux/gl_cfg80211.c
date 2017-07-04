@@ -3180,7 +3180,7 @@ bool is_world_regdom(char *alpha2)
 	if (!alpha2)
 		return false;
 
-	return ((alpha2[0] == '0') && (alpha2[1] == '0'));
+	return (alpha2[0] == '0') && (alpha2[1] == '0');
 }
 #endif
 

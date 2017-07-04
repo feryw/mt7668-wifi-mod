@@ -83,7 +83,7 @@ BOOLEAN g_fgManualCac = FALSE;
 UINT_32 g_u4DriverCacTime;
 UINT_32 g_u4CacStartBootTime;
 UINT_8 g_ucRadarDetectMode = FALSE;
-P2P_RADAR_INFO_T g_rP2pRadarInfo;
+struct P2P_RADAR_INFO g_rP2pRadarInfo;
 UINT_8 g_ucDfsState = DFS_STATE_INACTIVE;
 static PUINT_8 apucDfsState[DFS_STATE_NUM] = {
 	(PUINT_8) DISP_STRING("DFS_STATE_INACTIVE"),
@@ -1315,7 +1315,7 @@ VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 	}
 }
 
-VOID p2pFuncGetRadarInfo(IN P_P2P_RADAR_INFO_T prP2pRadarInfo)
+VOID p2pFuncGetRadarInfo(IN struct P2P_RADAR_INFO *prP2pRadarInfo)
 {
 	kalMemCopy(prP2pRadarInfo, &g_rP2pRadarInfo, sizeof(*prP2pRadarInfo));
 }

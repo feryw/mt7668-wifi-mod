@@ -57,7 +57,7 @@
 #define P2P_OFF_CHNL_TX_DEFAULT_TIME_MS                      1000
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-extern P2P_RADAR_INFO_T g_rP2pRadarInfo;
+extern struct P2P_RADAR_INFO g_rP2pRadarInfo;
 
 enum _ENUM_DFS_STATE_T {
 	DFS_STATE_INACTIVE = 0,
@@ -171,7 +171,7 @@ VOID p2pFuncRadarInfoInit(VOID);
 
 VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
 
-VOID p2pFuncGetRadarInfo(IN P_P2P_RADAR_INFO_T prP2pRadarInfo);
+VOID p2pFuncGetRadarInfo(IN struct P2P_RADAR_INFO *prP2pRadarInfo);
 
 PUINT_8 p2pFuncJpW53RadarType(VOID);
 

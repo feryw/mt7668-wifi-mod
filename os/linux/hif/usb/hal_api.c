@@ -729,7 +729,7 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 			if (!prSwRfb)
-				return (u4Length - u4RemainCount);
+				return u4Length - u4RemainCount;
 
 			kalMemCopy(prSwRfb->pucRecvBuff, pucRxFrame, u2RxByteCount);
 
@@ -1108,7 +1108,7 @@ VOID halWakeUpWiFi(IN P_ADAPTER_T prAdapter)
 		HAL_MCR_WR(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, (TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
 	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
 	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
-		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
+		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value) ? "SUCCESS" : "FAIL");
 #endif
 
 	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");

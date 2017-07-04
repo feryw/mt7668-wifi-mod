@@ -962,7 +962,7 @@ UINT_32 nicTxMsduQueueMthread(IN P_ADAPTER_T prAdapter)
 UINT_32 nicTxGetMsduPendingCnt(IN P_ADAPTER_T prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
-	return (prAdapter->rTxP0Queue.u4NumElem + prAdapter->rTxP1Queue.u4NumElem);
+	return prAdapter->rTxP0Queue.u4NumElem + prAdapter->rTxP1Queue.u4NumElem;
 #else
 	INT_32 i;
 	UINT_32 retValue = 0;

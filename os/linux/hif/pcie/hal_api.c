@@ -659,7 +659,7 @@ UINT_32 halGetMsduTokenFreeCnt(IN P_ADAPTER_T prAdapter)
 {
 	P_MSDU_TOKEN_INFO_T prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 
-	return (HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt);
+	return HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt;
 }
 
 P_MSDU_TOKEN_ENTRY_T halGetMsduTokenEntry(IN P_ADAPTER_T prAdapter, UINT_32 u4TokenNum)

@@ -8364,7 +8364,7 @@ BOOLEAN wlanIsChipRstRecEnabled(IN P_ADAPTER_T prAdapter)
 
 BOOLEAN wlanIsChipAssert(IN P_ADAPTER_T prAdapter)
 {
-	return (prAdapter->rWifiVar.fgChipResetRecover && prAdapter->fgIsChipAssert);
+	return prAdapter->rWifiVar.fgChipResetRecover && prAdapter->fgIsChipAssert;
 }
 
 VOID wlanChipRstPreAct(IN P_ADAPTER_T prAdapter)

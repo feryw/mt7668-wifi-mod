@@ -1723,16 +1723,16 @@ typedef struct _CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T {
 
 
 
-typedef struct _CHANNEL_TX_PWR_LIMIT {
+struct CHANNEL_TX_PWR_LIMIT {
 	UINT_8 ucChannel;
 	INT_8 rTxPwrLimitValue[TX_PWR_LIMIT_SECTION_NUM][TX_PWR_LIMIT_ELEMENT_NUM];
-} CHANNEL_TX_PWR_LIMIT, *P_CHANNEL_TX_PWR_LIMIT;
+};
 
-typedef struct _TX_PWR_LIMIT_DATA {
+struct TX_PWR_LIMIT_DATA {
 	UINT_32 countryCode;
 	UINT_32 ucChNum;
-	P_CHANNEL_TX_PWR_LIMIT rChannelTxPwrLimit;
-} TX_PWR_LIMIT_DATA, *P_TX_PWR_LIMIT_DATA;
+	struct CHANNEL_TX_PWR_LIMIT *rChannelTxPwrLimit;
+};
 
 #endif
 

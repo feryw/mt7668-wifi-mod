@@ -1592,7 +1592,7 @@ BOOL rlmDomainTxPwrLimitSectionEnd(PUINT_8 pucBuf,
 }
 
 INT_8 rlmDomainTxPwrLimitGetChIdx(
-	P_TX_PWR_LIMIT_DATA pTxPwrLimit, UINT_8 ucChannel)
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit, UINT_8 ucChannel)
 {
 	INT_8 cIdx = 0;
 
@@ -1608,11 +1608,11 @@ INT_8 rlmDomainTxPwrLimitGetChIdx(
 
 BOOL rlmDomainTxPwrLimitLoadChannelSetting(
 	PUINT_8 pucBuf, PUINT_32 pu4Pos, UINT_32 u4BufEnd,
-	P_TX_PWR_LIMIT_DATA pTxPwrLimit, UINT_8 ucSectionIdx)
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit, UINT_8 ucSectionIdx)
 {
 	UINT_32 u4TmpPos = *pu4Pos;
 	char cTmpChar = 0;
-	P_CHANNEL_TX_PWR_LIMIT prChTxPwrLimit = NULL;
+	struct CHANNEL_TX_PWR_LIMIT *prChTxPwrLimit = NULL;
 	BOOL bNeg = FALSE;
 	INT_8 cLimitValue = 0, cChIdx = 0;
 	UINT_8 ucIdx = 0, ucChannel = 0;
@@ -1755,7 +1755,7 @@ VOID rlmDomainTxPwrLimitRemoveComments(
 
 BOOL rlmDomainTxPwrLimitLoad(
 	P_ADAPTER_T prAdapter, PUINT_8 pucBuf, UINT_32 u4BufLen,
-	UINT_32 u4CountryCode, P_TX_PWR_LIMIT_DATA pTxPwrLimit)
+	UINT_32 u4CountryCode, struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
 {
 	UINT_8 uSecIdx = 0;
 	UINT_32 u4CountryStart = 0, u4CountryEnd = 0, u4Pos = 0;
@@ -1796,7 +1796,7 @@ BOOL rlmDomainTxPwrLimitLoad(
 }
 
 VOID rlmDomainTxPwrLimitSetChValues(
-	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd, P_CHANNEL_TX_PWR_LIMIT pChTxPwrLimit)
+	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd, struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit)
 {
 	UINT_8 section = 0, e = 0;
 
@@ -1851,12 +1851,12 @@ VOID rlmDomainTxPwrLimitSetChValues(
 
 VOID rlmDomainTxPwrLimitSetValues(
 	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T pSetCmd,
-	P_TX_PWR_LIMIT_DATA pTxPwrLimit)
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
 {
 	UINT_8 ucIdx = 0;
 	INT_8 cChIdx = 0;
 	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd = NULL;
-	P_CHANNEL_TX_PWR_LIMIT pChTxPwrLimit = NULL;
+	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
 
 	if (!pSetCmd || !pTxPwrLimit) {
 		DBGLOG(RLM, ERROR, "%s: Invalid request!!!\n", __func__);
@@ -1876,7 +1876,7 @@ VOID rlmDomainTxPwrLimitSetValues(
 }
 
 BOOL rlmDomainTxPwrLimitLoadFromFile(P_ADAPTER_T prAdapter,
-	UINT_32 u4CountryCode, P_TX_PWR_LIMIT_DATA pTxPwrLimit)
+	UINT_32 u4CountryCode, struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
 {
 	PUINT_8 pucConfigBuf;
 	UINT_32 u4ConfigReadLen;
@@ -1931,8 +1931,8 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 {
 	int bRet = TRUE;
 	UINT_8 ucIdx = 0, ucCnt = 0;
-	P_TX_PWR_LIMIT_DATA pTxPwrLimit =
-		(P_TX_PWR_LIMIT_DATA) kalMemAlloc(sizeof(TX_PWR_LIMIT_DATA), VIR_MEM_TYPE);
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit =
+		(struct TX_PWR_LIMIT_DATA *) kalMemAlloc(sizeof(struct TX_PWR_LIMIT_DATA), VIR_MEM_TYPE);
 
 	if (!pTxPwrLimit) {
 		bRet = FALSE;
@@ -1943,7 +1943,7 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	pTxPwrLimit->ucChNum = (pSetCmd_2g ? pSetCmd_2g->ucNum : 0) + (pSetCmd_5g ? pSetCmd_5g->ucNum : 0);
 
 	pTxPwrLimit->rChannelTxPwrLimit =
-		(P_CHANNEL_TX_PWR_LIMIT) kalMemAlloc(sizeof(CHANNEL_TX_PWR_LIMIT) *
+		(struct CHANNEL_TX_PWR_LIMIT *) kalMemAlloc(sizeof(struct CHANNEL_TX_PWR_LIMIT) *
 			(pTxPwrLimit->ucChNum), VIR_MEM_TYPE);
 
 	if (!pTxPwrLimit->rChannelTxPwrLimit) {
@@ -1953,7 +1953,7 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	}
 
 	kalMemSet(pTxPwrLimit->rChannelTxPwrLimit, MAX_TX_POWER,
-		sizeof(CHANNEL_TX_PWR_LIMIT) * (pTxPwrLimit->ucChNum));
+		sizeof(struct CHANNEL_TX_PWR_LIMIT) * (pTxPwrLimit->ucChNum));
 
 	if (pSetCmd_2g)
 		for (ucIdx = 0; ucIdx < pSetCmd_2g->ucNum; ucIdx++) {

@@ -6990,14 +6990,14 @@ int priv_driver_show_dfs_radar_param(IN struct net_device *prNetDev, IN char *pc
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	INT_32 i4BytesWritten = 0;
 	UINT_8 ucCnt = 0;
-	P_P2P_RADAR_INFO_T prP2pRadarInfo = (P_P2P_RADAR_INFO_T) NULL;
+	struct P2P_RADAR_INFO *prP2pRadarInfo = NULL;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
-	prP2pRadarInfo = (P_P2P_RADAR_INFO_T) cnmMemAlloc(prGlueInfo->prAdapter,
+	prP2pRadarInfo = (struct P2P_RADAR_INFO *) cnmMemAlloc(prGlueInfo->prAdapter,
 		RAM_TYPE_MSG, sizeof(*prP2pRadarInfo));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
