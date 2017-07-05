@@ -2508,17 +2508,18 @@ UINT_16 rsnPmfCapableValidation(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssI
 VOID rsnPmfGenerateTimeoutIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 {
 	IE_TIMEOUT_INTERVAL_T *prTimeout;
-	P_STA_RECORD_T prStaRec;
+	P_STA_RECORD_T prStaRec = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	DBGLOG(RSN, INFO, "rsnPmfGenerateTimeoutIE\n");
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec)
+		return;
 
 	prTimeout = (IE_TIMEOUT_INTERVAL_T *)
-	    (((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
-
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+		(((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
 
 	/* only when PMF connection, and association error code is 30 */
 	if ((rsnCheckBipKeyInstalled(prAdapter, prStaRec) == TRUE) &&
