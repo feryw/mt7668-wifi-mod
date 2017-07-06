@@ -4197,15 +4197,15 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Tx Total cnt", " = ", ucSkipAr ?
-			(u4TotalTxCnt):(prQueryStaStatistics->u4TransmitCount));
+			(u4TotalTxCnt) : (prQueryStaStatistics->u4TransmitCount));
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Tx Fail Cnt", " = ", ucSkipAr ?
-			(u4TotalFailCnt):(prQueryStaStatistics->u4TransmitFailCount));
+			(u4TotalFailCnt) : (prQueryStaStatistics->u4TransmitFailCount));
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "Rate1 Tx Cnt", " = ", ucSkipAr ?
-			(u4Rate1TxCnt):(prQueryStaStatistics->u4Rate1TxCnt));
+			(u4Rate1TxCnt) : (prQueryStaStatistics->u4Rate1TxCnt));
 
 		if (ucSkipAr)
 			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -4389,7 +4389,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 	/* =========== Group 0x0010 =========== */
 	if (u4StatGroup & 0x0010) {
-	    /* RX Reorder */
+		/* RX Reorder */
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "------ RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -4541,7 +4541,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 	/* =========== Group 0x0040 =========== */
 	if (u4StatGroup & 0x0040) {
-	    /* Tx Agg */
+		/* Tx Agg */
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "------ TX AGG (Group 0x40) -----\n");
 
