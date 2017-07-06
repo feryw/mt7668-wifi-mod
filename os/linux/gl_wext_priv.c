@@ -2428,17 +2428,13 @@ static int priv_driver_set_efuse_buffer_mode(IN struct net_device *prNetDev, IN 
 	INT_32 i4Argc = 0;
 	INT_32 i4BytesWritten = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
-	PARAM_CUSTOM_EFUSE_BUFFER_MODE_T *prSetEfuseBufModeInfo;
+	PARAM_CUSTOM_EFUSE_BUFFER_MODE_T *prSetEfuseBufModeInfo = NULL;
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 0)
 	BIN_CONTENT_T *pBinContent;
 	int i = 0;
 #endif
-	PUINT_8 pucConfigBuf;
+	PUINT_8 pucConfigBuf = NULL;
 	UINT_32 u4ConfigReadLen;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -2446,24 +2442,31 @@ static int priv_driver_set_efuse_buffer_mode(IN struct net_device *prNetDev, IN 
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	pucConfigBuf = (PUINT_8) kalMemAlloc(2048, VIR_MEM_TYPE);
+
+	if (!pucConfigBuf) {
+		DBGLOG(INIT, INFO, "allocate memory for pucConfigBuf failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 	kalMemZero(pucConfigBuf, 2048);
 	u4ConfigReadLen = 0;
 
-	if (pucConfigBuf) {
-		if (kalReadToFile("/MT6632_eFuse_usage_table.xlsm.bin", pucConfigBuf, 2048, &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
-		} else {
-			DBGLOG(INIT, INFO, "can't find file\n");
-			return -1;
-		}
-
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, 2048);
+	if (kalReadToFile("/MT6632_eFuse_usage_table.xlsm.bin", pucConfigBuf, 2048, &u4ConfigReadLen) == 0) {
+		/* ToDo:: Nothing */
+	} else {
+		DBGLOG(INIT, INFO, "can't find file\n");
+		i4BytesWritten = -1;
+		goto out;
 	}
+
 	/* pucConfigBuf */
 	prSetEfuseBufModeInfo =
 	(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T *) kalMemAlloc(sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T), VIR_MEM_TYPE);
-	if (prSetEfuseBufModeInfo == NULL)
-		return WLAN_STATUS_FAILURE;
+	if (prSetEfuseBufModeInfo == NULL) {
+		DBGLOG(INIT, INFO, "allocate memory for prSetEfuseBufModeInfo failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 	kalMemZero(prSetEfuseBufModeInfo, sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T));
 
 	prSetEfuseBufModeInfo->ucSourceMode = 1;
@@ -2486,11 +2489,17 @@ static int priv_driver_set_efuse_buffer_mode(IN struct net_device *prNetDev, IN 
 			   wlanoidSetEfusBufferMode,
 			   prSetEfuseBufModeInfo, sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T), FALSE, FALSE, TRUE,
 			   &u4BufLen);
-	kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T));
 
 	i4BytesWritten =
 		snprintf(pcCommand, i4TotalLen, "set buffer mode %s",
 			 (rStatus == WLAN_STATUS_SUCCESS) ? "success" : "fail");
+out:
+	if (pucConfigBuf)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, 2048);
+
+	if (prSetEfuseBufModeInfo)
+		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
+			sizeof(PARAM_CUSTOM_EFUSE_BUFFER_MODE_T));
 
 	return i4BytesWritten;
 }
@@ -3190,15 +3199,12 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 	UINT_8 aucMacAddr[MAC_ADDR_LEN];
 	UINT_8 ucWlanIndex;
 	PUINT_8 pucMacAddr = NULL;
-	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo;
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo = NULL;
 	PARAM_GET_STA_STA_STATISTICS rQueryStaStatistics;
 	PARAM_RSSI rRssi;
 	UINT_16 u2LinkSpeed;
 	UINT_32 u4Per;
 
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
@@ -3234,6 +3240,12 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 	}
 
 	prHwWlanInfo = (P_PARAM_HW_WLAN_INFO_T)kalMemAlloc(sizeof(PARAM_HW_WLAN_INFO_T), VIR_MEM_TYPE);
+
+	if (!prHwWlanInfo) {
+		DBGLOG(REQ, ERROR, "alloc memory for prHwWlanInfo failed!\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 	prHwWlanInfo->u4Index = ucWlanIndex;
 
 	DBGLOG(REQ, INFO, "MT6632 : index = %d i4TotalLen = %d\n", prHwWlanInfo->u4Index, i4TotalLen);
@@ -3243,8 +3255,8 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 			   prHwWlanInfo, sizeof(PARAM_HW_WLAN_INFO_T), TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
-		return -1;
+		DBGLOG(REQ, ERROR, "query prHwWlanInfo failed!\n");
+		goto out;
 	}
 
 	i4BytesWritten = priv_driver_dump_helper_wtbl_info(pcCommand, i4TotalLen, prHwWlanInfo);
@@ -3291,7 +3303,9 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 	}
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
-	kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
+out:
+	if (prHwWlanInfo)
+		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
 
 	return i4BytesWritten;
 }
@@ -3511,12 +3525,9 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	UINT_32 u4McuDest = 0;
 	UINT_32 u4LogType = 0;
-	P_CMD_FW_LOG_2_HOST_CTRL_T prFwLog2HostCtrl;
+	P_CMD_FW_LOG_2_HOST_CTRL_T prFwLog2HostCtrl = NULL;
 	UINT_32 u4Ret = 0;
 
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
 	DBGLOG(RSN, LOUD, "command is %s\n", pcCommand);
@@ -3526,36 +3537,46 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 	DBGLOG(RSN, INFO, "MT6632 : priv_driver_set_fw_log\n");
 
 	prFwLog2HostCtrl = (P_CMD_FW_LOG_2_HOST_CTRL_T)kalMemAlloc(sizeof(CMD_FW_LOG_2_HOST_CTRL_T), VIR_MEM_TYPE);
-	if (!prFwLog2HostCtrl)
-		return -1;
-
-	if (i4Argc == 3) {
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4McuDest);
-		if (u4Ret)
-			DBGLOG(REQ, LOUD, "parse u4McuDest error u4Ret=%d\n", u4Ret);
-
-		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4LogType);
-		if (u4Ret)
-			DBGLOG(REQ, LOUD, "parse u4LogType error u4Ret=%d\n", u4Ret);
-
-		prFwLog2HostCtrl->ucMcuDest = (UINT_8)u4McuDest;
-		prFwLog2HostCtrl->ucFwLog2HostCtrl = (UINT_8)u4LogType;
-
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidSetFwLog2Host,
-				   prFwLog2HostCtrl, sizeof(CMD_FW_LOG_2_HOST_CTRL_T), TRUE, TRUE, TRUE, &u4BufLen);
-
-	    DBGLOG(REQ, INFO, "%s: command result is %s (%d %d)\n", __func__, pcCommand, u4McuDest, u4LogType);
-		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
-
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			kalMemFree(prFwLog2HostCtrl, VIR_MEM_TYPE, sizeof(CMD_FW_LOG_2_HOST_CTRL_T));
-			return -1;
-		}
-	} else {
-		DBGLOG(REQ, ERROR, "argc %i is not equal to 3\n", i4Argc);
-		return -1;
+	if (!prFwLog2HostCtrl) {
+		DBGLOG(REQ, ERROR, "allocate memory for prFwLog2HostCtrl failed\n");
+		i4BytesWritten = -1;
+		goto out;
 	}
+
+	if (i4Argc != 3) {
+		DBGLOG(REQ, ERROR, "argc %i is not equal to 3\n", i4Argc);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4McuDest);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse u4McuDest error u4Ret=%d\n", u4Ret);
+
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &u4LogType);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse u4LogType error u4Ret=%d\n", u4Ret);
+
+	prFwLog2HostCtrl->ucMcuDest = (UINT_8)u4McuDest;
+	prFwLog2HostCtrl->ucFwLog2HostCtrl = (UINT_8)u4LogType;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetFwLog2Host,
+			   prFwLog2HostCtrl, sizeof(CMD_FW_LOG_2_HOST_CTRL_T), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s (%d %d)\n", __func__, pcCommand, u4McuDest, u4LogType);
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "send fw log to host cmd failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+out:
+	if (prFwLog2HostCtrl)
+		kalMemFree(prFwLog2HostCtrl, VIR_MEM_TYPE,
+			sizeof(CMD_FW_LOG_2_HOST_CTRL_T));
 
 	return i4BytesWritten;
 }
@@ -4924,16 +4945,12 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	INT_32 i4ArgNum = 1;
-	P_UMAC_STAT2_GET_T prUmacStat2GetInfo;
-	P_PARAM_GET_DRV_STATISTICS prQueryDrvStatistics;
+	P_UMAC_STAT2_GET_T prUmacStat2GetInfo = NULL;
+	P_PARAM_GET_DRV_STATISTICS prQueryDrvStatistics = NULL;
 	P_QUE_T prQueList, prTxMgmtTxRingQueList;
 	P_RX_CTRL_T prRxCtrl;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -4955,8 +4972,11 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 
 	/* to do for UMAC Dump */
 	prUmacStat2GetInfo = (P_UMAC_STAT2_GET_T)kalMemAlloc(sizeof(UMAC_STAT2_GET_T), VIR_MEM_TYPE);
-	if (!prUmacStat2GetInfo)
-		return -1;
+	if (!prUmacStat2GetInfo) {
+		DBGLOG(REQ, ERROR, "allocate memory for prUmacStat2GetInfo failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 
 	halUmacInfoGetMiscStatus(prAdapter, prUmacStat2GetInfo);
 
@@ -4964,8 +4984,11 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 	/* Get Driver stat info */
 	prQueryDrvStatistics =
 		(P_PARAM_GET_DRV_STATISTICS)kalMemAlloc(sizeof(PARAM_GET_DRV_STATISTICS), VIR_MEM_TYPE);
-	if (!prQueryDrvStatistics)
-		return -1;
+	if (!prQueryDrvStatistics) {
+		DBGLOG(REQ, ERROR, "allocate memory for prQueryDrvStatistics failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
 
 	prQueryDrvStatistics->i4TxPendingFrameNum =
 		(UINT_32) GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
@@ -5003,8 +5026,11 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 	i4BytesWritten = priv_driver_dump_stat2_info(prAdapter, pcCommand, i4TotalLen,
 		prUmacStat2GetInfo, prQueryDrvStatistics);
 
-	kalMemFree(prUmacStat2GetInfo, VIR_MEM_TYPE, sizeof(UMAC_STAT2_GET_T));
-	kalMemFree(prQueryDrvStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_DRV_STATISTICS));
+out:
+	if (prUmacStat2GetInfo)
+		kalMemFree(prUmacStat2GetInfo, VIR_MEM_TYPE, sizeof(UMAC_STAT2_GET_T));
+	if (prQueryDrvStatistics)
+		kalMemFree(prQueryDrvStatistics, VIR_MEM_TYPE, sizeof(PARAM_GET_DRV_STATISTICS));
 
 	return i4BytesWritten;
 }
