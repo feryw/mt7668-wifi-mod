@@ -881,22 +881,22 @@ wext_get_name(IN struct net_device *prNetDev, IN struct iw_request_info *prIwrIn
 
 		switch (eNetWorkType) {
 		case PARAM_NETWORK_TYPE_DS:
-			strcpy(pcName, "IEEE 802.11b");
+			strncpy(pcName, "IEEE 802.11b", sizeof(((struct iwreq *)0)->u.name));
 			break;
 		case PARAM_NETWORK_TYPE_OFDM24:
-			strcpy(pcName, "IEEE 802.11bgn");
+			strncpy(pcName, "IEEE 802.11bgn", sizeof(((struct iwreq *)0)->u.name));
 			break;
 		case PARAM_NETWORK_TYPE_AUTOMODE:
 		case PARAM_NETWORK_TYPE_OFDM5:
-			strcpy(pcName, "IEEE 802.11abgn");
+			strncpy(pcName, "IEEE 802.11abgn", sizeof(((struct iwreq *)0)->u.name));
 			break;
 		case PARAM_NETWORK_TYPE_FH:
 		default:
-			strcpy(pcName, "IEEE 802.11");
+			strncpy(pcName, "IEEE 802.11", sizeof(((struct iwreq *)0)->u.name));
 			break;
 		}
 	} else {
-		strcpy(pcName, "Disconnected");
+		strncpy(pcName, "Disconnected", sizeof(((struct iwreq *)0)->u.name));
 	}
 
 	return 0;
@@ -3902,17 +3902,22 @@ wext_indicate_wext_event(IN P_GLUE_INFO_T prGlueInfo,
 		goto skip_indicate_event;
 #else
 		if (pucData) {
+			INT_32 i4BufLen = 0;
 			P_PARAM_AUTH_REQUEST_T pAuthReq = (P_PARAM_AUTH_REQUEST_T) pucData;
 			/* under WE-18, only IWEVCUSTOM can be used */
 			u4Cmd = IWEVCUSTOM;
 			pucExtraInfo = aucExtraInfoBuf;
-			pucExtraInfo += sprintf(pucExtraInfo, "MLME-MICHAELMICFAILURE.indication ");
-			pucExtraInfo += sprintf(pucExtraInfo,
+
+			i4BufLen = scnprintf(pucExtraInfo, sizeof(aucExtraInfoBuf),
+									"MLME-MICHAELMICFAILURE.indication ");
+
+			i4BufLen += scnprintf((pucExtraInfo + i4BufLen),
+						(sizeof(aucExtraInfoBuf) - i4BufLen),
 						"%s",
 						(pAuthReq->u4Flags ==
 						 PARAM_AUTH_REQUEST_GROUP_ERROR) ? "groupcast " : "unicast ");
 
-			wrqu.data.length = pucExtraInfo - aucExtraInfoBuf;
+			wrqu.data.length = i4BufLen;
 			pucExtraInfo = aucExtraInfoBuf;
 		}
 #endif /* WIRELESS_EXT < 15 */

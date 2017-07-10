@@ -749,27 +749,34 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 PVOID kalPacketAllocWithHeadroom(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8 *ppucData)
 {
 	struct sk_buff *prSkb = dev_alloc_skb(u4Size);
-
-    /* Daniel 20151117, add for skb headroom setting */
-	prSkb = skb_realloc_headroom(prSkb, NIC_TX_HEAD_ROOM);
+	struct sk_buff *prSkbNew = NULL;
 
 	if (prSkb) {
-		*ppucData = (PUINT_8) (prSkb->data);
+		/* Daniel 20151117, add for skb headroom setting */
+		prSkbNew = skb_realloc_headroom(prSkb, NIC_TX_HEAD_ROOM);
 
-		/* DBGLOG(TDLS, INFO, "kalPacketAllocWithHeadroom, skb head[0x%x] data[0x%x] tail[0x%x] end[0x%x]\n",
-		*	prSkb->head, prSkb->data, prSkb->tail, prSkb->end);
-		*/
+		if (prSkbNew) {
+			*ppucData = (PUINT_8) (prSkbNew->data);
 
-		kalResetPacket(prGlueInfo, (P_NATIVE_PACKET) prSkb);
-	}
+			/* DBGLOG(TDLS, INFO, "kalPacketAllocWithHeadroom,
+			*			skb head[0x%x] data[0x%x] tail[0x%x] end[0x%x]\n",
+			*			prSkbNew->head, prSkbNew->data, prSkbNew->tail, prSkbNew->end);
+			*/
+
+			kalResetPacket(prGlueInfo, (P_NATIVE_PACKET) prSkbNew);
 #if DBG
-	{
-		PUINT_32 pu4Head = (PUINT_32) &prSkb->cb[0];
-		*pu4Head = (UINT_32) prSkb->head;
-		DBGLOG(RX, TRACE, "prSkb->head = %#lx, prSkb->cb = %#lx\n", (UINT_32) prSkb->head, *pu4Head);
-	}
+			{
+				PUINT_32 pu4Head = (PUINT_32) &prSkbNew->cb[0];
+				*pu4Head = (UINT_32) prSkbNew->head;
+				DBGLOG(RX, TRACE, "prSkbNew->head = %#lx, prSkbNew->cb = %#lx\n",
+										(UINT_32) prSkbNew->head, *pu4Head);
+			}
 #endif
-	return (PVOID) prSkb;
+		}
+
+		dev_kfree_skb(prSkb);
+	}
+	return (PVOID) prSkbNew;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1237,17 +1244,13 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 				 *  }
 				 */
 				{
-					UINT_32 i = 0;
-
-					P_PARAM_PMKID_CANDIDATE_T prPmkidCand =
-					    (P_PARAM_PMKID_CANDIDATE_T) &pPmkid->arCandidateList[0];
+					UINT_32 i;
 
 					for (i = 0; i < pPmkid->u4NumCandidates; i++) {
 						wext_indicate_wext_event(prGlueInfo,
 									 IWEVPMKIDCAND,
 									 (unsigned char *)&pPmkid->arCandidateList[i],
 									 pPmkid->u4NumCandidates);
-						prPmkidCand += sizeof(PARAM_PMKID_CANDIDATE_T);
 					}
 				}
 				break;
@@ -4072,6 +4075,7 @@ INT_32 kalRequestFirmware(const PUINT_8 pucPath, PUINT_8 pucData, UINT_32 u4Size
 		DBGLOG(INIT, INFO, "kalRequestFirmware %s Fail, errno[%d]!!\n", pucPath, ret);
 		pucData = NULL;
 		*pu4ReadSize = 0;
+		release_firmware(fw);
 		return ret;
 	}
 
@@ -4179,6 +4183,11 @@ kalReadyOnChannel(IN P_GLUE_INFO_T prGlueInfo,
 						  ieee80211_channel_to_frequency(ucChannelNum, KAL_BAND_5GHZ));
 		}
 
+		if (!prChannel) {
+			DBGLOG(INIT, ERROR, "ieee80211_get_channel fail!\n");
+			return;
+		}
+
 		switch (eSco) {
 		case CHNL_EXT_SCN:
 			rChannelType = NL80211_CHAN_NO_HT;
@@ -4234,6 +4243,11 @@ kalRemainOnChannelExpired(IN P_GLUE_INFO_T prGlueInfo,
 			prChannel =
 			    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
 						  ieee80211_channel_to_frequency(ucChannelNum, KAL_BAND_5GHZ));
+		}
+
+		if (!prChannel) {
+			DBGLOG(INIT, ERROR, "ieee80211_get_channel fail!\n");
+			return;
 		}
 
 		switch (eSco) {
@@ -4916,16 +4930,11 @@ int kalMetRemoveProcfs(void)
 #if CFG_SUPPORT_AGPS_ASSIST
 BOOLEAN kalIndicateAgpsNotify(P_ADAPTER_T prAdapter, UINT_8 cmd, PUINT_8 data, UINT_16 dataLen)
 {
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
-
-	struct sk_buff *skb = NULL;
-
 #ifdef CONFIG_NL80211_TESTMODE
-	skb = cfg80211_testmode_alloc_event_skb(priv_to_wiphy(prGlueInfo),
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	struct sk_buff *skb = cfg80211_testmode_alloc_event_skb(priv_to_wiphy(prGlueInfo),
 								dataLen, GFP_KERNEL);
-#else
-	goto nla_put_failure;
-#endif
+
 	/* DBGLOG(CCX, INFO, ("WLAN_STATUS_AGPS_NOTIFY, cmd=%d\n", cmd)); */
 	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_CMD, sizeof(cmd), &cmd) < 0))
 		goto nla_put_failure;
@@ -4936,16 +4945,16 @@ BOOLEAN kalIndicateAgpsNotify(P_ADAPTER_T prAdapter, UINT_8 cmd, PUINT_8 data, U
 	/* currently, the ifname maybe wlan0, p2p0, so the maximum name length will be 5 bytes */
 	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_IFNAME, 5, prGlueInfo->prDevHandler->name) < 0))
 		goto nla_put_failure;
- #ifdef CONFIG_NL80211_TESTMODE
+
 	cfg80211_testmode_event(skb, GFP_KERNEL);
 	return TRUE;
-#else
-	goto nla_put_failure;
-#endif
 
 nla_put_failure:
 	kfree_skb(skb);
 	return FALSE;
+#else
+	return FALSE;
+#endif
 }
 #endif
 

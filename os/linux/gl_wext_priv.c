@@ -1475,6 +1475,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	UINT_32 u4BufLen = 0;
 	PUINT_32 pu4IntBuf = NULL;
+	PUINT_8 prDest = NULL;
 	int status = 0;
 
 	kalMemZero(&aucOidBuf[0], sizeof(aucOidBuf));
@@ -1532,14 +1533,14 @@ priv_get_struct(IN struct net_device *prNetDev,
 	case PRIV_CMD_SW_CTRL:
 		pu4IntBuf = (PUINT_32) prIwReqData->data.pointer;
 		prNdisReq = (P_NDIS_TRANSPORT_STRUCT) &aucOidBuf[0];
+		prDest = (PUINT_8) &aucOidBuf[OFFSET_OF(NDIS_TRANSPORT_STRUCT, ndisOidContent)];
 
 		if (prIwReqData->data.length > (sizeof(aucOidBuf) - OFFSET_OF(NDIS_TRANSPORT_STRUCT, ndisOidContent))) {
 			DBGLOG(REQ, INFO, "priv_get_struct() exceeds length limit\n");
 			return -EFAULT;
 		}
 
-		if (copy_from_user(&prNdisReq->ndisOidContent[0], prIwReqData->data.pointer,
-			prIwReqData->data.length)) {
+		if (copy_from_user(prDest, prIwReqData->data.pointer, prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO, "priv_get_struct() copy_from_user oidBuf fail\n");
 			return -EFAULT;
 		}
@@ -6170,6 +6171,10 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev, IN char *pcComman
 	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
 
 	this_char = kalStrStr(*apcArgv, "=");
+
+	if (!this_char)
+		return -1;
+
 	this_char++;
 
 	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
@@ -6363,17 +6368,18 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand, IN i
 		CHAR ucTmp[WLAN_CFG_VALUE_LEN_MAX];
 		PUINT_8 pucCurrBuf = ucTmp;
 		UINT_8	i = 0;
+		INT_32	i4TmpBufLen = 0;
 
-		pucCurrBuf = ucTmp;
 		kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
 
 		if (i4Argc == 3) {
 			/*no space for it, driver can't accept space in the end of the line*/
 			/*ToDo: skip the space when parsing*/
-			SPRINTF(pucCurrBuf, ("%s", apcArgv[2]));
+			scnprintf(pucCurrBuf, sizeof(ucTmp), "%s", apcArgv[2]);
 		} else {
 			for (i = 2; i < i4Argc; i++)
-				SPRINTF(pucCurrBuf, ("%s ", apcArgv[i]));
+				i4TmpBufLen += scnprintf((pucCurrBuf + i4TmpBufLen),
+								(sizeof(ucTmp) - i4TmpBufLen), "%s", apcArgv[i]);
 		}
 
 		DBGLOG(INIT, WARN, "Update to driver temp buffer as [%s]\n", ucTmp);
@@ -6461,7 +6467,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 		/* rChipConfigInfo.u2MsgSize = kalStrnLen(apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
 		rChipConfigInfo.u2MsgSize = u4CmdLen - u4PrefixLen;
 		/* kalStrnCpy(rChipConfigInfo.aucCmd,apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
-		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE);
+		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE - 1);
 
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidSetChipConfig,
@@ -6566,7 +6572,7 @@ int priv_driver_get_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 		/* rChipConfigInfo.u2MsgSize = kalStrnLen(apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
 		rChipConfigInfo.u2MsgSize = u4CmdLen - u4PrefixLen;
 		/* kalStrnCpy(rChipConfigInfo.aucCmd,apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
-		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE);
+		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE - 1);
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryChipConfig,
 				   &rChipConfigInfo, sizeof(rChipConfigInfo), TRUE, TRUE, TRUE, &u4BufLen);
@@ -7572,8 +7578,10 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev, IN char *
 		DBGLOG(PF, INFO, "UDP ucCount=%d\n", ucCount);
 
 		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
-		if (u4Ret)
+		if (u4Ret) {
 			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
 
 		/* IPv4/IPv6 */
 		DBGLOG(PF, INFO, "ucVer=%d\n", ucVer);
@@ -7588,8 +7596,10 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev, IN char *
 		/* Port */
 		for (ii = 0; ii < ucCount; ii++) {
 			u4Ret = kalkStrtou16(apcPortArgv[ii+2], 0, &u2Port);
-			if (u4Ret)
+			if (u4Ret) {
 				DBGLOG(PF, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+				return -1;
+			}
 
 			pausPortArry[ii] = u2Port;
 			DBGLOG(PF, INFO, "ucPort=%d, idx=%d\n", u2Port, ii);
@@ -7597,6 +7607,13 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev, IN char *
 
 		return 0;
 	} else if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
 		if (ucVer == 0) {
 			kalMemZero(prGlueInfo->prAdapter->rWowCtrl.stWowPort.ausIPv4UdpPort,
 				sizeof(UINT_16) * MAX_TCP_UDP_PORT);
@@ -7641,8 +7658,10 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev, IN char *
 		DBGLOG(PF, INFO, "TCP ucCount=%d\n", ucCount);
 
 		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
-		if (u4Ret)
+		if (u4Ret) {
 			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
 
 		/* IPv4/IPv6 */
 		DBGLOG(PF, INFO, "Ver=%d\n", ucVer);
@@ -7657,8 +7676,10 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev, IN char *
 		/* Port */
 		for (ii = 0; ii < ucCount; ii++) {
 			u4Ret = kalkStrtou16(apcPortArgv[ii+2], 0, &u2Port);
-			if (u4Ret)
+			if (u4Ret) {
 				DBGLOG(PF, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+				return -1;
+			}
 
 			pausPortArry[ii] = u2Port;
 			DBGLOG(PF, INFO, "ucPort=%d, idx=%d\n", u2Port, ii);
@@ -7666,6 +7687,13 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev, IN char *
 
 		return 0;
 	} else if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
 		if (ucVer == 0) {
 			kalMemZero(prGlueInfo->prAdapter->rWowCtrl.stWowPort.ausIPv4UdpPort,
 				sizeof(UINT_16) * MAX_TCP_UDP_PORT);

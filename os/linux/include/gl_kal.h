@@ -916,6 +916,12 @@ kalIoctlTimeout(IN P_GLUE_INFO_T prGlueInfo,
 VOID kalHandleAssocInfo(IN P_GLUE_INFO_T prGlueInfo, IN P_EVENT_ASSOC_INFO prAssocInfo);
 
 #if CFG_ENABLE_FW_DOWNLOAD
+WLAN_STATUS kalFirmwareOpen(IN P_GLUE_INFO_T prGlueInfo, IN PPUINT_8 apucNameTable);
+WLAN_STATUS kalFirmwareClose(IN P_GLUE_INFO_T prGlueInfo);
+WLAN_STATUS kalFirmwareLoad(IN P_GLUE_INFO_T prGlueInfo, OUT PVOID prBuf, IN UINT_32 u4Offset, OUT PUINT_32 pu4Size);
+WLAN_STATUS kalFirmwareSize(IN P_GLUE_INFO_T prGlueInfo, OUT PUINT_32 pu4Size);
+VOID kalConstructDefaultFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
+	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);
 PVOID kalFirmwareImageMapping(IN P_GLUE_INFO_T prGlueInfo,
 			      OUT PPVOID ppvMapFileBuf, OUT PUINT_32 pu4FileLength, IN ENUM_IMG_DL_IDX_T eDlIdx);
 VOID kalFirmwareImageUnmapping(IN P_GLUE_INFO_T prGlueInfo, IN PVOID prFwHandle, IN PVOID pvMapFileBuf);

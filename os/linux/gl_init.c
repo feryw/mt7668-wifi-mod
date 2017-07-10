@@ -1074,7 +1074,7 @@ VOID wlanDebugInit(VOID)
 #endif
 #endif /* DBG */
 
-	LOG_FUNC("Reset ALL DBG module log level to DEFAULT!");
+	DBGLOG(INIT, INFO, "Reset ALL DBG module log level to DEFAULT!\n");
 
 }
 
@@ -1086,10 +1086,10 @@ WLAN_STATUS wlanSetDebugLevel(IN UINT_32 u4DbgIdx, IN UINT_32 u4DbgMask)
 	if (u4DbgIdx == DBG_ALL_MODULE_IDX) {
 		for (u4Idx = 0; u4Idx < DBG_MODULE_NUM; u4Idx++)
 			aucDebugModule[u4Idx] = (UINT_8) u4DbgMask;
-		LOG_FUNC("Set ALL DBG module log level to [0x%02x]\n", u4DbgMask);
+		DBGLOG(INIT, INFO, "Set ALL DBG module log level to [0x%02x]\n", u4DbgMask);
 	} else if (u4DbgIdx < DBG_MODULE_NUM) {
 		aucDebugModule[u4DbgIdx] = (UINT_8) u4DbgMask;
-		LOG_FUNC("Set DBG module[%u] log level to [0x%02x]\n", u4DbgIdx, u4DbgMask);
+		DBGLOG(INIT, INFO, "Set DBG module[%u] log level to [0x%02x]\n", u4DbgIdx, u4DbgMask);
 	} else {
 		fgStatus = WLAN_STATUS_FAILURE;
 	}
@@ -2185,6 +2185,11 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 		/* 4 <2.5> Set the ioaddr to HIF Info */
 		prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(prWdev->wiphy);
+		if (prGlueInfo == NULL) {
+			DBGLOG(INIT, ERROR, "wlanProbe: get wiphy_priv() fail\n");
+			return -1;
+		}
+
 		gPrDev = prGlueInfo->prDevHandler;
 
 		/* 4 <4> Setup IRQ */
@@ -2487,6 +2492,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		DBGLOG(INIT, LOUD, "wlanProbe: probe success\n");
 	} else {
+		if (prGlueInfo == NULL)
+			return -1;
+
 		glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
 		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
 	}

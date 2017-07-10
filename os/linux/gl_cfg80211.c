@@ -2535,6 +2535,7 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 #define NL80211_TESTMODE_P2P_SCANDONE_INVALID 0
 #define NL80211_TESTMODE_P2P_SCANDONE_STATUS 1
 
+#ifdef CONFIG_NL80211_TESTMODE
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	INT_32 i4Status = -EINVAL, READY_TO_BEAM = 0;
 
@@ -2543,11 +2544,8 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
 
-#ifdef CONFIG_NL80211_TESTMODE
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, sizeof(UINT_32));
-#else
-	DBGLOG(QM, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
-#endif
+
 	/* READY_TO_BEAM = */
 	/* (UINT_32)(prGlueInfo->prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsGOInitialDone) */
 	/* &(!prGlueInfo->prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsScanRequest); */
@@ -2578,14 +2576,15 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 		}
 	}
 
-#ifdef CONFIG_NL80211_TESTMODE
 	i4Status = cfg80211_testmode_reply(skb);
-#else
-	DBGLOG(QM, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
-#endif
 
 nla_put_failure:
 	return i4Status;
+
+#else
+	DBGLOG(QM, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
+	return -EINVAL;
+#endif
 
 }
 
@@ -2924,9 +2923,11 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, struc
 	STA_RECORD_T *prStaRec;
 	u8 deleteMac[MAC_ADDR_LEN];
 
-	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
 	memset(deleteMac, 0, MAC_ADDR_LEN);
 	memcpy(deleteMac, mac, MAC_ADDR_LEN);
@@ -2951,9 +2952,11 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, const
 	STA_RECORD_T *prStaRec;
 	u8 deleteMac[MAC_ADDR_LEN];
 
-	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
 	memset(deleteMac, 0, MAC_ADDR_LEN);
 	memcpy(deleteMac, mac, MAC_ADDR_LEN);
