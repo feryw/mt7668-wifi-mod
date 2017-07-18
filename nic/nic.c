@@ -468,6 +468,12 @@ WLAN_STATUS nicProcessIST(IN P_ADAPTER_T prAdapter)
 		}
 
 		nicProcessIST_impl(prAdapter, u4IntStatus);
+
+		/* Have to TX now. Skip RX polling ASAP */
+		if (test_bit(GLUE_FLAG_HIF_TX_CMD_BIT, &prAdapter->prGlueInfo->ulFlag)
+			|| test_bit(GLUE_FLAG_HIF_TX_BIT, &prAdapter->prGlueInfo->ulFlag)) {
+			i *= 2;
+		}
 	}
 
 	return u4Status;
