@@ -2778,7 +2778,7 @@ p2pFuncParseBeaconVenderId(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucIE,
 
 		if (rsnParseCheckForWFAInfoElem(prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
 			if ((ucOuiType == VENDOR_OUI_TYPE_WPA) && (u2SubTypeVersion == VERSION_WPA)) {
-				if (kalP2PGetCcmpCipher(prAdapter->prGlueInfo, ucRoleIndex))
+				if (!kalP2PGetCcmpCipher(prAdapter->prGlueInfo, ucRoleIndex))
 					kalP2PSetCipher(prAdapter->prGlueInfo, IW_AUTH_CIPHER_TKIP, ucRoleIndex);
 				kalMemCopy(prP2pSpecificBssInfo->aucWpaIeBuffer, pucIE, IE_SIZE(pucIE));
 				prP2pSpecificBssInfo->u2WpaIeLen = IE_SIZE(pucIE);
