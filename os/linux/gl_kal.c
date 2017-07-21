@@ -77,6 +77,7 @@
 #if CFG_SUPPORT_AGPS_ASSIST
 #include <net/netlink.h>
 #endif
+#include <linux/ctype.h>
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -3053,6 +3054,55 @@ BOOLEAN kalIsCardRemoved(IN P_GLUE_INFO_T prGlueInfo)
 	/* Linux MMC doesn't have removal notification yet */
 }
 
+
+#ifdef CONFIG_IDME
+#define IDME_MACADDR "/proc/idme/mac_addr"
+static int idme_get_mac_addr(unsigned char *mac_addr, size_t addr_len)
+{
+	unsigned char buf[IFHWADDRLEN * 2 + 1] = {""}, str[3] = {""};
+	int i, mac[IFHWADDRLEN];
+	mm_segment_t old_fs;
+	struct file *f;
+	size_t len;
+
+	if (!mac_addr || addr_len < IFHWADDRLEN) {
+		DBGLOG(INIT, ERROR, "invalid mac_addr ptr or buf\n");
+		return -1;
+	}
+
+	f = filp_open(IDME_MACADDR, O_RDONLY, 0);
+	if (IS_ERR(f)) {
+		DBGLOG(INIT, ERROR, "can't open mac addr file\n");
+		return -1;
+	}
+
+	old_fs = get_fs();
+	set_fs(get_ds());
+	f->f_op->read(f, buf, IFHWADDRLEN * 2, &f->f_pos);
+	filp_close(f, NULL);
+	set_fs(old_fs);
+
+	if (strlen(buf) != IFHWADDRLEN * 2)
+		goto bailout;
+
+	for (i = 0; i < IFHWADDRLEN; i++) {
+		str[0] = buf[i * 2];
+		str[1] = buf[i * 2 + 1];
+		if (!isxdigit(str[0]) || !isxdigit(str[1]))
+			goto bailout;
+		len = sscanf(str, "%02x", &mac[i]);
+		if (len != 1)
+			goto bailout;
+	}
+	for (i = 0; i < IFHWADDRLEN; i++)
+		mac_addr[i] = (unsigned char)mac[i];
+	return 0;
+bailout:
+	DBGLOG(INIT, ERROR, "wrong mac addr %02x %02x\n", buf[0], buf[1]);
+	return -1;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to send command to firmware for overriding netweork address
@@ -3074,6 +3124,13 @@ BOOLEAN kalRetrieveNetworkAddress(IN P_GLUE_INFO_T prGlueInfo, IN OUT PARAM_MAC_
 	prGlueInfo->fgIsMacAddrOverride = prAdapter->rWifiVar.ucMacAddrOverride;
 
 	wlanHwAddrToBin(prAdapter->rWifiVar.aucMacAddrStr, prGlueInfo->rMacAddrOverride);
+
+#ifdef CONFIG_IDME
+	if (prMacAddr && 0 == idme_get_mac_addr((unsigned char *)prMacAddr, sizeof(PARAM_MAC_ADDRESS))) {
+		DBGLOG(INIT, INFO, "use IDME mac addr\n");
+		return TRUE;
+	}
+#endif
 
 	if (prGlueInfo->fgIsMacAddrOverride == FALSE) {
 		UINT_32 i;
