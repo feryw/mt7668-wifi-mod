@@ -237,6 +237,66 @@ VOID rlmReqGeneratePowerCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief For association request, supported channels
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+VOID rlmReqGenerateSupportedChIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
+{
+	PUINT_8 pucBuffer;
+	P_BSS_INFO_T prBssInfo;
+	RF_CHANNEL_INFO_T auc2gChannelList[MAX_2G_BAND_CHN_NUM];
+	RF_CHANNEL_INFO_T auc5gChannelList[MAX_5G_BAND_CHN_NUM];
+	UINT_8 ucNumOf2gChannel = 0;
+	UINT_8 ucNumOf5gChannel = 0;
+	UINT_8 ucChIdx = 0;
+	UINT_8 ucIdx = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	/* We should add supported channels IE in assoc/reassoc req if the spectrum
+	 * management bit is set to 1 in Capability Infor field, or the connection
+	 * will be rejected by Marvell APs in some TGn items. (e.g. 5.2.3).
+	 * Spectrum management related feature (802.11h) is for 5G band.
+	 */
+	if (!prBssInfo || prBssInfo->eBand != BAND_5G)
+		return;
+
+
+	pucBuffer = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
+
+	rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
+					 MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel, auc2gChannelList);
+	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+					 MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel, auc5gChannelList);
+
+	SUP_CH_IE(pucBuffer)->ucId = ELEM_ID_SUP_CHS;
+	SUP_CH_IE(pucBuffer)->ucLength = (ucNumOf2gChannel + ucNumOf5gChannel) * 2;
+
+	for (ucIdx = 0; ucIdx < ucNumOf2gChannel; ucIdx++, ucChIdx += 2) {
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx] =
+			auc2gChannelList[ucIdx].ucChannelNum;
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx + 1] = 1;
+	}
+
+	for (ucIdx = 0; ucIdx < ucNumOf5gChannel; ucIdx++, ucChIdx += 2) {
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx] =
+			auc5gChannelList[ucIdx].ucChannelNum;
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx + 1] = 1;
+	}
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+	pucBuffer += IE_SIZE(pucBuffer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief For probe request, association request
 *
 * \param[in]

@@ -873,13 +873,14 @@
 #define ERP_INFO_USE_PROTECTION                     BIT(1)	/* Use_Protection bit */
 #define ERP_INFO_BARKER_PREAMBLE_MODE               BIT(2)	/* Barker_Preamble_Mode bit */
 
-#define ELEM_MAX_LEN_SUPPORTED_CHANNELS            9
+#define ELEM_MAX_LEN_SUPPORTED_CHANNELS            (MAX_CHN_NUM * 2)
 
 /* 7.3.2.14 Extended Supported Rates */
 #define ELEM_MAX_LEN_EXTENDED_SUP_RATES             255
 
 /* 7.3.2.16 Power Capability element */
 #define ELEM_MAX_LEN_POWER_CAP                      2
+
 
 /* 7.3.2.21 Measurement Request element */
 #define ELEM_RM_TYPE_BASIC_REQ                      0
@@ -1802,7 +1803,7 @@ typedef struct _IE_TPC_REPORT_T {
 typedef struct _IE_SUPPORTED_CHANNELS_T {
 	UINT_8 ucId;
 	UINT_8 ucLength;
-	UINT_8 ucChannelNum[ELEM_MAX_LEN_SUPPORTED_CHANNELS * 2];
+	UINT_8 ucChannelNum[0];
 } __KAL_ATTRIB_PACKED__ IE_SUPPORTED_CHANNELS_T, *P_IE_SUPPORTED_CHANNELS_T;
 
 /* 7.3.2.20 Channel Switch Announcement element*/
@@ -2606,6 +2607,8 @@ typedef struct _IE_MTK_OUI_T {
 #define EXT_CAP_IE(fp)          ((P_EXT_CAP_T) fp)
 
 #define POWER_CAP_IE(fp)          ((P_IE_POWER_CAP_T) fp)
+
+#define SUP_CH_IE(fp)           ((P_IE_SUPPORTED_CHANNELS_T) fp)
 
 #define HT_CAP_IE(fp)           ((P_IE_HT_CAP_T) fp)
 
