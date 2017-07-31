@@ -314,7 +314,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		}
 
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface name = %s\n", name);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
 		prNewNetDevice = alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), name,
 						NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
 #else

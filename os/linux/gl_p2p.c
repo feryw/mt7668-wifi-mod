@@ -901,7 +901,7 @@ BOOLEAN glRegisterP2P(P_GLUE_INFO_T prGlueInfo, const char *prDevName, const cha
 
 
 		/* 3. allocate netdev */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
 		prGlueInfo->prP2PInfo[i]->prDevHandler =
 			alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prSetDevName,
 					NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);

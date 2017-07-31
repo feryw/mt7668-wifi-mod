@@ -1240,7 +1240,7 @@ void wlanMonWorkHandler(struct work_struct *work)
 	if (prGlueInfo->fgIsEnableMon) {
 		if (prGlueInfo->prMonDevHandler)
 			return;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
 		prGlueInfo->prMonDevHandler =
 			alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), NIC_MONITOR_INF_NAME,
 				NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
@@ -1625,7 +1625,7 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 		prInfName = NIC_INF_NAME;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
 		prGlueInfo->prDevHandler =
 			alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prInfName,
 						NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
