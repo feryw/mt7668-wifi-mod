@@ -1202,6 +1202,12 @@ static int wlanStop(struct net_device *prDev)
 	if (prScanRequest)
 		kalCfg80211ScanDone(prScanRequest, TRUE);
 
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+	/* zero clear old acs information */
+	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
+		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
+#endif
+
 	netif_tx_stop_all_queues(prDev);
 
 	return 0;		/* success */
