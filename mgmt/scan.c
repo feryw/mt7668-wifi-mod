@@ -2326,8 +2326,16 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBss
 			break;
 
 		case CONNECT_BY_BSSID:
-			if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prConnSettings->aucBSSID))
-				prPrimaryBssDesc = prBssDesc;
+			if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prConnSettings->aucBSSID)) {
+				/* Make sure to match with SSID if supplied.
+				 * Some dual band APs share a single BSSID among different BSSes.
+				 */
+				if ((prBssDesc->ucSSIDLen > 0 && prConnSettings->ucSSIDLen > 0 &&
+					 EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+								prConnSettings->aucSSID, prConnSettings->ucSSIDLen)) ||
+					prConnSettings->ucSSIDLen == 0)
+					prPrimaryBssDesc = prBssDesc;
+			}
 			break;
 
 		default:
