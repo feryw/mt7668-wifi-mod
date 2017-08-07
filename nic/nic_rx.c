@@ -3423,11 +3423,11 @@ nicRxGetRcpiValueFromRxv(IN UINT_8 ucRcpiMode, IN P_SW_RFB_T prSwRfb)
 			break;
 
 		case RCPI_MODE_MAX:
-			ucRcpiValue = (ucRcpi0 > ucRcpi1) ? (ucRcpi0):(ucRcpi1);
+			ucRcpiValue = (ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
 			break;
 
 		case RCPI_MODE_MIN:
-			ucRcpiValue = (ucRcpi0 < ucRcpi1) ? (ucRcpi0):(ucRcpi1);
+			ucRcpiValue = (ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
 			break;
 
 		default:

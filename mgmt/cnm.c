@@ -973,7 +973,7 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 {
 	UINT_8 ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
-	return ucMaxBandwidth == MAX_BW_20MHZ ? ucMaxBandwidth:(ucMaxBandwidth - 1);
+	return ucMaxBandwidth == MAX_BW_20MHZ ? ucMaxBandwidth : (ucMaxBandwidth - 1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1123,7 +1123,7 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 	P_BSS_INFO_T			prBssInfo;
 	UINT_8					ucMaxBw;
 
-	DBGLOG(CNM, INFO, "DBDC %s\n", fgDbdcEn?"Enable":"Disable");
+	DBGLOG(CNM, INFO, "DBDC %s\n", fgDbdcEn ? "Enable" : "Disable");
 
 	/* Parameter decision */
 	if (fgDbdcEn)

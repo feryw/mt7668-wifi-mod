@@ -8470,7 +8470,7 @@ static int priv_driver_get_cnm_info(IN struct net_device *prNetDev, IN char *pcC
 
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"DBDC is %s, %u CHs in BAND0, %u CHs in BAND1\n",
-				rCnmStatus.fgDbDcModeEn?"ON":"OFF", rCnmStatus.ucChNumB0, rCnmStatus.ucChNumB1);
+				rCnmStatus.fgDbDcModeEn ? "ON" : "OFF", rCnmStatus.ucChNumB0, rCnmStatus.ucChNumB1);
 
 	if (rCnmStatus.ucChNumB0 > 0) {
 		rSwCtrlInfo.u4Id = 0xb0010000;
@@ -9121,7 +9121,7 @@ static int priv_driver_pta_config(IN struct net_device *prNetDev, IN char *pcCom
 				"\ncommand failed %x", rStatus);
 	else if (!(cmd->u2Type & CMD_ADV_CONTROL_SET)) {
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\nCoex mode: %s", (cmd->u4CoexMode)?"FDD":"TDD");
+				"\nCoex mode: %s", (cmd->u4CoexMode) ? "FDD" : "TDD");
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\nPTA status:");
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,

@@ -859,7 +859,7 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 		} else if (fgTimeout) {
 			HAL_WIFI_FUNC_GET_STATUS(prAdapter, u4Result);
 			DBGLOG(INIT, ERROR, "Waiting for %s: Timeout, Status=0x%08x\n",
-				fgRdyChk?"ready bit":"power off", u4Result);
+				fgRdyChk ? "ready bit" : "power off", u4Result);
 
 			u4Status = WLAN_STATUS_FAILURE;
 
@@ -2365,7 +2365,7 @@ OUT PUINT_32 pu4DataMode, OUT PUINT_32 pu4BlockSize, OUT PUINT_32 pu4CRC, OUT PU
 	/* Dump image information */
 	if (ucCurSecNum == 0) {
 		DBGLOG(INIT, INFO, "%s INFO: chip_info[%u:E%u] feature[0x%02X]\n",
-			(eDlIdx == IMG_DL_IDX_N9_FW)?"N9":"CR4", prTailer->chip_info,
+			(eDlIdx == IMG_DL_IDX_N9_FW) ? "N9" : "CR4", prTailer->chip_info,
 			prTailer->eco_code, prTailer->feature_set);
 		DBGLOG(INIT, INFO, "date[%s] version[%c%c%c%c%c%c%c%c%c%c]\n", prTailer->ram_built_date,
 			prTailer->ram_version[0], prTailer->ram_version[1],

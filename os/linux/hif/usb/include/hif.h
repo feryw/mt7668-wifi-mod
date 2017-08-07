@@ -323,7 +323,7 @@ typedef struct _USB_REQ_T {
 ********************************************************************************
 */
 
-#define USB_TRANS_MSDU_TC(_prMsduInfo) ((_prMsduInfo)->ucWmmQueSet ? USB_DBDC1_TC:(_prMsduInfo)->ucTC)
+#define USB_TRANS_MSDU_TC(_prMsduInfo) ((_prMsduInfo)->ucWmmQueSet ? USB_DBDC1_TC : (_prMsduInfo)->ucTC)
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
