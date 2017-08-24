@@ -6822,6 +6822,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucWowPwsMode = (UINT_8) wlanCfgGetUint32(prAdapter, "WowPwsMode", Param_PowerModeFast_PSP);
 	prWifiVar->ucListenDtimInterval =
 		(UINT_8) wlanCfgGetUint32(prAdapter, "ListenDtimInt", DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD);
+	prWifiVar->ucEapolOffload = (UINT_8) wlanCfgGetUint32(prAdapter, "EapolOffload", FEATURE_ENABLED);
 
 #if CFG_WOW_SUPPORT
 	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
@@ -9425,6 +9426,91 @@ WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @brief This function is a wrapper to send eapol offload (rekey) command
+*
+* @param prGlueInfo                     Pointer of prGlueInfo Data Structure
+*
+* @return VOID
+*/
+/*----------------------------------------------------------------------------*/
+int wlanSuspendRekeyOffload(P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRekeyDisable)
+{
+	UINT_32 u4BufLen;
+	P_PARAM_GTK_REKEY_DATA prGtkData;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	INT_32 i4Rslt = -EINVAL;
+
+	ASSERT(prGlueInfo);
+
+	prGtkData =
+		(P_PARAM_GTK_REKEY_DATA) kalMemAlloc(sizeof(PARAM_GTK_REKEY_DATA), VIR_MEM_TYPE);
+
+	if (!prGtkData)
+		return WLAN_STATUS_SUCCESS;
+
+	/* if enable => enable FW rekey offload. if disable, let rekey back to supplicant */
+	prGtkData->ucRekeyDisable = ucRekeyDisable;
+
+	if (!ucRekeyDisable) {
+		DBGLOG(RSN, INFO, "kek\n");
+		DBGLOG_MEM8(RSN, ERROR, (PUINT_8)prGlueInfo->rWpaInfo.aucKek, NL80211_KEK_LEN);
+		DBGLOG(RSN, INFO, "kck\n");
+		DBGLOG_MEM8(RSN, ERROR, (PUINT_8)prGlueInfo->rWpaInfo.aucKck, NL80211_KCK_LEN);
+		DBGLOG(RSN, INFO, "replay count\n");
+		DBGLOG_MEM8(RSN, ERROR, (PUINT_8)prGlueInfo->rWpaInfo.aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+
+		kalMemCopy(prGtkData->aucKek, prGlueInfo->rWpaInfo.aucKek, NL80211_KEK_LEN);
+		kalMemCopy(prGtkData->aucKck, prGlueInfo->rWpaInfo.aucKck, NL80211_KCK_LEN);
+		kalMemCopy(prGtkData->aucReplayCtr, prGlueInfo->rWpaInfo.aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+
+		prGtkData->ucBssIndex = prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+
+		prGtkData->u4Proto = NL80211_WPA_VERSION_2;
+		if (prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_WPA)
+			prGtkData->u4Proto = NL80211_WPA_VERSION_1;
+
+		if (prGlueInfo->rWpaInfo.u4CipherPairwise == IW_AUTH_CIPHER_TKIP)
+			prGtkData->u4PairwiseCipher = BIT(3);
+		else if (prGlueInfo->rWpaInfo.u4CipherPairwise == IW_AUTH_CIPHER_CCMP)
+			prGtkData->u4PairwiseCipher = BIT(4);
+		else {
+			kalMemFree(prGtkData, VIR_MEM_TYPE, sizeof(PARAM_GTK_REKEY_DATA));
+			return WLAN_STATUS_SUCCESS;
+		}
+
+		if (prGlueInfo->rWpaInfo.u4CipherGroup == IW_AUTH_CIPHER_TKIP)
+			prGtkData->u4GroupCipher    = BIT(3);
+		else if (prGlueInfo->rWpaInfo.u4CipherGroup == IW_AUTH_CIPHER_CCMP)
+			prGtkData->u4GroupCipher    = BIT(4);
+		else {
+			kalMemFree(prGtkData, VIR_MEM_TYPE, sizeof(PARAM_GTK_REKEY_DATA));
+			return WLAN_STATUS_SUCCESS;
+		}
+
+		prGtkData->u4KeyMgmt = prGlueInfo->rWpaInfo.u4KeyMgmt;
+		prGtkData->u4MgmtGroupCipher = 0;
+
+	} else {
+		/* inform FW disable EAPOL offload */
+		DBGLOG(RSN, INFO, "Disable EAPOL offload\n");
+	}
+
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetGtkRekeyData,
+				prGtkData, sizeof(PARAM_GTK_REKEY_DATA), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, INFO, "Suspend GTK rekey data error:%lx\n", rStatus);
+	else
+		i4Rslt = 0;
+
+	kalMemFree(prGtkData, VIR_MEM_TYPE, sizeof(PARAM_GTK_REKEY_DATA));
+
+	return i4Rslt;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * @brief This function is a wrapper to send power-saving mode command
 *        when AIS enter wow, and send WOW command
 *        Also let GC/GO/AP enter deactivate state to enter TOP sleep
@@ -9439,6 +9525,12 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	UINT_8 idx;
 	PARAM_POWER_MODE ePwrMode;
 	P_BSS_INFO_T prBssInfo;
+
+	/* if wifi.cfg EAPOL offload is 0, we set rekey offload when enter wow */
+	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
+		wlanSuspendRekeyOffload(prGlueInfo, FALSE);
+		DBGLOG(HAL, STATE, "Suspend rekey offload\n");
+	}
 
 	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
 	/* Send power-saving cmd when enter wow state, even w/o cfg80211 support */
@@ -9483,6 +9575,12 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
 {
 	PARAM_POWER_MODE ePwrMode = Param_PowerModeCAM;
+
+	/* if wifi.cfg EAPOL offload is disble, we disable FW offload when leave wow */
+	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
+		wlanSuspendRekeyOffload(prGlueInfo, TRUE);
+		DBGLOG(HAL, STATE, "Resume rekey offload disable\n");
+	}
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {

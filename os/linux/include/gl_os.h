@@ -305,6 +305,9 @@ typedef struct _GL_WPA_INFO_T {
 	UINT_32 u4Mfp;
 	UINT_8 ucRSNMfpCap;
 #endif
+	UINT_8 aucKek[NL80211_KEK_LEN];
+	UINT_8 aucKck[NL80211_KCK_LEN];
+	UINT_8 aucReplayCtr[NL80211_REPLAY_CTR_LEN];
 } GL_WPA_INFO_T, *P_GL_WPA_INFO_T;
 
 typedef enum _ENUM_NET_DEV_IDX_T {

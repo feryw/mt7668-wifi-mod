@@ -1488,6 +1488,18 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy, struct net_device *dev, str
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	/* if disable offload, we store key data here, and enable rekey offload when enter wow */
+	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
+		kalMemZero(prGlueInfo->rWpaInfo.aucKek, NL80211_KEK_LEN);
+		kalMemZero(prGlueInfo->rWpaInfo.aucKck, NL80211_KCK_LEN);
+		kalMemZero(prGlueInfo->rWpaInfo.aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+		kalMemCopy(prGlueInfo->rWpaInfo.aucKek, data->kek, NL80211_KEK_LEN);
+		kalMemCopy(prGlueInfo->rWpaInfo.aucKck, data->kck, NL80211_KCK_LEN);
+		kalMemCopy(prGlueInfo->rWpaInfo.aucReplayCtr, data->replay_ctr, NL80211_REPLAY_CTR_LEN);
+
+		return 0;
+	}
+
 	prGtkData =
 	    (P_PARAM_GTK_REKEY_DATA) kalMemAlloc(sizeof(PARAM_GTK_REKEY_DATA), VIR_MEM_TYPE);
 
@@ -1538,6 +1550,8 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy, struct net_device *dev, str
 
 	prGtkData->u4KeyMgmt = prGlueInfo->rWpaInfo.u4KeyMgmt;
 	prGtkData->u4MgmtGroupCipher = 0;
+
+	prGtkData->ucRekeyDisable = FALSE;
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetGtkRekeyData,

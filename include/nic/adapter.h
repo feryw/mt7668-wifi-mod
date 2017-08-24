@@ -811,6 +811,7 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
 	UINT_8 ucWowPwsMode; /* when enter wow, automatically enter wow power-saving profile */
 	UINT_8 ucListenDtimInterval; /* adjust the listen interval by dtim interval */
+	UINT_8 ucEapolOffload; /* eapol offload when active mode / wow mode */
 
 	UINT_8 u4SwTestMode;
 	UINT_8	ucCtrlFlagAssertPath;
