@@ -1047,7 +1047,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		/* In this case, the scan resoure could be locked by kernel, and */
 		/* driver needs this work around to clear the state */
 		kalMemCopy(&(prP2pGlueDevInfo->rBackupScanRequest),
-			prP2pGlueDevInfo->prScanRequest, sizeof(struct cfg80211_scan_request));
+			request, sizeof(struct cfg80211_scan_request));
 
 		i4RetRslt = 0;
 	} while (FALSE);
