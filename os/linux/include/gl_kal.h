@@ -460,6 +460,22 @@ typedef struct _MONITOR_RADIOTAP_T {
 #endif
 
 /**
+ * enum nl80211_reg_rule_flags - regulatory rule flags
+ * @NL80211_RRF_NO_OFDM: OFDM modulation not allowed
+ * @NL80211_RRF_AUTO_BW: maximum available bandwidth should be calculated
+ *  base on contiguous rules and wider channels will be allowed to cross
+ *  multiple contiguous/overlapping frequency ranges.
+ * @NL80211_RRF_DFS: DFS support is required to be used
+ */
+#define KAL_RRF_NO_OFDM NL80211_RRF_NO_OFDM
+#define KAL_RRF_DFS     NL80211_RRF_DFS
+#if KERNEL_VERSION(3, 15, 0) > CFG80211_VERSION_CODE
+#define KAL_RRF_AUTO_BW 0
+#else
+#define KAL_RRF_AUTO_BW NL80211_RRF_AUTO_BW
+#endif
+
+/**
  * kalCfg80211ToMtkBand - Band translation helper
  *
  * @band: cfg80211_band
