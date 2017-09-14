@@ -8192,10 +8192,7 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 #endif
 
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"WiFi Driver Version %u.%u.%u\n",
-		NIC_DRIVER_MAJOR_VERSION,
-		NIC_DRIVER_MINOR_VERSION,
-		NIC_DRIVER_SERIAL_VERSION);
+		"WiFi Driver Version " NIC_DRIVER_VERSION_STRING "\n");
 
 	i4BytesWritten = (INT_32)u4Offset;
 
