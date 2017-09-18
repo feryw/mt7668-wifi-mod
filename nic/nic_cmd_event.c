@@ -130,6 +130,39 @@ VOID nicCmdEventQueryMcrRead(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 
 }
 
+VOID nicCmdEventQueryCoexIso(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	UINT_32 u4QueryInfoLen;
+	P_GLUE_INFO_T prGlueInfo;
+
+	struct CMD_COEX_CTRL *prCmdCoexCtrl;
+	struct CMD_COEX_ISO_DETECT *prCmdCoexIsoDetect;
+	struct PARAM_COEX_CTRL *prCoexCtrl;
+	struct PARAM_COEX_ISO_DETECT *prCoexIsoDetect;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCmdCoexCtrl = (struct CMD_COEX_CTRL *) (pucEventBuf);
+		u4QueryInfoLen  = sizeof(struct PARAM_COEX_CTRL);
+		prCmdCoexIsoDetect = (struct CMD_COEX_ISO_DETECT *) &prCmdCoexCtrl->aucBuffer[0];
+
+		prCoexCtrl = (struct PARAM_COEX_CTRL *) prCmdInfo->pvInformationBuffer;
+		prCoexIsoDetect  = (struct PARAM_COEX_ISO_DETECT *) &prCoexCtrl->aucBuffer[0];
+		prCoexIsoDetect->u4IsoPath = prCmdCoexIsoDetect->u4IsoPath;
+		prCoexIsoDetect->u4Channel = prCmdCoexIsoDetect->u4Channel;
+		/*prCoexIsoDetect->u4Band = prCmdCoexIsoDetect->u4Band;*/
+		prCoexIsoDetect->u4Isolation = prCmdCoexIsoDetect->u4Isolation;
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+}
+
 #if CFG_SUPPORT_QA_TOOL
 VOID nicCmdEventQueryRxStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
 {

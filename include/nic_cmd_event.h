@@ -498,7 +498,7 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_SET_ROAMING_SKIP = 0x6D,	/* 0x6D (Set) used to setting roaming skip*/
 #endif
 	CMD_ID_GET_SET_CUSTOMER_CFG = 0x70, /* 0x70(Set) */
-
+	CMD_ID_COEX_CTRL = 0x7C, /* 0x7C (Set/Query) */
 	CMD_ID_GET_NIC_CAPABILITY = 0x80,	/* 0x80 (Query) */
 	CMD_ID_GET_LINK_QUALITY,	/* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,	/* 0x82 (Query) */
@@ -1266,6 +1266,37 @@ typedef struct _CMD_ACCESS_REG {
 	UINT_32 u4Address;
 	UINT_32 u4Data;
 } CMD_ACCESS_REG, *P_CMD_ACCESS_REG;
+
+/* CMD_COEX_CTRL & EVENT_COEX_CTRL */
+/************************************************/
+/*  UINT_32 u4SubCmd : Coex Ctrl Sub Command    */
+/*  UINT_8 aucBuffer : Reserve for Sub Command  */
+/*                    Data Structure            */
+/************************************************/
+struct CMD_COEX_CTRL {
+	UINT_32 u4SubCmd;
+	UINT_8  aucBuffer[64];
+};
+
+/* Sub Command Data Structure */
+/************************************************/
+/*  UINT_32 u4IsoPath : WF Path (WF0/WF1)       */
+/*  UINT_32 u4Channel : WF Channel              */
+/*  UINT_32 u4Band    : WF Band (Band0/Band1)(Not used now)   */
+/*  UINT_32 u4Isolation  : Isolation value      */
+/************************************************/
+struct CMD_COEX_ISO_DETECT {
+	UINT_32 u4IsoPath;
+	UINT_32 u4Channel;
+	/*UINT_32 u4Band;*/
+	UINT_32 u4Isolation;
+};
+
+/* Use for Coex Ctrl Cmd */
+enum ENUM_COEX_CTRL_CMD {
+	ENUM_COEX_CTRL_ISO_DETECT = 1,
+	ENUM_COEX_CTRL_NUM
+};
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 /* CMD_ID_CAL_BACKUP_IN_HOST_V2 & EVENT_ID_CAL_BACKUP_IN_HOST_V2 */
@@ -3023,6 +3054,8 @@ typedef struct _EVENT_UPDATE_COEX_PHYRATE_T {
 ********************************************************************************
 */
 VOID nicCmdEventQueryMcrRead(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+/* Nic cmd/event for Coex related */
+VOID nicCmdEventQueryCoexIso(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 
 #if CFG_SUPPORT_QA_TOOL
 VOID nicCmdEventQueryRxStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);

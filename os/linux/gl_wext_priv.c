@@ -2322,6 +2322,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 #define CMD_GET_CURR_AR_RATE	"GET_CURR_AR_RATE"
+#define CMD_COEX_CONTROL        "COEX_CONTROL"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -3554,6 +3555,112 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 
 	nicRxClearStatistics(prGlueInfo->prAdapter);
 
+	return i4BytesWritten;
+}
+
+/* Private Coex Ctrl Subcmd for Isolation Detection */
+static int priv_driver_iso_detect(IN P_GLUE_INFO_T prGlueInfo,
+				IN struct CMD_COEX_CTRL *prCmdCoexCtrl, IN signed char *argv[])
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	UINT_32 u4Ret = 0;
+
+	struct CMD_COEX_ISO_DETECT rCmdCoexIsoDetect;
+
+	rCmdCoexIsoDetect.u4Isolation = 0;
+
+	u4Ret = kalkStrtou32(argv[2], 0, &(rCmdCoexIsoDetect.u4IsoPath));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, " -priv_driver_coex_iso_detect - Parse Iso Path failed u4Ret=%d\n", u4Ret);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(argv[3], 0, &(rCmdCoexIsoDetect.u4Channel));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, " -priv_driver_coex_iso_detect - Parse channel failed u4Ret = %d\n", u4Ret);
+		return -1;
+	}
+
+	/* Copy Memory */
+	kalMemCopy(prCmdCoexCtrl->aucBuffer, &rCmdCoexIsoDetect, sizeof(struct CMD_COEX_ISO_DETECT));
+
+	/* Ioctl Isolation Detect */
+	rStatus = kalIoctl(prGlueInfo,
+			wlanoidQueryCoexIso,
+			prCmdCoexCtrl,
+			sizeof(struct CMD_COEX_CTRL),
+			TRUE,
+			TRUE,
+			TRUE,
+			&u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	/* If all pass, return u4Ret to 0 */
+		return u4Ret;
+}
+
+/* Private Command for Coex Ctrl */
+static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	INT_32 i4ArgNum = 2;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_32 u4Ret = 0;
+	enum ENUM_COEX_CTRL_CMD CoexCtrlCmd;
+	struct CMD_COEX_CTRL rCmdCoexCtrl;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	/* Prevent Kernel Panic, set default i4ArgNum to 2 */
+	if (i4Argc >= i4ArgNum) {
+
+		/* Parse Coex SubCmd */
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &rCmdCoexCtrl.u4SubCmd);
+		if (u4Ret)
+			return -1;
+
+		CoexCtrlCmd = (enum ENUM_COEX_CTRL_CMD) rCmdCoexCtrl.u4SubCmd;
+
+		switch (CoexCtrlCmd) {
+		/* Isolation Detection */
+		case ENUM_COEX_CTRL_ISO_DETECT:
+		{
+			INT_32 i4SubArgNum = 4;
+			/* Safely dereference "argv[3]".*/
+			if (i4Argc >= i4SubArgNum) {
+				struct CMD_COEX_ISO_DETECT *prCmdCoexIsoDetect;
+
+				/* Isolation Detection Method */
+				u4Ret = priv_driver_iso_detect(prGlueInfo, &rCmdCoexCtrl, apcArgv);
+				if (u4Ret)
+					return -1;
+
+				/* Get Isolation value */
+				prCmdCoexIsoDetect = (struct CMD_COEX_ISO_DETECT *) rCmdCoexCtrl.aucBuffer;
+
+				/* Set Return i4BytesWritten Value */
+				i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%d", prCmdCoexIsoDetect->u4Isolation);
+				DBGLOG(REQ, INFO, "Isolation: %d\n", prCmdCoexIsoDetect->u4Isolation);
+			}
+			break;
+		}
+		/* Default Coex Cmd */
+		default:
+			break;
+		}
+	}
 	return i4BytesWritten;
 }
 
@@ -9620,6 +9727,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_show_acl_entry(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_CLEAR_ACL_ENTRY, strlen(CMD_CLEAR_ACL_ENTRY)) == 0) {
 			i4BytesWritten = priv_driver_clear_acl_entry(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_COEX_CONTROL, strlen(CMD_COEX_CONTROL)) == 0) {
+			i4BytesWritten = priv_driver_coex_ctrl(prNetDev, pcCommand, i4TotalLen);
 		}
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		else if (strnicmp(pcCommand, CMD_SHOW_DFS_STATE, strlen(CMD_SHOW_DFS_STATE)) == 0) {
