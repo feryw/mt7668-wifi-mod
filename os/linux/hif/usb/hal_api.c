@@ -968,6 +968,7 @@ VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
 	UINT_32 u4BufLen;
 	static BOOL s_fgOutOfSwRfb = FALSE;
 	static UINT_32 s_u4OutOfSwRfbPrintLimit;
+	static UINT_32 s_u4OutOfSwRfbBeginTime;
 
 	/* Process complete event/data */
 	prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, &prHifInfo->rRxEventQLock);
@@ -997,8 +998,22 @@ VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
 					DBGLOG(RX, WARN, "Out of SwRfb!\n");
 					s_u4OutOfSwRfbPrintLimit = jiffies + MSEC_TO_JIFFIES(SW_RFB_LOG_LIMIT_MS);
 				}
+				s_u4OutOfSwRfbBeginTime = jiffies;
 				s_fgOutOfSwRfb = TRUE;
 			}
+
+			/* If the out-of-SW-RFB situation continues more than SW_RFB_BLOCKING_LIMIT_MS millie seconds,
+			 * we discard the remaining Rx packets so as to break the possible dead lock
+			 */
+			if (jiffies_to_msecs((long)jiffies - (long)s_u4OutOfSwRfbBeginTime) >
+			    SW_RFB_BLOCKING_LIMIT_MS) {
+				DBGLOG(RX, WARN, "Discard Rx packets (%u bytes)!\n",
+				       prUrb->actual_length - prBufCtrl->u4ReadSize);
+				glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, &prHifInfo->rRxEventQLock, FALSE);
+				s_fgOutOfSwRfb = FALSE;
+				break;
+			}
+
 			glUsbEnqueueReq(prHifInfo, prCompleteQ, prUsbReq, &prHifInfo->rRxEventQLock, TRUE);
 
 			set_bit(GLUE_FLAG_RX_BIT, &prGlueInfo->ulFlag);

@@ -97,7 +97,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define HIF_IST_LOOP_COUNT              (4)
 #define HIF_IST_TX_THRESHOLD            (1) /* Min msdu count to trigger Tx during INT polling state */
 
-#define HIF_NUM_OF_QM_RX_PKT_NUM        (512)
+#define HIF_NUM_OF_QM_RX_PKT_NUM        (1024)
 
 #define HIF_TX_BUFF_COUNT_TC0            256
 #define HIF_TX_BUFF_COUNT_TC1            256
@@ -178,6 +178,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define INTERRUPT_TIMEOUT_MS            (1000)
 #define SW_RFB_RECHECK_MS               (10)
 #define SW_RFB_LOG_LIMIT_MS             (5000)
+#define SW_RFB_BLOCKING_LIMIT_MS        (1000)
 
 /* Vendor Request */
 #define VND_REQ_POWER_ON_WIFI           (0x4)
