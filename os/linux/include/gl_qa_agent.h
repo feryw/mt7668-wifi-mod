@@ -267,5 +267,7 @@ int HQA_CMDHandler(struct net_device *prNetDev, IN union iwreq_data *prIwReqData
 
 int priv_qa_agent(IN struct net_device *prNetDev,
 		  IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+
+int priv_set_eeprom_mode(IN UINT_32 u4Mode);
 #endif /*CFG_SUPPORT_QA_TOOL */
 #endif /* _GL_QA_AGENT_H */

@@ -2263,6 +2263,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 
 #define CMD_SETMONITOR		"MONITOR"
 #define CMD_SETBUFMODE		"BUFFER_MODE"
+#define CMD_SETEEPROM_MODE	"EEPROM_MODE"
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 #define CMD_GET_CH_RANK_LIST "GET_CH_RANK_LIST"
@@ -2420,6 +2421,45 @@ int priv_driver_get_dbg_level(IN struct net_device *prNetDev, IN char *pcCommand
 
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
+static int priv_driver_set_eeprom_mode(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	INT_32 i4Argc = 0;
+	INT_32 i4BytesWritten = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_32 arg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 2) {
+		rStatus = kalkStrtou32(apcArgv[1], 0, &arg);
+		if (rStatus) {
+			DBGLOG(REQ, LOUD, "parse apcArgv error rStatus=%d\n", rStatus);
+			return -1;
+		}
+
+		rStatus = priv_set_eeprom_mode(arg);
+		if (rStatus) {
+			DBGLOG(REQ, LOUD, "priv_set_eeprom_mode rStatus=%d\n", rStatus);
+			return -1;
+		}
+
+		i4BytesWritten =
+			snprintf(pcCommand, i4TotalLen, "Switch eeprom source as %s",
+				(arg == EFUSE_MODE) ? "Efuse" : "Buffer Bin");
+	}
+
+	return i4BytesWritten;
+}
 static int priv_driver_set_efuse_buffer_mode(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -9600,6 +9640,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 #if CFG_SUPPORT_BUFFER_MODE
 		else if (strnicmp(pcCommand, CMD_SETBUFMODE, strlen(CMD_SETBUFMODE)) == 0)
 			i4BytesWritten = priv_driver_set_efuse_buffer_mode(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SETEEPROM_MODE, strlen(CMD_SETEEPROM_MODE)) == 0)
+			i4BytesWritten = priv_driver_set_eeprom_mode(prNetDev, pcCommand, i4TotalLen);
 #endif
 #endif
 #if CFG_SUPPORT_MSP

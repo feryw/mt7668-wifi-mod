@@ -7656,4 +7656,13 @@ ERROR1:
 ERROR0:
 	return i4Status;
 }
+
+int priv_set_eeprom_mode(IN UINT_32 u4Mode)
+{
+	if ((u4Mode != EFUSE_MODE) && (u4Mode != BUFFER_BIN_MODE))
+		return -EINVAL;
+
+	g_ucEepromCurrentMode = u4Mode;
+	return 0;
+}
 #endif
