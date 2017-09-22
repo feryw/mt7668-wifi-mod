@@ -191,8 +191,14 @@
 #define CFG_SUPPORT_RX_AMSDU		1
 
 /* Enable Android wake_lock operations */
+#ifdef CONFIG_HAS_WAKELOCK
 #ifndef CFG_ENABLE_WAKE_LOCK
 #define CFG_ENABLE_WAKE_LOCK		1
+#endif
+
+#else
+#undef CFG_ENABLE_WAKE_LOCK
+#define CFG_ENABLE_WAKE_LOCK		0
 #endif
 
 /*------------------------------------------------------------------------------

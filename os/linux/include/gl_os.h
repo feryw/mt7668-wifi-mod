@@ -120,7 +120,7 @@
 #include <linux/jiffies.h>	/* jiffies */
 #include <linux/delay.h>	/* udelay and mdelay macro */
 
-#ifdef CONFIG_ANDROID
+#ifdef CONFIG_HAS_WAKELOCK
 #include <linux/wakelock.h>
 #endif
 
@@ -594,8 +594,10 @@ struct _GLUE_INFO_T {
 	UINT_8 aucDADipv6[16];
 #endif				/* CFG_SUPPORT_PASSPOINT */
 
+#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T rIntrWakeLock;
 	KAL_WAKE_LOCK_T rTimeoutWakeLock;
+#endif
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	BOOLEAN fgMetProfilingEn;

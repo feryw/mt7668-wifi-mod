@@ -851,7 +851,9 @@ typedef struct _WIFI_VAR_T {
 typedef struct {
 	LINK_T rLinkHead;
 	OS_SYSTIME rNextExpiredSysTime;
+#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T rWakeLock;
+#endif
 	BOOLEAN fgWakeLocked;
 } ROOT_TIMER, *P_ROOT_TIMER;
 
