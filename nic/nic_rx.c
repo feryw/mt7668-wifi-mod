@@ -181,6 +181,10 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 #else
 	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
 #endif
+#if (CFG_WOW_SUPPORT == 1)
+	{EVENT_ID_WOW_WAKEUP_REASON,		nicEventWakeUpReason},
+#endif
+
 };
 
 /*******************************************************************************

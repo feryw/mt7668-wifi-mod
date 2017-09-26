@@ -3289,3 +3289,34 @@ VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEve
 	}
 }
 
+#if (CFG_WOW_SUPPORT == 1)
+VOID nicEventWakeUpReason(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	struct _EVENT_WAKEUP_REASON_INFO *prWakeUpReason;
+	P_GLUE_INFO_T prGlueInfo;
+
+	DBGLOG(NIC, INFO, "nicEventWakeUpReason\n");
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	/* Driver receives EVENT_ID_WOW_WAKEUP_REASON after firmware wake up host
+	 * The possible Wakeup Reason define in FW as following
+	 * 0:  MAGIC PACKET
+	 * 1:  BITMAP
+	 * 2:  ARPNS
+	 * 3:  GTK_REKEY
+	 * 4:  COALESCING_FILTER
+	 * 5:  HW_GLOBAL_ENABLE
+	 * 6:  TCP_SYN PACKET
+	 * 7:  TDLS
+	 * 8:  DISCONNECT
+	 * 9:  IPV4_UDP PACKET
+	 * 10: IPV4_TCP PACKET
+	 * 11: IPV6_UDP PACKET
+	 * 12: IPV6_TCP PACKET
+	 */
+	prWakeUpReason = (struct _EVENT_WAKEUP_REASON_INFO *) (prEvent->aucBuffer);
+	prGlueInfo->prAdapter->rWowCtrl.ucReason = prWakeUpReason->reason;
+	DBGLOG(NIC, INFO, "nicEventWakeUpReason:%d\n", prGlueInfo->prAdapter->rWowCtrl.ucReason);
+}
+#endif
+

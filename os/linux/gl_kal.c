@@ -4983,6 +4983,7 @@ WLAN_STATUS kalCloseCorDumpFile(BOOLEAN fgIsN9)
 VOID kalWowInit(IN P_GLUE_INFO_T prGlueInfo)
 {
 	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort, sizeof(WOW_PORT_T));
+	prGlueInfo->prAdapter->rWowCtrl.ucReason = INVALID_WOW_WAKE_UP_REASON;
 }
 
 VOID kalWowCmdEventSetCb(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
@@ -5055,6 +5056,7 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 	wlanSetSuspendMode(prGlueInfo, enable);
 	/* p2pSetSuspendMode(prGlueInfo, TRUE); */
 
+	pWOW_CTRL->ucReason = INVALID_WOW_WAKE_UP_REASON;
 	/* Let WOW enable/disable as last command, so we can back/restore DMA classify filter in FW */
 	rCmdWowlanParam.ucScenarioID = pWOW_CTRL->ucScenarioId;
 	rCmdWowlanParam.ucBlockCount = pWOW_CTRL->ucBlockCount;

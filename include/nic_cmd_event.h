@@ -628,6 +628,10 @@ typedef enum _ENUM_EVENT_ID_T {
 	EVENT_ID_CSA_DONE = 0x61,
 #endif
 
+#if (CFG_WOW_SUPPORT == 1)
+	EVENT_ID_WOW_WAKEUP_REASON = 0x62,
+#endif
+
 	EVENT_ID_TDLS = 0x80,	/* TDLS event_id */
 
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,	/* 0x90 (Unsolicited) */
@@ -2325,6 +2329,14 @@ typedef struct _EVENT_RDD_REPORT_T {
 } EVENT_RDD_REPORT_T, *P_EVENT_RDD_REPORT_T;
 #endif
 
+#if (CFG_WOW_SUPPORT == 1)
+/* event of wake up reason */
+struct _EVENT_WAKEUP_REASON_INFO {
+	UINT_8 reason;
+	UINT_8 aucReserved[3];
+};
+#endif
+
 typedef struct _EVENT_BSS_BEACON_TIMEOUT_T {
 	UINT_8 ucBssIndex;
 	UINT_8 ucReasonCode;
@@ -3165,7 +3177,9 @@ VOID nicEventAssertDump(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventHifCtrl(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventRddSendPulse(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
-
+#if (CFG_WOW_SUPPORT == 1)
+VOID nicEventWakeUpReason(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+#endif
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

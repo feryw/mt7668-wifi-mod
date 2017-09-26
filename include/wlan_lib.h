@@ -199,6 +199,10 @@
 #define ACS_DIRTINESS_LEVEL_LOW 32
 #endif
 
+#if CFG_WOW_SUPPORT
+#define INVALID_WOW_WAKE_UP_REASON 255
+#endif
+
 
 typedef enum _CMD_VER_T {
 	CMD_VER_1, /* Type[2]+String[32]+Value[32] */
@@ -483,6 +487,7 @@ typedef struct _WOW_CTRL_T {
 	UINT_8 aucReserved1[1];
 	WOW_WAKE_HIF_T astWakeHif[2];
 	WOW_PORT_T stWowPort;
+	UINT_8 ucReason;
 } WOW_CTRL_T, *P_WOW_CTRL_T;
 
 #endif
