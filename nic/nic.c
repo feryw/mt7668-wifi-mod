@@ -1357,7 +1357,9 @@ WLAN_STATUS nicDeactivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
 	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, ucBssIndex);
-
+#if (CFG_HW_WMM_BY_BSS == 1)
+	cnmFreeWmmIndex(prAdapter, prBssInfo);
+#endif
 	return u4Status;
 }
 

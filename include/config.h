@@ -295,6 +295,7 @@
 #define CFG_RX_DIRECT_USB                           1
 #endif
 
+#define CFG_HW_WMM_BY_BSS                           1
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Integration
  *------------------------------------------------------------------------------
@@ -306,6 +307,7 @@
 #define CFG_REPORT_RFBB_VERSION     1
 
 #define HW_BSSID_NUM                4	/* HW BSSID number by chip */
+#define HW_WMM_NUM                  4	/* HW WMM number by chip */
 
 #if (MTK_WCN_HIF_SDIO)
 #define CFG_CHIP_RESET_SUPPORT          1

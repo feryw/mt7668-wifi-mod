@@ -832,7 +832,7 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 		fgSetTx2Hif = TRUE;
 		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
 
-		if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
+		if (prMsduInfo->ucWmmQueSet != DBDC_5G_WMM_INDEX) {
 			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
 			QUEUE_INSERT_TAIL(prDataPort[TX_2G_WMM_PORT_NUM], (P_QUE_ENTRY_T) prMsduInfo);
 		} else {
@@ -3474,7 +3474,7 @@ static UINT_8 nicTxDirectGetHifTc(P_MSDU_INFO_T prMsduInfo)
 {
 	UINT_8 ucHifTc = 0;
 
-	if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
+	if (prMsduInfo->ucWmmQueSet != DBDC_5G_WMM_INDEX) {
 		ucHifTc = TX_2G_WMM_PORT_NUM;
 	} else {
 		if (prMsduInfo->ucTC >= 0 && prMsduInfo->ucTC < TC_NUM)

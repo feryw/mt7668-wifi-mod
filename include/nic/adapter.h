@@ -369,6 +369,9 @@ struct _BSS_INFO_T {
 	UINT_8 aucCWmaxLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWmaxLog2 */
 	AC_QUE_PARMS_T arACQueParmsForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the value */
 	UINT_8 ucWmmQueSet;
+#if (CFG_HW_WMM_BY_BSS == 1)
+	BOOLEAN fgIsWmmInited;
+#endif
 
     /*------------------------------------------------------------------------*/
 	/* 802.11n HT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_HT) */
@@ -1228,6 +1231,9 @@ struct _ADAPTER_T {
 	/* SER related info */
 	UINT_8 ucSerState;
 
+#if (CFG_HW_WMM_BY_BSS == 1)
+	UINT_8 ucHwWmmEnBit;
+#endif
 	WIFI_FEM_CFG_T rWifiFemCfg;
 };				/* end of _ADAPTER_T */
 
