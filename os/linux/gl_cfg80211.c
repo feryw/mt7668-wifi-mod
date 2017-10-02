@@ -333,6 +333,11 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_in
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	if (g_u4HaltFlag) {
+		DBGLOG(RSN, WARN, "wlan is halt, skip key deletion\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 #if DBG
 	DBGLOG(RSN, TRACE, "mtk_cfg80211_del_key\n");
 	if (mac_addr) {
