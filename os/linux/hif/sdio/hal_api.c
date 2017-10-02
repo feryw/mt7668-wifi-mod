@@ -1909,24 +1909,101 @@ VOID halGetMailbox(IN P_ADAPTER_T prAdapter, IN UINT_32 u4MailboxNum, OUT PUINT_
 	}
 }
 
+VOID halDeAggRxPktProc(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
+{
+	P_GL_HIF_INFO_T prHifInfo;
+	P_RX_CTRL_T prRxCtrl;
+	P_SW_RFB_T prSwRfb = (P_SW_RFB_T) NULL;
+	PUINT_8 pucSrcAddr;
+	UINT_16 u2PktLength;
+	UINT_32 i;
+	BOOLEAN fgReschedule = FALSE;
+
+	QUE_T rTempFreeRfbList, rTempRxRfbList;
+	P_QUE_T prTempFreeRfbList = &rTempFreeRfbList;
+	P_QUE_T prTempRxRfbList = &rTempRxRfbList;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	SDIO_TIME_INTERVAL_DEC();
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	QUEUE_INITIALIZE(prTempFreeRfbList);
+	QUEUE_INITIALIZE(prTempRxRfbList);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	if (prRxCtrl->rFreeSwRfbList.u4NumElem < prRxBuf->u4PktCount) {
+		fgReschedule = TRUE;
+	} else {
+		/* Get enough free SW_RFB to be Rx */
+		for (i = 0; i < prRxBuf->u4PktCount; i++) {
+			QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList, prSwRfb, P_SW_RFB_T);
+			QUEUE_INSERT_TAIL(prTempFreeRfbList, &prSwRfb->rQueEntry);
+		}
+		fgReschedule = FALSE;
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+	if (fgReschedule) {
+		mutex_lock(&prHifInfo->rRxDeAggQueMutex);
+		QUEUE_INSERT_HEAD(&prHifInfo->rRxDeAggQueue, (P_QUE_ENTRY_T)prRxBuf);
+		mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
+
+		/* Reschedule this work */
+		if ((prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0)
+			schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
+
+		return;
+	}
+
+
+	pucSrcAddr = prRxBuf->pvRxCoalescingBuf;
+
+	SDIO_REC_TIME_START();
+	for (i = 0; i < prRxBuf->u4PktCount; i++) {
+		u2PktLength = HAL_RX_STATUS_GET_RX_BYTE_CNT((P_HW_MAC_RX_DESC_T)pucSrcAddr);
+
+		QUEUE_REMOVE_HEAD(prTempFreeRfbList, prSwRfb, P_SW_RFB_T);
+		kalMemCopy(prSwRfb->pucRecvBuff, pucSrcAddr, ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN));
+
+		prSwRfb->ucPacketType = (UINT_8)HAL_RX_STATUS_GET_PKT_TYPE(prSwRfb->prRxStatus);
+
+		QUEUE_INSERT_TAIL(prTempRxRfbList, &prSwRfb->rQueEntry);
+
+		pucSrcAddr += ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN);
+	}
+	SDIO_REC_TIME_END();
+	SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4RxDataCpTime);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+	RX_ADD_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT, prTempRxRfbList->u4NumElem);
+	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList, prTempRxRfbList);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+
+	/* Wake up Rx handling thread */
+	set_bit(GLUE_FLAG_RX_BIT, &(prAdapter->prGlueInfo->ulFlag));
+	wake_up_interruptible(&(prAdapter->prGlueInfo->waitq));
+
+	if (prTempFreeRfbList->u4NumElem) {
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+		QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList, prTempFreeRfbList);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	}
+
+	prRxBuf->u4PktCount = 0;
+	mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
+	QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (P_QUE_ENTRY_T)prRxBuf);
+	mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
+}
+
 VOID halDeAggRxPktWorker(struct work_struct *work)
 {
 	P_GLUE_INFO_T prGlueInfo;
 	P_GL_HIF_INFO_T prHifInfo;
 	P_ADAPTER_T prAdapter;
 	P_SDIO_RX_COALESCING_BUF_T prRxBuf;
-	UINT_32 i;
-	QUE_T rTempFreeRfbList, rTempRxRfbList;
-	P_QUE_T prTempFreeRfbList = &rTempFreeRfbList;
-	P_QUE_T prTempRxRfbList = &rTempRxRfbList;
 	P_RX_CTRL_T prRxCtrl;
-	P_SW_RFB_T prSwRfb = (P_SW_RFB_T) NULL;
-	PUINT_8 pucSrcAddr;
-	UINT_16 u2PktLength;
-	BOOLEAN fgReschedule = FALSE;
-
-	KAL_SPIN_LOCK_DECLARATION();
-	SDIO_TIME_INTERVAL_DEC();
 
 	if (g_u4HaltFlag)
 		return;
@@ -1941,76 +2018,12 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	QUEUE_INITIALIZE(prTempFreeRfbList);
-	QUEUE_INITIALIZE(prTempRxRfbList);
-
 	mutex_lock(&prHifInfo->rRxDeAggQueMutex);
 	QUEUE_REMOVE_HEAD(&prHifInfo->rRxDeAggQueue, prRxBuf, P_SDIO_RX_COALESCING_BUF_T);
 	mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
+
 	while (prRxBuf) {
-
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-		if (prRxCtrl->rFreeSwRfbList.u4NumElem < prRxBuf->u4PktCount) {
-			fgReschedule = TRUE;
-		} else {
-			/* Get enough free SW_RFB to be Rx */
-			for (i = 0; i < prRxBuf->u4PktCount; i++) {
-				QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList, prSwRfb, P_SW_RFB_T);
-				QUEUE_INSERT_TAIL(prTempFreeRfbList, &prSwRfb->rQueEntry);
-			}
-			fgReschedule = FALSE;
-		}
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-		if (fgReschedule) {
-			mutex_lock(&prHifInfo->rRxDeAggQueMutex);
-			QUEUE_INSERT_HEAD(&prHifInfo->rRxDeAggQueue, (P_QUE_ENTRY_T)prRxBuf);
-			mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
-
-			/* Reschedule this work */
-			if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0)
-				schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
-
-			return;
-		}
-
-		pucSrcAddr = prRxBuf->pvRxCoalescingBuf;
-
-		SDIO_REC_TIME_START();
-		for (i = 0; i < prRxBuf->u4PktCount; i++) {
-			u2PktLength = HAL_RX_STATUS_GET_RX_BYTE_CNT((P_HW_MAC_RX_DESC_T)pucSrcAddr);
-
-			QUEUE_REMOVE_HEAD(prTempFreeRfbList, prSwRfb, P_SW_RFB_T);
-			kalMemCopy(prSwRfb->pucRecvBuff, pucSrcAddr, ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN));
-
-			prSwRfb->ucPacketType = (UINT_8)HAL_RX_STATUS_GET_PKT_TYPE(prSwRfb->prRxStatus);
-
-			QUEUE_INSERT_TAIL(prTempRxRfbList, &prSwRfb->rQueEntry);
-
-			pucSrcAddr += ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN);
-		}
-		SDIO_REC_TIME_END();
-		SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4RxDataCpTime);
-
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-		RX_ADD_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT, prTempRxRfbList->u4NumElem);
-		QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList, prTempRxRfbList);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-
-		/* Wake up Rx handling thread */
-		set_bit(GLUE_FLAG_RX_BIT, &(prAdapter->prGlueInfo->ulFlag));
-		wake_up_interruptible(&(prAdapter->prGlueInfo->waitq));
-
-		if (prTempFreeRfbList->u4NumElem) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-			QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList, prTempFreeRfbList);
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-		}
-
-		prRxBuf->u4PktCount = 0;
-		mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
-		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (P_QUE_ENTRY_T)prRxBuf);
-		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
+		halDeAggRxPktProc(prAdapter, prRxBuf);
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 			return;
@@ -2024,7 +2037,6 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 VOID halDeAggRxPkt(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
 {
 	P_GL_HIF_INFO_T prHifInfo;
-
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	/* Avoid to schedule DeAggWorker during uninit flow */
@@ -2036,11 +2048,15 @@ VOID halDeAggRxPkt(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
 		return;
 	}
 
+#if CFG_SDIO_RX_AGG_TASKLET
 	mutex_lock(&prHifInfo->rRxDeAggQueMutex);
 	QUEUE_INSERT_TAIL(&prHifInfo->rRxDeAggQueue, (P_QUE_ENTRY_T)prRxBuf);
 	mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
 
 	schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
+#else
+	halDeAggRxPktProc(prAdapter, prRxBuf);
+#endif
 }
 
 VOID halRxTasklet(unsigned long data)
