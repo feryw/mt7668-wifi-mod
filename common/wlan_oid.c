@@ -11830,6 +11830,10 @@ wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
 		*pu4QueryInfoLen = sizeof(struct CMD_GET_TRAFFIC_REPORT);
 		len = sizeof(struct CMD_GET_TRAFFIC_REPORT);
 		break;
+	case CMD_NOISE_HISTOGRAM_TYPE:
+		*pu4QueryInfoLen = sizeof(struct CMD_NOISE_HISTOGRAM_REPORT);
+		len = sizeof(struct CMD_NOISE_HISTOGRAM_REPORT);
+		break;
 	default:
 		return WLAN_STATUS_INVALID_LENGTH;
 	}

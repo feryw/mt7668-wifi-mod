@@ -2369,6 +2369,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_PD            "GET_PD"
 #define CMD_SET_MAX_RFGAIN        "SET_MAX_RFGAIN"
 #define CMD_GET_MAX_RFGAIN        "GET_MAX_RFGAIN"
+#define CMD_NOISE_HISTOGRAM   "NOISE_HISTOGRAM"
 
 enum {
 	CMD_ADVCTL_NOISE_ID = 1,
@@ -9850,6 +9851,108 @@ static int priv_driver_get_maxrfgain(IN struct net_device *prNetDev, IN char *pc
 	return i4BytesWritten;
 
 }
+
+static int priv_driver_noise_histogram(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	P_GLUE_INFO_T prGlueInfo;
+	INT_32 i4BytesWritten = 0;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	struct CMD_NOISE_HISTOGRAM_REPORT *cmd = NULL;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto noise_histogram_invalid;
+
+	cmd = (struct CMD_NOISE_HISTOGRAM_REPORT *)kalMemAlloc(sizeof(*cmd), VIR_MEM_TYPE);
+	if (!cmd)
+		goto noise_histogram_invalid;
+
+	if ((i4Argc > 4) || (i4Argc < 2))
+		goto noise_histogram_invalid;
+
+	memset(cmd, 0, sizeof(*cmd));
+
+	cmd->u2Type = CMD_NOISE_HISTOGRAM_TYPE;
+	cmd->u2Len = sizeof(*cmd);
+
+	if (strnicmp(apcArgv[1], "ENABLE", strlen("ENABLE")) == 0) {
+		cmd->ucAction = CMD_NOISE_HISTOGRAM_ENABLE;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if (strnicmp(apcArgv[1], "DISABLE", strlen("DISABLE")) == 0) {
+		cmd->ucAction = CMD_NOISE_HISTOGRAM_DISABLE;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if (strnicmp(apcArgv[1], "RESET", strlen("RESET")) == 0) {
+		cmd->ucAction = CMD_NOISE_HISTOGRAM_RESET;
+		cmd->u2Type |= CMD_ADV_CONTROL_SET;
+	} else if (strnicmp(apcArgv[1], "GET", strlen("GET")) == 0) {
+		cmd->ucAction = CMD_NOISE_HISTOGRAM_GET;
+	} else
+		goto noise_histogram_invalid;
+
+	DBGLOG(REQ, LOUD, "%s(%s) action %x\n"
+		, __func__, pcCommand, cmd->ucAction);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidAdvCtrl, cmd, sizeof(*cmd), TRUE, TRUE, TRUE, &u4BufLen);
+
+	if ((rStatus != WLAN_STATUS_SUCCESS) && (rStatus != WLAN_STATUS_PENDING))
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand failed %x", rStatus);
+	else if (cmd->ucAction == CMD_NOISE_HISTOGRAM_GET) {
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n       Power > -55: %10d"
+				, cmd->u4IPI10);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-55 >= Power > -60: %10d"
+				, cmd->u4IPI9);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-60 >= Power > -65: %10d"
+				, cmd->u4IPI8);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-65 >= Power > -70: %10d"
+				, cmd->u4IPI7);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-70 >= Power > -75: %10d"
+				, cmd->u4IPI6);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-75 >= Power > -80: %10d"
+				, cmd->u4IPI5);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-80 >= Power > -83: %10d"
+				, cmd->u4IPI4);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-83 >= Power > -86: %10d"
+				, cmd->u4IPI3);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-86 >= Power > -89: %10d"
+				, cmd->u4IPI2);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-89 >= Power > -92: %10d"
+				, cmd->u4IPI1);
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\n-92 >= Power      : %10d"
+				, cmd->u4IPI0);
+
+	} else
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\ncommand sent %x", rStatus);
+
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+
+	return i4BytesWritten;
+noise_histogram_invalid:
+	if (cmd)
+		kalMemFree(cmd, VIR_MEM_TYPE, sizeof(*cmd));
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"\nformat:get_report [enable|disable|get|reset]");
+	return i4BytesWritten;
+}
 #endif
 
 static int priv_driver_set_csi(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -10316,6 +10419,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_MAX_RFGAIN, strlen(CMD_GET_MAX_RFGAIN)) == 0)
 			i4BytesWritten = priv_driver_get_maxrfgain(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_NOISE_HISTOGRAM, strlen(CMD_NOISE_HISTOGRAM)) == 0)
+			i4BytesWritten = priv_driver_noise_histogram(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else
 			i4CmdFound = 0;

@@ -2475,6 +2475,7 @@ struct EVENT_CSI_DATA_T {
 #define CMD_AFH_CONFIG_TYPE (0x2)
 #define CMD_BA_CONFIG_TYPE (0x3)
 #define CMD_GET_REPORT_TYPE (0x4)
+#define CMD_NOISE_HISTOGRAM_TYPE (0x5)
 
 /* for PtaConfig field */
 #define CMD_PTA_CONFIG_PTA_EN (1<<0)
@@ -2625,6 +2626,33 @@ typedef struct _CMD_ADV_CONFIG_HEADER {
 	UINT_16 u2Type;
 	UINT_16 u2Len;
 } CMD_ADV_CONFIG_HEADER_T, *P_CMD_ADV_CONFIG_HEADER_T;
+
+/* noise histogram related */
+enum _ENUM_NOISE_HISTOGRAM_ACTION_T {
+	CMD_NOISE_HISTOGRAM_ENABLE = 1,
+	CMD_NOISE_HISTOGRAM_DISABLE,
+	CMD_NOISE_HISTOGRAM_RESET,
+	CMD_NOISE_HISTOGRAM_GET
+};
+struct CMD_NOISE_HISTOGRAM_REPORT {
+	UINT_16 u2Type;
+	UINT_16 u2Len;
+	/* parameter */
+	UINT_8 ucAction;
+	UINT_8 reserved[3];
+	/* IPI_report */
+	UINT_32 u4IPI0;  /* Power <= -92 */
+	UINT_32 u4IPI1;  /* -92 < Power <= -89 */
+	UINT_32 u4IPI2;  /* -89 < Power <= -86 */
+	UINT_32 u4IPI3;  /* -86 < Power <= -83 */
+	UINT_32 u4IPI4;  /* -83 < Power <= -80 */
+	UINT_32 u4IPI5;  /* -80 < Power <= -75 */
+	UINT_32 u4IPI6;  /* -75 < Power <= -70 */
+	UINT_32 u4IPI7;  /* -70 < Power <= -65 */
+	UINT_32 u4IPI8;  /* -65 < Power <= -60 */
+	UINT_32 u4IPI9;  /* -60 < Power <= -55 */
+	UINT_32 u4IPI10; /* -55 < Power  */
+};
 #endif
 typedef struct _CMD_SET_DEVICE_MODE_T {
 	UINT_16 u2ChipID;
