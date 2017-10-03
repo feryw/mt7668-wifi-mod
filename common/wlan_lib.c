@@ -3757,7 +3757,7 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 	P_INIT_EVENT_ACCESS_REG prInitEventAccessReg;
 	UINT_8 ucTC, ucCmdSeqNum;
 	UINT_16 cmd_size;
-	UINT_8 aucBuffer[sizeof(INIT_HIF_RX_HEADER_T) + sizeof(INIT_CMD_ACCESS_REG)];
+	UINT_8 aucBuffer[sizeof(INIT_HIF_RX_HEADER_T) + sizeof(INIT_EVENT_ACCESS_REG)];
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
