@@ -244,6 +244,7 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
 	UINT_8 count = 0;
+	UINT_8 ret = 0;
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
@@ -253,7 +254,8 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	while (prGlueInfo->rHifInfo.state != USB_STATE_PRE_SUSPEND_DONE) {
 		if (count > 25) {
-			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
+			DBGLOG(HAL, ERROR, "pre_suspend timeout, return -EFAULT in the end\n");
+			ret = -EFAULT;
 			break;
 		}
 		msleep(20);
@@ -267,7 +269,7 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 
 	/* TODO */
-	return 0;
+	return ret;
 }
 
 int mtk_usb_resume(struct usb_interface *intf)
