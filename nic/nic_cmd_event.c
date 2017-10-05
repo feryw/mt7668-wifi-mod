@@ -3219,8 +3219,10 @@ VOID nicEventDebugMsg(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 VOID nicEventTdls(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
+#if CFG_SUPPORT_TDLS
 	TdlsexEventHandle(prAdapter->prGlueInfo, (PUINT_8)prEvent->aucBuffer,
 		(UINT_32)(prEvent->u2PacketLength - 8));
+#endif
 }
 
 VOID nicEventDumpMem(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)

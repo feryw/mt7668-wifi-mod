@@ -1948,6 +1948,26 @@ TdlsSendChSwControlCmd(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBu
 	return TDLS_STATUS_SUCCESS;
 }
 
+WLAN_STATUS
+TdlsTxCtrl(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgEnable)
+{
+	int i;
+	P_STA_RECORD_T prStaRec;
+
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = &prAdapter->arStaRec[i];
+
+		if (prStaRec->eStaType != STA_TYPE_DLS_PEER)
+			continue;
+
+		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == prBssInfo->ucBssIndex) {
+			qmSetStaRecTxAllowed(prAdapter, prStaRec, fgEnable);
+			DBGLOG(TDLS, EVENT, "TDLS STA[%d], TX ctrl=%d\n", i, fgEnable);
+		}
+	}
+
+	return TDLS_STATUS_SUCCESS;
+}
 #endif /* CFG_SUPPORT_TDLS */
 
 /* End of tdls.c */
