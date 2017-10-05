@@ -709,7 +709,7 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 {
 	struct sk_buff *prSkb;
 
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter) && in_interrupt())
+	if (in_interrupt())
 		prSkb = __dev_alloc_skb(u4Size + NIC_TX_HEAD_ROOM, GFP_ATOMIC);
 	else
 		prSkb = __dev_alloc_skb(u4Size + NIC_TX_HEAD_ROOM, GFP_KERNEL);
