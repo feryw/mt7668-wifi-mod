@@ -4462,6 +4462,7 @@ kalGetIPv4Address(IN struct net_device *prDev,
 	return TRUE;
 }
 
+#if IS_ENABLED(CONFIG_IPV6)
 BOOLEAN
 kalGetIPv6Address(IN struct net_device *prDev,
 		  IN UINT_32 u4MaxNumOfAddr, OUT PUINT_8 pucIpv6Addrs, OUT PUINT_32 pu4NumOfIpv6Addr)
@@ -4495,6 +4496,7 @@ kalGetIPv6Address(IN struct net_device *prDev,
 
 	return TRUE;
 }
+#endif /* IS_ENABLED(CONFIG_IPV6) */
 
 VOID
 kalSetNetAddress(IN P_GLUE_INFO_T prGlueInfo,

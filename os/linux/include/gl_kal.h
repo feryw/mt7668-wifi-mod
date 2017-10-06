@@ -1136,9 +1136,19 @@ BOOLEAN
 kalGetIPv4Address(IN struct net_device *prDev,
 		  IN UINT_32 u4MaxNumOfAddr, OUT PUINT_8 pucIpv4Addrs, OUT PUINT_32 pu4NumOfIpv4Addr);
 
+#if IS_ENABLED(CONFIG_IPV6)
 BOOLEAN
 kalGetIPv6Address(IN struct net_device *prDev,
 		  IN UINT_32 u4MaxNumOfAddr, OUT PUINT_8 pucIpv6Addrs, OUT PUINT_32 pu4NumOfIpv6Addr);
+#else
+static inline BOOLEAN
+kalGetIPv6Address(IN struct net_device *prDev,
+		  IN UINT_32 u4MaxNumOfAddr, OUT PUINT_8 pucIpv6Addrs, OUT PUINT_32 pu4NumOfIpv6Addr) {
+	/* Not support IPv6 */
+	*pu4NumOfIpv6Addr = 0;
+	return FALSE;
+}
+#endif /* IS_ENABLED(CONFIG_IPV6) */
 
 VOID kalSetNetAddressFromInterface(IN P_GLUE_INFO_T prGlueInfo, IN struct net_device *prDev, IN BOOLEAN fgSet);
 
