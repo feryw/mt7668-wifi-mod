@@ -6883,7 +6883,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->fgChipResetRecover = (BOOLEAN) wlanCfgGetUint32(prAdapter, "ChipResetRecover", FEATURE_ENABLED);
 
 #if CFG_SUPPORT_ANT_SELECT
-	prWifiVar->ucSpeIdxCtrl = (UINT_8) wlanCfgGetUint32(prAdapter, "SpeIdxCtrl", 0);
+	prWifiVar->ucSpeIdxCtrl = (UINT_8) wlanCfgGetUint32(prAdapter, "SpeIdxCtrl", 2);
 #endif
 }
 
