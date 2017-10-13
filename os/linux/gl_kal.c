@@ -5047,7 +5047,9 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 	wlanSetSuspendMode(prGlueInfo, enable);
 	/* p2pSetSuspendMode(prGlueInfo, TRUE); */
 
-	pWOW_CTRL->ucReason = INVALID_WOW_WAKE_UP_REASON;
+	/* wake up reason reset to default only when enter wow mode */
+	if (enable)
+		pWOW_CTRL->ucReason = INVALID_WOW_WAKE_UP_REASON;
 	/* Let WOW enable/disable as last command, so we can back/restore DMA classify filter in FW */
 	rCmdWowlanParam.ucScenarioID = pWOW_CTRL->ucScenarioId;
 	rCmdWowlanParam.ucBlockCount = pWOW_CTRL->ucBlockCount;
