@@ -78,7 +78,7 @@
 #include <linux/fs.h>
 
 #include <linux/uaccess.h>
-
+#include "precomp.h"
 #include "gl_os.h"
 
 #if CFG_ENABLE_EARLY_SUSPEND
