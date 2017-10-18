@@ -54,6 +54,10 @@ export CONFIG_MTK_PREALLOC_MEMORY=n
 # Define to enable Android wake_lock
 #CFG_ENABLE_WAKE_LOCK=0
 
+# For wpa_supplicant w/o MTK priv lib
+# y: enable, n: disable
+CFG_ANDROID_AOSP_PRIV_CMD=n
+
 #CFG_DEFAULT_DBG_LEVEL=0xF
 
 CFG_TX_DIRECT_USB=1
@@ -152,6 +156,10 @@ endif
 
 ifneq ($(CFG_CHIP_RESET_SUPPORT),)
 PLATFORM_FLAGS += -DCFG_CHIP_RESET_SUPPORT=$(CFG_CHIP_RESET_SUPPORT)
+endif
+
+ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
+PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
 endif
 
 all: driver

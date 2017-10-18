@@ -2398,6 +2398,13 @@ typedef struct priv_driver_cmd_s {
 	int total_len;
 } priv_driver_cmd_t;
 
+#ifdef CFG_ANDROID_AOSP_PRIV_CMD
+struct android_wifi_priv_cmd {
+	char *buf;
+	int used_len;
+	int total_len;
+};
+#endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
 int priv_driver_get_dbg_level(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -10036,7 +10043,13 @@ static int priv_driver_get_pd(IN struct net_device *prNetDev, IN char *pcCommand
 	i4BytesWritten = (INT_32)u4Offset;
 
 	return i4BytesWritten;
+}
 
+static int priv_cmd_not_support(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	DBGLOG(REQ, WARN, "not support priv command: %s\n", pcCommand);
+
+	return -EOPNOTSUPP;
 }
 
 static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -10447,7 +10460,6 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	INT_32 i4BytesWritten = 0;
-	INT_32 i4CmdFound = 0;
 
 	if (g_u4HaltFlag) {
 		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
@@ -10458,8 +10470,6 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		return -1;
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
-	if (i4CmdFound == 0) {
-		i4CmdFound = 1;
 		if (strnicmp(pcCommand, CMD_RSSI, strlen(CMD_RSSI)) == 0) {
 			/* i4BytesWritten =
 			 *  wl_android_get_rssi(net, command, i4TotalLen);
@@ -10725,11 +10735,7 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_noise_histogram(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else
-			i4CmdFound = 0;
-	}
-	/* i4CmdFound */
-	if (i4CmdFound == 0)
-		DBGLOG(REQ, INFO, "Unknown driver command %s - ignored\n", pcCommand);
+		i4BytesWritten = priv_cmd_not_support(prNetDev, pcCommand, i4TotalLen);
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalLen > 0)) {
@@ -10835,3 +10841,54 @@ exit:
 
 	return ret;
 }				/* priv_support_driver_cmd */
+
+#ifdef CFG_ANDROID_AOSP_PRIV_CMD
+int android_private_support_driver_cmd(IN struct net_device *prNetDev,
+									IN OUT struct ifreq *prReq, IN int i4Cmd)
+{
+	struct android_wifi_priv_cmd priv_cmd;
+	char *command = NULL;
+	int ret = 0, bytes_written = 0;
+
+	if (!prReq->ifr_data)
+		return -EINVAL;
+
+	if (copy_from_user(&priv_cmd, prReq->ifr_data, sizeof(priv_cmd)))
+		return -EFAULT;
+
+	command = kzalloc(priv_cmd.total_len, GFP_KERNEL);
+	if (!command) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(command, priv_cmd.buf, priv_cmd.total_len)) {
+		ret = -EFAULT;
+		goto FREE;
+	}
+
+	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
+
+	if (bytes_written >= 0) {
+		/* priv_cmd in but no response */
+		if ((bytes_written == 0) && (priv_cmd.total_len > 0))
+			command[0] = '\0';
+
+		if (bytes_written >= priv_cmd.total_len)
+			bytes_written = priv_cmd.total_len;
+		else
+			bytes_written++;
+
+		priv_cmd.used_len = bytes_written;
+
+		if (copy_to_user(priv_cmd.buf, command, bytes_written))
+			ret = -EFAULT;
+	} else
+		ret = bytes_written;
+
+FREE:
+		kfree(command);
+
+	return ret;
+}
+#endif /* CFG_ANDROID_AOSP_PRIV_CMD */

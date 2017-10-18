@@ -136,6 +136,10 @@ CFG_DRIVER_INITIAL_RUNNING_MODE=3
 # Define to enable Android wake_lock
 CFG_ENABLE_WAKE_LOCK=0
 
+# For wpa_supplicant w/o MTK priv lib
+# y: enable, n: disable
+CFG_ANDROID_AOSP_PRIV_CMD=n
+
 CFG_DEFAULT_DBG_LEVEL=0xF
 
 CFG_TX_DIRECT_USB=1
@@ -227,6 +231,10 @@ endif
 
 ifeq ($(CFG_DRIVER_INF_NAME_CHANGE), y)
 PLATFORM_FLAGS += -DCFG_DRIVER_INF_NAME_CHANGE
+endif
+
+ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
+PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
 endif
 
 ifneq ($(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB),)
