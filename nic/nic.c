@@ -1930,7 +1930,7 @@ nicUpdateBeaconIETemplate(IN P_ADAPTER_T prAdapter,
 	} else if (eIeUpdMethod == IE_UPD_METHOD_DELETE_ALL) {
 		u2CmdBufLen = OFFSET_OF(CMD_BEACON_TEMPLATE_UPDATE, u2IELen);
 	} else {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "Unknown IeUpdMethod.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 

@@ -994,7 +994,9 @@ WLAN_STATUS authProcessRxDeauthFrame(IN P_SW_RFB_T prSwRfb, IN UINT_8 aucBSSID[]
 #endif
 
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) < REASON_CODE_FIELD_LEN) {
-		ASSERT(0);
+		DBGLOG(SAA, WARN,
+		  "Invalid Deauth packet length. u2PacketLen(%u), u2HeaderLen(%u)\n",
+		  prSwRfb->u2PacketLen, prSwRfb->u2HeaderLen);
 		return WLAN_STATUS_FAILURE;
 	}
 

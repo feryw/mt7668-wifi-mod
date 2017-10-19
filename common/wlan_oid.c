@@ -857,7 +857,7 @@ wlanoidSetBssid(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Set
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (P_MSG_AIS_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_AIS_ABORT_T));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -993,7 +993,7 @@ wlanoidSetSsid(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetB
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (P_MSG_AIS_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_AIS_ABORT_T));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1069,7 +1069,7 @@ wlanoidSetConnect(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	}
 	prAisAbortMsg = (P_MSG_AIS_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_AIS_ABORT_T));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
@@ -7761,7 +7761,7 @@ wlanoidSetDisassociate(IN P_ADAPTER_T prAdapter,
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (P_MSG_AIS_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_AIS_ABORT_T));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in creating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
