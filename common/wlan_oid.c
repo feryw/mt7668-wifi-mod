@@ -1084,6 +1084,7 @@ wlanoidSetConnect(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	kalMemZero(prConnSettings->aucSSID, sizeof(prConnSettings->aucSSID));
+	prConnSettings->ucSSIDLen = 0;
 	kalMemZero(prConnSettings->aucBSSID, sizeof(prConnSettings->aucBSSID));
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
 	prConnSettings->fgIsConnByBssidIssued = FALSE;
