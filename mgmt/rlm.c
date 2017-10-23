@@ -1228,24 +1228,20 @@ static VOID rlmFillVhtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSD
 #if CFG_SUPPORT_BFEE
 		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-		if (prStaRec) {
-			if ((prStaRec->ucVhtCapNumSoundingDimensions > 0) &&
-				(prStaRec->ucVhtCapNumSoundingDimensions < VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX)) {
-				prVhtCap->u4VhtCapInfo |= (((UINT_32)prStaRec->ucVhtCapNumSoundingDimensions) <<
-				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUPPOERTED_OFFSET);
-				DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
-					prStaRec->ucVhtCapNumSoundingDimensions);
-			} else {
-				prVhtCap->u4VhtCapInfo |=
-					VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUPPOERTED;
-				DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n", VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
-			}
+		if (prStaRec && (prStaRec->ucVhtCapNumSoundingDimensions == 0x2)) {
+			/* For the compatibility with netgear R7000 AP */
+			prVhtCap->u4VhtCapInfo |= (((UINT_32)prStaRec->ucVhtCapNumSoundingDimensions) <<
+			VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUPPOERTED_OFFSET);
+			DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
+				prStaRec->ucVhtCapNumSoundingDimensions);
 		} else {
-			/*DUT role is AP OR GO wiht VHT capabiltiy and generating BCN VHT IE with rlmFillVhtCapIE api*/
+			/* For 11ac cert. VHT-5.2.63C MU-BFee step3,
+			 * it requires STAUT to set its maximum STS capability here
+			 */
 			prVhtCap->u4VhtCapInfo |=
-					VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUPPOERTED;
+				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUPPOERTED;
+			DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n", VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
 		}
-		/* DBGLOG(RLM, INFO, "VhtCapInfo=%x\n", prVhtCap->u4VhtCapInfo); */
 #endif
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
 			prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE;
@@ -3969,7 +3965,7 @@ VOID rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UIN
 /*!
 * \brief Send Notify Channel Width frame (HT action frame)
 *
-* \param[in] ucChannelWidth 0:20MHz, 1:Any channel width in the STA¡¦s Supported Channel Width Set subfield
+* \param[in] ucChannelWidth 0:20MHz, 1:Any channel width in the STAÂ¡Â¦s Supported Channel Width Set subfield
 *
 * \return none
 */
