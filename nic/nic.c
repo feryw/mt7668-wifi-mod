@@ -588,6 +588,12 @@ WLAN_STATUS nicInitializeAdapter(IN P_ADAPTER_T prAdapter)
 	prAdapter->fgIsIntEnableWithLPOwnSet = FALSE;
 	prAdapter->fgIsReadRevID = FALSE;
 
+#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+	prAdapter->fgIsBufferBinExtract = FALSE;
+
+	prAdapter->u4EfuseMacAddrOffset = DEFAULT_EFUSE_MACADDR_OFFSET;
+#endif
+
 	do {
 		if (!nicVerifyChipID(prAdapter)) {
 			u4Status = WLAN_STATUS_FAILURE;

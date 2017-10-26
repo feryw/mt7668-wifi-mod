@@ -1211,6 +1211,11 @@ struct _ADAPTER_T {
 	/* COEX feature */
 	UINT_32 u4FddMode;
 
+#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+	/* MAC address Efuse Offset */
+	UINT_32 u4EfuseMacAddrOffset;
+#endif
+
 #if CFG_WOW_SUPPORT
 	WOW_CTRL_T	rWowCtrl;
 #endif
@@ -1227,6 +1232,7 @@ struct _ADAPTER_T {
 	BOOLEAN fgIsSupportGetFreeEfuseBlockCount;
 	BOOLEAN fgIsSupportQAAccessEfuse;
 	BOOLEAN fgIsSupportPowerOnSendBufferModeCMD;
+	BOOLEAN fgIsBufferBinExtract;
 	BOOLEAN fgIsSupportGetTxPower;
 	BOOLEAN fgIsEnableLpdvt;
 

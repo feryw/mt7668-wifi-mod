@@ -1188,6 +1188,7 @@ typedef enum _NIC_CAPABILITY_V2_TAG_T {
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	TAG_CAP_CSUM_OFFLOAD = 0x4,
 #endif
+	TAG_CAP_EFUSE_OFFSET = 0x5,
 	TAG_CAP_TOTAL
 } NIC_CAPABILITY_V2_TAG_T;
 
@@ -1205,6 +1206,11 @@ typedef struct _NIC_EFUSE_ADDRESS_T {
 	UINT_32 u4EfuseStartAddress;  /* Efuse Start Address */
 	UINT_32 u4EfuseEndAddress;   /* Efuse End Address */
 } NIC_EFUSE_ADDRESS_T, *P_NIC_EFUSE_ADDRESS_T;
+
+struct _NIC_EFUSE_OFFSET_T {
+	UINT_32 u4TotalItem;	/* Efuse offset items */
+	UINT_32 u4WlanMacAddr;  /* Efuse Offset 1 */
+};
 
 typedef struct _NIC_TX_RESOURCE_T {
 	UINT_32 u4McuTotalResource;  /* the total usable resource for MCU port */
@@ -3172,6 +3178,8 @@ VOID nicCmdEventQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEve
 WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+
+WLAN_STATUS nicCmdEventQueryEfuseOffset(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 

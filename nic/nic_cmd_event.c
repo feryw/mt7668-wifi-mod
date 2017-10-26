@@ -85,6 +85,7 @@ const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
 #endif
+	{TAG_CAP_EFUSE_OFFSET, nicCmdEventQueryEfuseOffset},
 };
 
 /*******************************************************************************
@@ -2525,6 +2526,17 @@ WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pu
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+WLAN_STATUS nicCmdEventQueryEfuseOffset(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct _NIC_EFUSE_OFFSET_T *prEfuseOffset = (struct _NIC_EFUSE_OFFSET_T *)pucEventBuf;
+
+	if (prEfuseOffset->u4TotalItem > 0)
+		prAdapter->u4EfuseMacAddrOffset = prEfuseOffset->u4WlanMacAddr;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 
 WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {

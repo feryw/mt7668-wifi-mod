@@ -3042,28 +3042,21 @@ BOOLEAN kalIsCardRemoved(IN P_GLUE_INFO_T prGlueInfo)
 /*----------------------------------------------------------------------------*/
 BOOLEAN kalRetrieveNetworkAddress(IN P_GLUE_INFO_T prGlueInfo, IN OUT PARAM_MAC_ADDRESS *prMacAddr)
 {
+	P_ADAPTER_T prAdapter;
 	ASSERT(prGlueInfo);
 
-	/* Get MAC address override from wlan feature option */
-	prGlueInfo->fgIsMacAddrOverride = prGlueInfo->prAdapter->rWifiVar.ucMacAddrOverride;
+	prAdapter = prGlueInfo->prAdapter;
 
-	wlanHwAddrToBin(prGlueInfo->prAdapter->rWifiVar.aucMacAddrStr, prGlueInfo->rMacAddrOverride);
+	/* Get MAC address override from wlan feature option */
+	prGlueInfo->fgIsMacAddrOverride = prAdapter->rWifiVar.ucMacAddrOverride;
+
+	wlanHwAddrToBin(prAdapter->rWifiVar.aucMacAddrStr, prGlueInfo->rMacAddrOverride);
 
 	if (prGlueInfo->fgIsMacAddrOverride == FALSE) {
-
-#ifdef CFG_ENABLE_EFUSE_MAC_ADDR
-		if (prGlueInfo->prAdapter->fgIsEmbbededMacAddrValid) {
-			COPY_MAC_ADDR(prMacAddr, prGlueInfo->prAdapter->rWifiVar.aucMacAddress);
-			return TRUE;
-		} else {
-			return FALSE;
-		}
-#else
-
-#if !defined(CONFIG_X86)
 		UINT_32 i;
 		BOOLEAN fgIsReadError = FALSE;
 
+#if !defined(CONFIG_X86)
 		for (i = 0; i < MAC_ADDR_LEN; i += 2) {
 			if (kalCfgDataRead16(prGlueInfo,
 					     OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
@@ -3072,19 +3065,10 @@ BOOLEAN kalRetrieveNetworkAddress(IN P_GLUE_INFO_T prGlueInfo, IN OUT PARAM_MAC_
 				break;
 			}
 		}
-
-		if (fgIsReadError == TRUE)
-			return FALSE;
-		else
-			return TRUE;
 #else
 		/* x86 Linux doesn't need to override network address so far */
 		/*return FALSE;*/
-
 		/*Modify for Linux PC support NVRAM Setting*/
-		UINT_32 i;
-		BOOLEAN fgIsReadError = FALSE;
-
 		for (i = 0; i < MAC_ADDR_LEN; i += 2) {
 			if (kalCfgDataRead16(prGlueInfo,
 						 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
@@ -3094,13 +3078,30 @@ BOOLEAN kalRetrieveNetworkAddress(IN P_GLUE_INFO_T prGlueInfo, IN OUT PARAM_MAC_
 			}
 		}
 
+#endif
+
+#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+		/* retrieve buffer mode efuse */
+		if ((prAdapter->fgIsSupportPowerOnSendBufferModeCMD == TRUE) &&
+			(prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE)) {
+			if (wlanExtractBufferBin(prAdapter) ==	WLAN_STATUS_SUCCESS) {
+				UINT_32 u4BinOffset = prAdapter->u4EfuseMacAddrOffset;
+
+				/* Update MAC address */
+				kalMemCopy(prMacAddr, &uacEEPROMImage[u4BinOffset], MAC_ADDR_LEN);
+				fgIsReadError = FALSE;
+			} else {
+				fgIsReadError = TRUE;
+			}
+		}
+#endif
+		/* return retrieve result */
 		if (fgIsReadError == TRUE)
 			return FALSE;
 		else
 			return TRUE;
 
-#endif
-#endif
+
 	} else {
 		COPY_MAC_ADDR(prMacAddr, prGlueInfo->rMacAddrOverride);
 
