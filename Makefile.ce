@@ -96,8 +96,8 @@ endif
 else
 LINUX_SRC=$(KERNEL_OBJ_ROOT)/$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
 # overwrite $(OUT_STA_KO) for MT53XX platform
-OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
-include $(LINUX_ROOT)/linux_mts/mak/toolchain.mak
+OUT_STA_KO = $(OBJ_ROOT)/linux_mts/ko_modules/wlan_driver/gen4m/$(MODULE_NAME).ko
+include $(LINUX_ROOT)/linux_mts/build/mak/toolchain.mak
 endif
 
 ifeq ($(CROSS_COMPILE),)
@@ -110,6 +110,7 @@ endif
 $(warning =============================================)
 $(warning wifi driver LINUX_SRC=$(LINUX_SRC))
 $(warning CROSS_COMPILE=$(CROSS_COMPILE))
+$(warning KERNEL_CROSS_COMPILE=$(KERNEL_CROSS_COMPILE))
 $(warning =============================================)
 
 endif
@@ -168,6 +169,9 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
+CFG_DRIVER_INITIAL_RUNNING_MODE=0
+CFG_USB_REQ_TX_DATA_CNT=4
+CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
 endif
 
 
@@ -252,6 +256,8 @@ driver:
 ifeq ($(PLATFORM),MT53XX)
 ifeq ($(DRIVER_PARTIAL_BUILD), y)
 	@cd $(DRIVER_DIR) && $(CROSS_COMPILE)strip --strip-unneeded $(MODULE_NAME).ko
+else
+	$(KERNEL_CROSS_COMPILE)strip --strip-unneeded $(OUT_STA_KO)
 endif
 endif
 
@@ -265,52 +271,58 @@ endif
 ifeq ($(PLATFORM),MT53XX)
 ifneq ($(DRIVER_PARTIAL_BUILD), y)
 ifneq ($(ANDROID),true)
-	if [ ! -d $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID) ]; then \
-		mkdir -p $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/; \
+	if [ ! -d $(OUTPUT_ROOT)/basic/wifi_ko ]; then \
+		mkdir -p $(OUTPUT_ROOT)/basic/wifi_ko/; \
 	fi
-	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
+	if [ -d $(OUTPUT_ROOT)/basic/wifi_ko ]; then \
+		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/wifi_ko/$(MODULE_NAME).ko; \
+	fi
 else
-ifeq "$(BUILD_CFG)" "debug"
-	echo "ANDROID_VERSION=$(ANDROID_VERSION)"
-	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg ]; then \
-		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg; \
+	if [ ! -d $(OUTPUT_ROOT)/basic/modules ]; then \
+		mkdir -p $(OUTPUT_ROOT)/basic/modules/; \
 	fi
-	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
-	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
-
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-        fi
-
-else
-	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING) ]; then \
-		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING); \
+		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
 	fi
-	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
-	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
-
+endif # ifneq ($(ANDROID),true)
+ifeq ($(S_PLATFORM),true)
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
-        fi
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/WIFI_RAM_CODE_MT7668.bin $(OUTPUT_ROOT)/basic/modules; \
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/WIFI_RAM_CODE2_USB_MT7668.bin $(OUTPUT_ROOT)/basic/modules; \
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/wifi.cfg $(OUTPUT_ROOT)/basic/modules; \
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/TxPwrLimit_MT76x8.dat $(OUTPUT_ROOT)/basic/modules; \
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/bt/mt7668/mt7668_patch_e1_hdr.bin $(OUTPUT_ROOT)/basic/modules; \
+		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/bt/mt7668/mt7668_patch_e2_hdr.bin $(OUTPUT_ROOT)/basic/modules; \
+	fi
 endif
-endif #ANDROID
-endif #DRIVER_PARTIAL_BUILD
-endif #MT53XX
+endif # ifneq ($(DRIVER_PARTIAL_BUILD), y)
+endif # ifeq ($(PLATFORM),MT53XX)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # MT53XX end
 #= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 clean: driver_clean
+ifeq ($(PLATFORM),MT53XX)
+ifeq ($(S_PLATFORM),true)
+	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
+		rm -f $(OUTPUT_ROOT)/basic/modules/WIFI_RAM_CODE_MT7668.bin; \
+		rm -f $(OUTPUT_ROOT)/basic/modules/WIFI_RAM_CODE2_USB_MT7668.bin; \
+		rm -f $(OUTPUT_ROOT)/basic/modules/wifi.cfg; \
+		rm -f $(OUTPUT_ROOT)/basic/modules/TxPwrLimit_MT76x8.dat; \
+		rm -f $(OUTPUT_ROOT)/basic/modules/mt7668_patch_e1_hdr.bin; \
+		rm -f $(OUTPUT_ROOT)/basic/modules/mt7668_patch_e2_hdr.bin; \
+	fi
+endif
+endif
 
 driver_clean:
 ifneq ($(ANDROID),true)
 	rm -rf $(THIRDPARTY_LIB_ROOT)/wlan
 endif
-#	cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean
-#	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; \
-#        fi
+	if [ -d $(DRIVER_DIR) ] && [ -d $(LINUX_SRC) ]; then \
+		cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean; \
+	fi
+	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; fi;
 
 
 
