@@ -184,6 +184,7 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 #if (CFG_WOW_SUPPORT == 1)
 	{EVENT_ID_WOW_WAKEUP_REASON,		nicEventWakeUpReason},
 #endif
+	{EVENT_ID_CSI_DATA,                 nicEventCSIData},
 
 };
 

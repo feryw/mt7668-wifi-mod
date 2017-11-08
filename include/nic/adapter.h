@@ -924,6 +924,15 @@ typedef struct _WIFI_FEM_CFG_T {
 	UINT_32 au4Reserved[4];
 } WIFI_FEM_CFG_T, *P_WIFI_FEM_CFG_T;
 
+struct CSI_DATA_T {
+	UINT_8 ucBw;
+	BOOLEAN bIsCck;
+	UINT_16 u2DataCount;
+	INT_16 ac2IData[256];
+	INT_16 ac2QData[256];
+	UINT_8 ucDbdcIdx;
+};
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1243,6 +1252,7 @@ struct _ADAPTER_T {
 	UINT_8 ucHwWmmEnBit;
 #endif
 	WIFI_FEM_CFG_T rWifiFemCfg;
+	struct CSI_DATA_T rCsiData;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

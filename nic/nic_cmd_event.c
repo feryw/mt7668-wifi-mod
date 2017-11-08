@@ -3367,3 +3367,22 @@ VOID nicEventWakeUpReason(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 }
 #endif
 
+VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	struct EVENT_CSI_DATA_T *prCsiData;
+
+	DBGLOG(NIC, INFO, "nicEventCSIData\n");
+
+	prCsiData = (struct EVENT_CSI_DATA_T *) (prEvent->aucBuffer);
+	prAdapter->rCsiData.ucDbdcIdx = prCsiData->ucDbdcIdx;
+	prAdapter->rCsiData.ucBw = prCsiData->ucBw;
+	prAdapter->rCsiData.bIsCck = prCsiData->bIsCck;
+	prAdapter->rCsiData.u2DataCount = prCsiData->u2DataCount;
+	kalMemZero(prAdapter->rCsiData.ac2IData, sizeof(prAdapter->rCsiData.ac2IData));
+	kalMemZero(prAdapter->rCsiData.ac2QData, sizeof(prAdapter->rCsiData.ac2QData));
+	kalMemCopy(prAdapter->rCsiData.ac2IData,
+		prCsiData->ac2IData, sizeof(prCsiData->ac2IData));
+
+	kalMemCopy(prAdapter->rCsiData.ac2QData,
+		prCsiData->ac2QData, sizeof(prCsiData->ac2QData));
+}

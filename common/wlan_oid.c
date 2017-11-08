@@ -12280,3 +12280,39 @@ wlanoidLinkDown(IN P_ADAPTER_T prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetDisassociate */
 
+WLAN_STATUS
+wlanoidSetCSIControl(
+	IN P_ADAPTER_T prAdapter,
+	IN PVOID pvSetBuffer,
+	IN UINT_32 u4SetBufferLen,
+	OUT PUINT_32 pu4SetInfoLen)
+{
+	struct CMD_CSI_CONTROL_T *pCSICtrl;
+
+	DEBUGFUNC("wlanoidSetCSIControl");
+
+	*pu4SetInfoLen = sizeof(struct CMD_CSI_CONTROL_T);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+			   "Fail in set CSI control! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+			   prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4SetBufferLen < sizeof(struct CMD_CSI_CONTROL_T)) {
+		DBGLOG(REQ, WARN, "Too short length %lu\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	pCSICtrl = (struct CMD_CSI_CONTROL_T *)pvSetBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_CSI_CONTROL,
+				TRUE,
+				FALSE,
+				TRUE,
+				nicCmdEventSetCommon,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_CSI_CONTROL_T),
+				(PUINT_8)pCSICtrl, pvSetBuffer, u4SetBufferLen);
+}
+

@@ -483,6 +483,8 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_SET_WOWLAN,			/* 0x4a (Set) */
 #endif
 
+	CMD_ID_CSI_CONTROL = 0x4c, /* 0x4c (Set /Query) */
+
 #if CFG_SUPPORT_WIFI_HOST_OFFLOAD
 	CMD_ID_SET_AM_FILTER = 0x55,	/* 0x55 (Set) */
 	CMD_ID_SET_AM_HEARTBEAT,	/* 0x56 (Set) */
@@ -601,6 +603,8 @@ typedef enum _ENUM_EVENT_ID_T {
 	EVENT_ID_RTT_UPDATE_RANGE = 0x29,	/* 0x29 (Unsoiicited) */
 	EVENT_ID_CHECK_REORDER_BUBBLE = 0x2a,	/* 0x2a (Unsoiicited) */
 	EVENT_ID_BATCH_RESULT = 0x2b,	/* 0x2b (Query) */
+
+	EVENT_ID_CSI_DATA = 0x3c, /* 0x3c (Query) */
 
 	EVENT_ID_UART_ACK = 0x40,	/* 0x40 (Unsolicited) */
 	EVENT_ID_UART_NAK,	/* 0x41 (Unsolicited) */
@@ -2452,6 +2456,16 @@ typedef struct _CMD_TDLS_CH_SW_T {
 } CMD_TDLS_CH_SW_T, *P_CMD_TDLS_CH_SW_T;
 #endif
 
+struct EVENT_CSI_DATA_T {
+	UINT_8 ucBw;
+	BOOLEAN bIsCck;
+	UINT_16 u2DataCount;
+	INT_16 ac2IData[256];
+	INT_16 ac2QData[256];
+	UINT_8 ucDbdcIdx;
+	UINT_8 aucReserved[3];
+};
+
 #if CFG_SUPPORT_ADVANCE_CONTROL
 /* command type */
 #define CMD_ADV_CONTROL_SET (1<<15)
@@ -3038,6 +3052,34 @@ typedef struct _EVENT_UPDATE_COEX_PHYRATE_T {
 	UINT_32 au4PhyRateLimit[HW_BSSID_NUM+1];
 } EVENT_UPDATE_COEX_PHYRATE_T, *P_EVENT_UPDATE_COEX_PHYRATE_T;
 
+enum CSI_CONTROL_MODE_T {
+	CSI_CONTROL_MODE_STOP,
+	CSI_CONTROL_MODE_START,
+	CSI_CONTROL_MODE_NUM
+};
+
+enum ENUM_RTT_ROLE_T {
+	RTT_ROLE_RECEIVING = 0,
+	RTT_ROLE_SENDING,
+	RTT_ROLE_NUM
+};
+
+enum ENUM_RTT_FRAME_TYPE_T {
+	RTT_FRAME_TYPE_BEACON,
+	RTT_FRAME_TYPE_QOS_DATA,
+	RTT_FRAME_TYPE_NUM
+};
+
+struct CMD_CSI_CONTROL_T {
+	UINT_8 ucMode;
+	UINT_8 ucBand;
+	UINT_8 ucWf;
+	UINT_8 ucRole;
+	UINT_8 ucFrameType;
+	UINT_8 ucFrameTypeIndex;
+	UINT_8 ucReserved[2];
+};
+
 /*#endif*/
 
 /*******************************************************************************
@@ -3221,6 +3263,8 @@ VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEve
 #if (CFG_WOW_SUPPORT == 1)
 VOID nicEventWakeUpReason(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 #endif
+VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

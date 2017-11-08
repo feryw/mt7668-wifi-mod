@@ -2323,6 +2323,8 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 #define CMD_GET_CURR_AR_RATE	"GET_CURR_AR_RATE"
 #define CMD_COEX_CONTROL        "COEX_CONTROL"
+#define CMD_SET_CSI             "SET_CSI"
+#define CMD_GET_CSI             "GET_CSI"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -9643,6 +9645,180 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev, IN char *pc
 
 #endif
 
+static int priv_driver_set_csi(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
+	UINT_32 u4Ret = 0;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(RSN, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	DBGLOG(RSN, INFO, "priv_driver_csi_control\n");
+
+	prCSICtrl = (struct CMD_CSI_CONTROL_T *)kalMemAlloc(sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
+	if (!prCSICtrl) {
+		DBGLOG(REQ, ERROR, "allocate memory for prCSICtrl failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	if (i4Argc != 2 && i4Argc != 5) {
+		DBGLOG(REQ, ERROR, "argc %i is invalid\n", i4Argc);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &(prCSICtrl->ucMode));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse ucMode error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucMode > 1) {
+		DBGLOG(REQ, LOUD, "Invalid ucMode %d, should be 0 or 1\n",
+			prCSICtrl->ucMode);
+	}
+
+	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP)
+		goto send_cmd;
+
+	prCSICtrl->ucBand = ENUM_BAND_0;
+	prCSICtrl->ucRole = RTT_ROLE_SENDING;
+
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &(prCSICtrl->ucWf));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse ucWf error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucWf > 1) {
+		DBGLOG(REQ, LOUD, "Invalid ucWf %u, should be 0 or 1\n",
+			prCSICtrl->ucWf);
+		goto out;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &(prCSICtrl->ucFrameTypeIndex));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse ucFrameTypeIndex error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucFrameTypeIndex > 3) {
+		DBGLOG(REQ, LOUD, "Invalid ucFrameTypeIndex %u, should be 0 ~ 3\n",
+			prCSICtrl->ucFrameTypeIndex);
+		goto out;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[4], 0, &(prCSICtrl->ucFrameType));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse ucFrameType error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucFrameType != 0) {
+		DBGLOG(REQ, LOUD, "Invalid ucFrameType %u, only support 0(beacon)\n",
+			prCSICtrl->ucFrameType);
+		goto out;
+	}
+
+send_cmd:
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetCSIControl, prCSICtrl,
+		sizeof(struct CMD_CSI_CONTROL_T), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+	DBGLOG(REQ, INFO,
+	   "mode %d, band %d, role %d, frame type idx %d, frame type idx %d",
+		prCSICtrl->ucMode, prCSICtrl->ucBand, prCSICtrl->ucRole,
+		prCSICtrl->ucFrameType, prCSICtrl->ucFrameTypeIndex);
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "send CSI control cmd failed\n");
+		i4BytesWritten = -1;
+	}
+
+out:
+	if (prCSICtrl)
+		kalMemFree(prCSICtrl, VIR_MEM_TYPE, sizeof(struct CMD_CSI_CONTROL_T));
+
+	return i4BytesWritten;
+}
+
+
+static int priv_driver_get_csi(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4BytesWritten = 0;
+	P_ADAPTER_T prAdapter = NULL;
+	UINT_8 ucBw = 20;
+	UINT_16 i = 0;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, LOUD, "Adapter is NULL!\n");
+		return -1;
+	}
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	if (prAdapter->rCsiData.u2DataCount == 0) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "No CSI Data\n");
+		goto out;
+	}
+
+	if (prAdapter->rCsiData.ucBw == 0)
+		ucBw = 20;
+	else if (prAdapter->rCsiData.ucBw == 1)
+		ucBw = 40;
+	else if (prAdapter->rCsiData.ucBw == 2)
+		ucBw = 80;
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nCSI Data:\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "BW: %d\n", ucBw);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "isCck: %d\n",
+		prAdapter->rCsiData.bIsCck);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "data count: %d\n",
+		prAdapter->rCsiData.u2DataCount);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "I data:\n");
+
+	for (i = 0; i < prAdapter->rCsiData.u2DataCount; i++) {
+		if ((i % 16) == 0)
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d ",
+			prAdapter->rCsiData.ac2IData[i]);
+	}
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\nQ data:\n");
+
+	for (i = 0; i < prAdapter->rCsiData.u2DataCount; i++) {
+		if ((i % 16) == 0)
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d ",
+			prAdapter->rCsiData.ac2QData[i]);
+	}
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
+
+	prAdapter->rCsiData.u2DataCount = 0;
+
+out:
+	return i4BytesWritten;
+}
+
+
 INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -9729,6 +9905,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_clear_acl_entry(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_COEX_CONTROL, strlen(CMD_COEX_CONTROL)) == 0) {
 			i4BytesWritten = priv_driver_coex_ctrl(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_CSI, strlen(CMD_SET_CSI)) == 0) {
+			i4BytesWritten = priv_driver_set_csi(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_GET_CSI, strlen(CMD_GET_CSI)) == 0) {
+			i4BytesWritten = priv_driver_get_csi(prNetDev, pcCommand, i4TotalLen);
 		}
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		else if (strnicmp(pcCommand, CMD_SHOW_DFS_STATE, strlen(CMD_SHOW_DFS_STATE)) == 0) {
