@@ -6928,7 +6928,7 @@ VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)
 	for (i = 0; i < WLAN_CFG_SET_SW_CTRL_LEN_MAX; i++) {
 		kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 		kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-		kalSprintf(aucKey, "SwCtrl%d", i);
+		kalSnprintf(aucKey, sizeof(aucKey), "SwCtrl%d", i);
 
 		/* get nothing */
 		if (wlanCfgGet(prAdapter, aucKey, aucValue, "", 0) != WLAN_STATUS_SUCCESS)
@@ -7021,7 +7021,7 @@ VOID wlanCfgSetDebugLevel(IN P_ADAPTER_T prAdapter)
 	for (i = 0; i < WLAN_CFG_SET_DEBUG_LEVEL_LEN_MAX; i++) {
 		kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 		kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-		kalSprintf(aucKey, "DbgLevel%d", i);
+		kalSnprintf(aucKey, sizeof(aucKey), "DbgLevel%d", i);
 
 		/* get nothing */
 		if (wlanCfgGet(prAdapter, aucKey, aucValue, "", 0) != WLAN_STATUS_SUCCESS)
