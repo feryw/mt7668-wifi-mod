@@ -1686,7 +1686,7 @@ VOID p2pRoleFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 
 	DBGLOG(P2P, TRACE, "P2P BSS %d, Join Complete\n", prStaRec->ucBssIndex);
 
-	ASSERT(prStaRec)
+	ASSERT(prStaRec);
 	if (!prStaRec) {
 		DBGLOG(P2P, ERROR, "prJoinCompMsg->prStaRec is NULL!\n");
 		goto error;
