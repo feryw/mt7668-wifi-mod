@@ -3332,16 +3332,17 @@ VOID nicTxDirectClearAllStaPsQ(IN P_ADAPTER_T prAdapter)
 	UINT_32 u4StaPsBitmap;
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
+	if (!u4StaPsBitmap)
+		return;
 
-	if (u4StaPsBitmap)
-		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM; ++ucStaRecIndex) {
-			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
-				nicTxDirectClearBssAbsentQ(prAdapter, ucStaRecIndex);
-				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
-			}
-			if (u4StaPsBitmap == 0)
-				break;
+	for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM; ++ucStaRecIndex) {
+		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
+			nicTxDirectClearStaPsQ(prAdapter, ucStaRecIndex);
+			u4StaPsBitmap &= ~BIT(ucStaRecIndex);
 		}
+		if (u4StaPsBitmap == 0)
+			break;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3367,6 +3368,7 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
+	ASSERT(prStaRec);
 
 	QUEUE_CONCATENATE_QUEUES(&prAdapter->rStaPsQueue[ucStaRecIndex], prQue);
 	QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, P_QUE_ENTRY_T);
