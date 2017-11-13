@@ -153,7 +153,9 @@
 						/* 0: Disable */
 
 #define CFG_SUPPORT_RRM             0	/* Radio Reasource Measurement (802.11k) */
+#ifndef CFG_SUPPORT_DFS
 #define CFG_SUPPORT_DFS             1	/* DFS (802.11h) */
+#endif
 #ifndef CFG_SUPPORT_DFS_MASTER
 #define CFG_SUPPORT_DFS_MASTER      1
 #endif
