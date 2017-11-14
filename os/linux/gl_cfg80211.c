@@ -3283,6 +3283,11 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		return;
 	}
 
+	if (g_u4HaltFlag) {
+		DBGLOG(RLM, WARN, "wlan is halt, skip reg callback\n");
+		return;
+	}
+
 	/*
 	 * Magic flow for driver to send inband command after kernel's calling reg_notifier callback
 	 */
