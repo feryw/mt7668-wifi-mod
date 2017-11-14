@@ -9020,7 +9020,6 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	struct CMD_GET_TRAFFIC_REPORT *cmd = NULL;
 	UINT_8 ucBand = ENUM_BAND_0;
-	UINT_32 u4Val = 0;
 	UINT_16 u2Val = 0;
 	UINT_8 ucVal = 0;
 	INT_32 u4Ret = 0;
@@ -9062,8 +9061,8 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 		fgWaitResp = TRUE;
 		fgRead = TRUE;
 		if ((i4Argc == 4) && (strnicmp(apcArgv[2], "BAND", strlen("BAND")) == 0)) {
-			u4Ret = kalkStrtou32(apcArgv[3], 0, &u4Val);
-			cmd->ucBand = u4Val;
+			u4Ret = kalkStrtou8(apcArgv[3], 0, &ucVal);
+			cmd->ucBand = ucVal;
 		}
 		if (strnicmp(apcArgv[1], "GETDBG", strlen("GETDBG")) == 0)
 			fgGetDbg = TRUE;
@@ -9075,16 +9074,16 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 	} else if ((strnicmp(apcArgv[1], "TXTHRES", strlen("TXTHRES")) == 0) && (i4Argc == 3)) {
 		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucVal);
 		/* valid val range is from 0 - 100% */
-		if (u4Val > 100)
-			u4Val = 100;
+		if (ucVal > 100)
+			ucVal = 100;
 		cmd->ucTxThres = ucVal;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 		cmd->ucAction = CMD_SET_REPORT_TXTHRES;
 	} else if ((strnicmp(apcArgv[1], "RXTHRES", strlen("RXTHRES")) == 0) && (i4Argc == 3)) {
 		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucVal);
 		/* valid val range is from 0 - 100% */
-		if (u4Val > 100)
-			u4Val = 100;
+		if (ucVal > 100)
+			ucVal = 100;
 		cmd->ucRxThres = ucVal;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 		cmd->ucAction = CMD_SET_REPORT_RXTHRES;
