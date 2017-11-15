@@ -380,6 +380,10 @@ VOID aisFsmRunEventChannelTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 
 VOID aisFsmRunEventDeauthTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID aisRxMcsCollectionTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
 /*----------------------------------------------------------------------------*/

@@ -537,6 +537,10 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_WLAN_INFO	= 0xCD, /* 0xcd (Query) */
 	CMD_ID_MIB_INFO		= 0xCE, /* 0xce (Query) */
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+	CMD_ID_TX_MCS_INFO	= 0xCF, /* 0xcf (Query) */
+#endif
+
 	CMD_ID_SET_RDD_CH = 0xE1,
 
 #if CFG_SUPPORT_QA_TOOL
@@ -647,6 +651,10 @@ typedef enum _ENUM_EVENT_ID_T {
 
 	EVENT_ID_WLAN_INFO = 0xCD,
 	EVENT_ID_MIB_INFO = 0xCE,
+
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+	EVENT_ID_TX_MCS_INFO = 0xCF,
+#endif
 
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,		/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 /*#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)*/
@@ -3042,6 +3050,14 @@ typedef struct _EVENT_MIB_INFO {
 } EVENT_MIB_INFO, *P_EVENT_MIB_INFO;
 #endif
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+struct EVENT_TX_MCS_INFO {
+	UINT_16		au2TxRateCode[MCS_INFO_SAMPLE_CNT];
+	UINT_8		aucTxRatePer[MCS_INFO_SAMPLE_CNT];
+	UINT_8      aucReserved[2];
+};
+#endif
+
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 typedef struct _EVENT_ACCESS_EFUSE {
 
@@ -3245,6 +3261,10 @@ VOID nicCmdEventQueryWlanInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInf
 
 VOID nicCmdEventQueryMibInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID nicCmdEventTxMcsInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+#endif
+
 VOID nicCmdEventQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
@@ -3269,6 +3289,9 @@ VOID nicEventBtOverWifi(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventStatistics(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventWlanInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventMibInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID nicEventTxMcsInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+#endif
 VOID nicEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventUpdateNoaParams(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventStaAgingTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);

@@ -1820,6 +1820,13 @@ typedef struct _PARAM_HW_MIB_INFO_T {
 } PARAM_HW_MIB_INFO_T, *P_PARAM_HW_MIB_INFO_T;
 #endif
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+struct PARAM_TX_MCS_INFO {
+	UINT_8		ucStaIndex;
+	UINT_16		au2TxRateCode[MCS_INFO_SAMPLE_CNT];
+	UINT_8		aucTxRatePer[MCS_INFO_SAMPLE_CNT];
+};
+#endif
 
 /*--------------------------------------------------------------*/
 /*! \brief For Fixed Rate Configuration (Registry)              */
@@ -2645,6 +2652,11 @@ wlanoidQueryWlanInfo(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidQueryMibInfo(IN P_ADAPTER_T prAdapter,
 	OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+WLAN_STATUS
+wlanoidTxMcsInfo(IN P_ADAPTER_T prAdapter,
+	IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
+#endif
 
 WLAN_STATUS
 wlanoidSetFwLog2Host(

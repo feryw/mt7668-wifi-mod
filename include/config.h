@@ -847,6 +847,15 @@
  */
 #define CFG_SUPPORT_REPLAY_DETECTION		1
 
+/*------------------------------------------------------------------------------
+ * Flags of Last Second MCS Tx/Rx Info
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_LAST_SEC_MCS_INFO	1
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+#define MCS_INFO_SAMPLE_CNT			10
+#endif
+
 
 /*------------------------------------------------------------------------------
  * Flags of driver fw customization

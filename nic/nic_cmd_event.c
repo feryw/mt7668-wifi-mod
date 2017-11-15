@@ -2489,6 +2489,36 @@ VOID nicCmdEventQueryMibInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 }
 #endif
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID nicCmdEventTxMcsInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	UINT_32 u4QueryInfoLen;
+	P_GLUE_INFO_T prGlueInfo;
+	struct EVENT_TX_MCS_INFO *prTxMcsEvent;
+	struct PARAM_TX_MCS_INFO *prTxMcsInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+	ASSERT(prCmdInfo->pvInformationBuffer);
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prTxMcsEvent = (struct EVENT_TX_MCS_INFO *) pucEventBuf;
+		prTxMcsInfo = (struct PARAM_TX_MCS_INFO *) prCmdInfo->pvInformationBuffer;
+
+		u4QueryInfoLen = sizeof(struct EVENT_TX_MCS_INFO);
+
+		kalMemCopy(prTxMcsInfo->au2TxRateCode, prTxMcsEvent->au2TxRateCode,
+				sizeof(prTxMcsEvent->au2TxRateCode));
+		kalMemCopy(prTxMcsInfo->aucTxRatePer, prTxMcsEvent->aucTxRatePer,
+				sizeof(prTxMcsEvent->aucTxRatePer));
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif
+
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {
@@ -2925,6 +2955,27 @@ VOID nicEventMibInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	}
 
 }
+
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID nicEventTxMcsInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	P_CMD_INFO_T prCmdInfo;
+
+	DBGLOG(RSN, INFO, "EVENT_ID_TX_MCS_INFO");
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo, prEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery, 0, WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+
+}
+#endif
 
 VOID nicEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {

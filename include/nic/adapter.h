@@ -1117,6 +1117,11 @@ struct _ADAPTER_T {
 	EVENT_WLAN_INFO rEventWlanInfo;
 #endif
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+	TIMER_T rRxMcsInfoTimer;
+	BOOLEAN fgIsMcsInfoValid;
+#endif
+
 	EVENT_LINK_QUALITY rLinkQuality;
 	OS_SYSTIME rLinkQualityUpdateTime;
 	BOOLEAN fgIsLinkQualityValid;

@@ -11941,6 +11941,48 @@ wlanoidQueryMibInfo(IN P_ADAPTER_T prAdapter,
 }				/* wlanoidQueryMibInfo */
 #endif
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+WLAN_STATUS
+wlanoidTxMcsInfo(IN P_ADAPTER_T prAdapter,
+		       IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
+{
+	struct PARAM_TX_MCS_INFO *prMcsInfo;
+
+	DEBUGFUNC("wlanoidQueryWlanInfo");
+	DBGLOG(REQ, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+	ASSERT(pu4QueryInfoLen);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_TX_MCS_INFO);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+		       "Fail in query receive error! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		*pu4QueryInfoLen = sizeof(UINT_32);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4QueryBufferLen < sizeof(struct PARAM_TX_MCS_INFO)) {
+		DBGLOG(REQ, WARN, "Too short length %ld\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	prMcsInfo = (struct PARAM_TX_MCS_INFO *)pvQueryBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_TX_MCS_INFO,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventTxMcsInfo,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct PARAM_TX_MCS_INFO), (PUINT_8)prMcsInfo,
+				   pvQueryBuffer, u4QueryBufferLen);
+
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

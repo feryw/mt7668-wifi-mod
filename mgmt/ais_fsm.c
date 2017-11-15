@@ -3133,6 +3133,22 @@ VOID aisFsmRunEventDeauthTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 	aisDeauthXmitComplete(prAdapter, NULL, TX_RESULT_LIFE_TIMEOUT);
 }
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+VOID aisRxMcsCollectionTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
+{
+	static UINT_8 ucSmapleCnt;
+	UINT_8 ucStaIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
+
+	if (prAdapter->arStaRec[ucStaIdx].fgIsValid && prAdapter->arStaRec[ucStaIdx].fgIsInUse) {
+		prAdapter->arStaRec[ucStaIdx].au4RxVect0Que[ucSmapleCnt] = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		prAdapter->arStaRec[ucStaIdx].au4RxVect1Que[ucSmapleCnt] = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
+		ucSmapleCnt = (ucSmapleCnt + 1) % MCS_INFO_SAMPLE_CNT;
+	}
+
+	cnmTimerStartTimer(prAdapter, &prAdapter->rRxMcsInfoTimer, 100);
+}
+#endif
+
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)
 /*----------------------------------------------------------------------------*/
 /*!

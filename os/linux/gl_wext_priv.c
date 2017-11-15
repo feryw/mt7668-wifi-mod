@@ -2223,6 +2223,9 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_STA_STATISTICS	"GET_STA_STATISTICS"
 #define CMD_GET_WTBL_INFO	"GET_WTBL"
 #define CMD_GET_MIB_INFO	"GET_MIB"
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+#define CMD_GET_MCS_INFO	"GET_MCS_INFO"
+#endif
 #define CMD_GET_STA_INFO	"GET_STA"
 #define CMD_SET_FW_LOG		"SET_FWLOG"
 #define CMD_GET_QUE_INFO	"GET_QUE"
@@ -3991,6 +3994,185 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev, IN char *
 	return i4BytesWritten;
 
 }				/* priv_driver_get_test_result */
+
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+INT_32 priv_driver_last_sec_mcs_info(IN P_ADAPTER_T prAdapter, IN char *pcCommand, IN int i4TotalLen,
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo, struct PARAM_TX_MCS_INFO *prTxMcsInfo)
+{
+	UINT_8 i, j, txmode, rate, stbc;
+	UINT_8 nsts;
+	INT_32 i4BytesWritten = 0;
+	UINT_32 au4RxVect0Que[MCS_INFO_SAMPLE_CNT], au4RxVect1Que[MCS_INFO_SAMPLE_CNT];
+	UINT_8 ucStaIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "\nTx MCS:\n");
+
+	for (i = 0; i < MCS_INFO_SAMPLE_CNT; i++) {
+		UINT_8 tmpPerSum = 0, cnt = 0;
+		UINT_16 tmpRateCode = 0xFFFF;
+
+		if (prTxMcsInfo->au2TxRateCode[i] == 0xFFFF)
+			continue;
+
+		if (tmpRateCode == 0xFFFF)
+			tmpRateCode = prTxMcsInfo->au2TxRateCode[i];
+
+		txmode = HW_TX_RATE_TO_MODE(prTxMcsInfo->au2TxRateCode[i]);
+		if (txmode >= MAX_TX_MODE)
+			txmode = MAX_TX_MODE;
+		rate = HW_TX_RATE_TO_MCS(prTxMcsInfo->au2TxRateCode[i], txmode);
+		nsts = HW_TX_RATE_TO_NSS(prTxMcsInfo->au2TxRateCode[i]) + 1;
+		stbc = HW_TX_RATE_TO_STBC(prTxMcsInfo->au2TxRateCode[i]);
+
+		for (j = 0; j < MCS_INFO_SAMPLE_CNT; j++) {
+			if (tmpRateCode == prTxMcsInfo->au2TxRateCode[j]) {
+				tmpPerSum += prTxMcsInfo->aucTxRatePer[j];
+				cnt++;
+				prTxMcsInfo->au2TxRateCode[j] = 0xFFFF;
+			}
+		}
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	%s, ", hw_rate_ofdm_str(rate));
+		else if ((txmode == TX_RATE_MODE_HTMIX) || (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	MCS%d, ", rate);
+		else
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	NSS%d_MCS%d, ", nsts, rate);
+
+		if ((txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM))
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, ", HW_TX_RATE_BW[0]);
+		else
+			if (i > prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN)
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					 i4TotalLen - i4BytesWritten, "%s, ",
+					 prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+						(prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability > BW_20 ?
+						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability - 1] :
+						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]) :
+						HW_TX_RATE_BW[4]);
+			else
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					  i4TotalLen - i4BytesWritten, "%s, ",
+					  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] :
+						HW_TX_RATE_BW[4]);
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, ", rate < 4 ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, ", priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap) == 0 ? "LGI" : "SGI");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s%s%s [PER: %02d%]\t", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+			stbc ? ", STBC, " : ", ",
+			((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
+			(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC",
+			tmpPerSum/cnt);
+
+		for (j = 0; j < cnt; j++)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "*");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "\n");
+	}
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "\nRx MCS:\n");
+
+	kalMemCopy(au4RxVect0Que, prAdapter->arStaRec[ucStaIdx].au4RxVect0Que, sizeof(au4RxVect0Que));
+	kalMemCopy(au4RxVect1Que, prAdapter->arStaRec[ucStaIdx].au4RxVect1Que, sizeof(au4RxVect1Que));
+
+	for (i = 0; i < MCS_INFO_SAMPLE_CNT; i++) {
+		UINT_8 cnt = 0;
+		UINT_32 u4RxVector0 = 0xFFFFFFFF;
+		UINT_32 txmode, rate, frmode, sgi, nsts, ldpc, stbc, groupid, mu;
+		#define RX_MCS_INFO_MASK BITS(0, 17)
+
+		if (au4RxVect0Que[i] == 0xFFFFFFFF)
+			continue;
+
+		if (u4RxVector0 == 0xFFFFFFFF)
+			u4RxVector0 = au4RxVect0Que[i];
+
+		txmode = (au4RxVect0Que[i] & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+		rate = (au4RxVect0Que[i] & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+		frmode = (au4RxVect0Que[i] & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+		nsts = ((au4RxVect1Que[i] & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+		stbc = (au4RxVect0Que[i] & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;
+		sgi = au4RxVect0Que[i] & RX_VT_SHORT_GI;
+		ldpc = au4RxVect0Que[i] & RX_VT_LDPC;
+		groupid = (au4RxVect1Que[i] & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+
+		for (j = 0; j < MCS_INFO_SAMPLE_CNT; j++) {
+			if ((u4RxVector0 & RX_MCS_INFO_MASK) == (au4RxVect0Que[j] & RX_MCS_INFO_MASK)) {
+				au4RxVect0Que[j] = 0xFFFFFFFF;
+				cnt++;
+			}
+		}
+
+		if (groupid && groupid != 63) {
+			mu = 1;
+		} else {
+			mu = 0;
+			nsts += 1;
+		}
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	%s, ", hw_rate_ofdm_str(rate));
+		else if ((txmode == TX_RATE_MODE_HTMIX) || (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	MCS%d, ", rate);
+		else
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"	NSS%d_MCS%d, ", nsts, rate);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s, ", frmode < 4 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, ", rate < 4 ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s,", sgi == 0 ? "LGI" : "SGI");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s", stbc == 0 ? " " : " STBC, ");
+
+		if (mu) {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, %s, %s (%d)\t", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+				ldpc == 0 ? "BCC" : "LDPC", "MU", groupid);
+		} else {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s, %s\t", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+				ldpc == 0 ? "BCC" : "LDPC");
+		}
+
+		for (j = 0; j < cnt; j++)
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "*");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten, "\n");
+	}
+
+	return i4BytesWritten;
+}
+#endif
 
 INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN fgDumpAll,
 	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo, P_PARAM_GET_STA_STATISTICS prQueryStaStatistics)
@@ -8568,6 +8750,102 @@ int priv_driver_set_p2p_ps(IN struct net_device *prNetDev, IN char *pcCommand, I
 	return i4BytesWritten;
 }
 
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+static int priv_driver_get_mcs_info(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0, i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo = NULL;
+	struct PARAM_TX_MCS_INFO *prTxMcsInfo = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (prGlueInfo->prAdapter->rRxMcsInfoTimer.pfMgmtTimeOutFunc == NULL) {
+		cnmTimerInitTimer(prGlueInfo->prAdapter,
+			&prGlueInfo->prAdapter->rRxMcsInfoTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) aisRxMcsCollectionTimeout, (ULONG) NULL);
+	}
+
+	if (i4Argc >= 2) {
+		if (strnicmp(apcArgv[1], "START", strlen("START")) == 0) {
+			cnmTimerStartTimer(prGlueInfo->prAdapter, &prGlueInfo->prAdapter->rRxMcsInfoTimer, 100);
+			prGlueInfo->prAdapter->fgIsMcsInfoValid = TRUE;
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"\nStart the MCS Info Function\n");
+			return i4BytesWritten;
+		} else if (strnicmp(apcArgv[1], "STOP", strlen("STOP")) == 0) {
+			cnmTimerStopTimer(prGlueInfo->prAdapter, &prGlueInfo->prAdapter->rRxMcsInfoTimer);
+			prGlueInfo->prAdapter->fgIsMcsInfoValid = FALSE;
+
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nStop the MCS Info Function\n");
+			return i4BytesWritten;
+		}
+	}
+
+	if (prGlueInfo->prAdapter->fgIsMcsInfoValid != TRUE) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\nUse GET_MCS_INFO [START/STOP] to control the MCS Info Function\n");
+		return i4BytesWritten;
+	}
+
+	if (prGlueInfo->prAdapter->prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED)
+		return -1;
+
+	prHwWlanInfo = (P_PARAM_HW_WLAN_INFO_T)kalMemAlloc(sizeof(PARAM_HW_WLAN_INFO_T), VIR_MEM_TYPE);
+	if (!prHwWlanInfo)
+		return -1;
+
+	rStatus = kalIoctl(prGlueInfo,
+				   wlanoidQueryWlanInfo,
+				   prHwWlanInfo, sizeof(PARAM_HW_WLAN_INFO_T), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, INFO, "rStatus %u u4BufLen = %d\n", rStatus, u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto out;
+
+	prTxMcsInfo = (struct PARAM_TX_MCS_INFO *)kalMemAlloc(sizeof(struct PARAM_TX_MCS_INFO), VIR_MEM_TYPE);
+	if (!prTxMcsInfo)
+		goto out;
+
+	prTxMcsInfo->ucStaIndex = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
+	rStatus = kalIoctl(prGlueInfo,
+				   wlanoidTxMcsInfo,
+				   prTxMcsInfo, sizeof(struct PARAM_TX_MCS_INFO), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, INFO, "rStatus %u u4BufLen = %d\n", rStatus, u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto out;
+
+	i4BytesWritten = priv_driver_last_sec_mcs_info(prGlueInfo->prAdapter,
+							pcCommand, i4TotalLen, prHwWlanInfo, prTxMcsInfo);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+out:
+	if (prHwWlanInfo)
+		kalMemFree(prHwWlanInfo, VIR_MEM_TYPE, sizeof(PARAM_HW_WLAN_INFO_T));
+	if (prTxMcsInfo)
+		kalMemFree(prTxMcsInfo, VIR_MEM_TYPE, sizeof(struct PARAM_TX_MCS_INFO));
+
+	return i4BytesWritten;
+}
+#endif
+
 static int priv_driver_get_deep_sleep_cnt(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -10304,6 +10582,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_wtbl_info(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_MIB_INFO, strlen(CMD_GET_MIB_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_mib_info(prNetDev, pcCommand, i4TotalLen);
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+		else if (strnicmp(pcCommand, CMD_GET_MCS_INFO, strlen(CMD_GET_MCS_INFO)) == 0)
+			i4BytesWritten = priv_driver_get_mcs_info(prNetDev, pcCommand, i4TotalLen);
+#endif
 		else if (strnicmp(pcCommand, CMD_SET_FW_LOG, strlen(CMD_SET_FW_LOG)) == 0)
 			i4BytesWritten = priv_driver_set_fw_log(prNetDev, pcCommand, i4TotalLen);
 #endif

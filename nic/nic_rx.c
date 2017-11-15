@@ -148,6 +148,9 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 	{EVENT_ID_STATISTICS,				nicEventStatistics},
 	{EVENT_ID_WLAN_INFO,				nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO,					nicEventMibInfo},
+#if CFG_SUPPORT_LAST_SEC_MCS_INFO
+	{EVENT_ID_TX_MCS_INFO,				nicEventTxMcsInfo},
+#endif
 	{EVENT_ID_CH_PRIVILEGE,				cnmChMngrHandleChEvent},
 	{EVENT_ID_BSS_ABSENCE_PRESENCE,		qmHandleEventBssAbsencePresence},
 	{EVENT_ID_STA_CHANGE_PS_MODE,		qmHandleEventStaChangePsMode},
