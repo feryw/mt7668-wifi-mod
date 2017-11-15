@@ -3711,6 +3711,11 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 	prFwLog2HostCtrl->ucMcuDest = (UINT_8)u4McuDest;
 	prFwLog2HostCtrl->ucFwLog2HostCtrl = (UINT_8)u4LogType;
 
+	if (prFwLog2HostCtrl->ucMcuDest == 0)
+		prGlueInfo->prAdapter->rWifiVar.ucN9Log2HostCtrl = prFwLog2HostCtrl->ucFwLog2HostCtrl;
+	else if (prFwLog2HostCtrl->ucMcuDest == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucCR4Log2HostCtrl = prFwLog2HostCtrl->ucFwLog2HostCtrl;
+
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetFwLog2Host,
 			   prFwLog2HostCtrl, sizeof(CMD_FW_LOG_2_HOST_CTRL_T), TRUE, TRUE, TRUE, &u4BufLen);

@@ -842,6 +842,9 @@ typedef struct _WIFI_VAR_T {
 	BOOLEAN fgTdlsBufferSTASleep; /* Support TDLS 5.5.4.2 optional case */
 	BOOLEAN fgChipResetRecover;
 
+	UINT_8 ucN9Log2HostCtrl;
+	UINT_8 ucCR4Log2HostCtrl;
+
 #if CFG_SUPPORT_ANT_SELECT
 	UINT_8  ucSpeIdxCtrl;   /* 0:WF0, 1:WF1, 2: both WF0/1 */
 #endif

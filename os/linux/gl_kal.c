@@ -5023,9 +5023,10 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 {
 	CMD_WOWLAN_PARAM_T rCmdWowlanParam;
 	CMD_PACKET_FILTER_CAP_T rCmdPacket_Filter_Cap;
+	CMD_FW_LOG_2_HOST_CTRL_T rFwLog2HostCtrl;
 	P_WOW_CTRL_T pWOW_CTRL = &prGlueInfo->prAdapter->rWowCtrl;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-	UINT_32 ii, wait = 0;
+	UINT_32 ii, u4BufLen, wait = 0;
 
 	kalMemZero(&rCmdWowlanParam, sizeof(CMD_WOWLAN_PARAM_T));
 
@@ -5040,6 +5041,18 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 
 	DBGLOG(PF, INFO, "profile wow=%d, GpioInterval=%d\n",
 		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval);
+
+	/* Kernel log timestamp correction */
+	if (prGlueInfo->prAdapter->rWifiVar.ucN9Log2HostCtrl > 0) {
+		rFwLog2HostCtrl.ucMcuDest = 0;
+		rFwLog2HostCtrl.ucFwLog2HostCtrl = prGlueInfo->prAdapter->rWifiVar.ucN9Log2HostCtrl;
+
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetFwLog2Host,
+					&rFwLog2HostCtrl, sizeof(CMD_FW_LOG_2_HOST_CTRL_T),
+					TRUE, TRUE, TRUE, &u4BufLen);
+	}
+
 
 	/* add band info */
 	rCmdWowlanParam.ucDbdcBand = (UINT_8)prGlueInfo->prAdapter->prAisBssInfo->eDBDCBand;

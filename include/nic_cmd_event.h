@@ -1508,6 +1508,8 @@ typedef struct _CMD_FW_LOG_2_HOST_CTRL_T {
 	UINT_8 ucFwLog2HostCtrl;
 	UINT_8 ucMcuDest;
 	UINT_8 ucReserve[2];
+	UINT_32 u4HostTimeSec;
+	UINT_32 u4HostTimeMSec;
 } CMD_FW_LOG_2_HOST_CTRL_T, *P_CMD_FW_LOG_2_HOST_CTRL_T;
 
 typedef struct _CMD_CHIP_CONFIG_T {
