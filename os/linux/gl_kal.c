@@ -1489,19 +1489,19 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	 *	1. To enlarge threshold for WMM certification, WMM phase two may hit netif_stop_subquene
 	 *	   Which may cause test case fail due to high priority packets are not enough.
 	 *	2. Dynamic control threshold for AC queue.
-	 *	   EX: if u4NetifStopTh = 512
-	 *	   Threshold for low priority AC will decrease to 64
-	 *	   Threshold for high priority AC will increase to 1536
+	 *	   If there is high priority traffic, decrease low priority threshold.
+	 *	   If these is low priority traffic, increase high priority threshold.
+	 *     Else, remians the original threshold.
 	*/
 	if (prGlueInfo->prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_SIGMA_AC_N_PMF) {
 		if ((u2QueueIdx < 3) &&
 		   (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx+1])
-		    > prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh))
+		    > 64))
 			u4MaxTxPendingNum = (prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh >> 3);
 		else if ((u2QueueIdx > 0) &&
 			(GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx-1])
-		    > prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh))
-			u4MaxTxPendingNum = (prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh << 3);
+		    > 64))
+			u4MaxTxPendingNum = (prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh * 3);
 		else
 			u4MaxTxPendingNum = prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh;
 	}
