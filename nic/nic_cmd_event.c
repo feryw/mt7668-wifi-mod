@@ -1465,6 +1465,9 @@ INT_32 GetIQData(INT_32 **prIQAry, UINT_32 *prDataLen, UINT_32 u4IQ, UINT_32 u4G
 
 	/* sprintf(aucPath, "/pattern.txt");             // CSD's Pattern */
 	sprintf(aucPath, "/tmp/dump_out_%05ld_WF%d.txt", (g_u2DumpIndex - 1), u4GetWf1);
+	if (kalCheckPath(aucPath) == -1)
+		snprintf(aucPath, sizeof(aucPath), "/data/dump_out_%05ld_WF%d.txt", (g_u2DumpIndex - 1), u4GetWf1);
+
 	DBGLOG(INIT, INFO, "iCap Read Dump File dump_out_%05ld_WF%d.txt\n", (g_u2DumpIndex - 1), u4GetWf1);
 
 	file = kalFileOpen(aucPath, O_RDONLY, 0);
