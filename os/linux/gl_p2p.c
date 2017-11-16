@@ -1144,6 +1144,10 @@ void glP2pDestroyWirelessDevice(void)
 	kfree(gprP2pWdev);
 
 	for (i = 0; i < KAL_P2P_NUM; i++) {
+
+		if (gprP2pRoleWdev[i] == NULL)
+			continue;
+
 		if (i != 0) { /* The P2P is always in index 0 and shares Wiphy with P2PWdev */
 			DBGLOG(INIT, INFO, "glP2pDestroyWirelessDevice (%p)\n", gprP2pRoleWdev[i]->wiphy);
 			set_wiphy_dev(gprP2pRoleWdev[i]->wiphy, NULL);
