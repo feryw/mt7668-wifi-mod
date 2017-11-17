@@ -1308,7 +1308,7 @@ VOID nicRxProcessMonitorPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwR
 	}
 
 	/* Bit Number 5 ANT SIGNAL */
-	rMonitorRadiotap.ucAntennaSignal = (((prRxStatusGroup3)->u4RxVector[3] & RX_VT_IB_RSSI_MASK));
+	rMonitorRadiotap.ucAntennaSignal = RCPI_TO_dBm(HAL_RX_STATUS_GET_RCPI0(prSwRfb->prRxStatusGroup3));
 
 	/* Bit Number 6 ANT NOISE */
 	rMonitorRadiotap.ucAntennaNoise = ((((prRxStatusGroup3)->u4RxVector[5] & RX_VT_NF0_MASK) >> 1) + 128);
@@ -1353,6 +1353,7 @@ VOID nicRxProcessMonitorPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwR
 	prRxCtrl->ucNumIndPacket++;
 #endif
 
+	prSwRfb->pvPacket = NULL;
 	/* Return RFB */
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
 		DBGLOG(RX, WARN, "Cannot allocate packet buffer for SwRfb!\n");
@@ -2754,10 +2755,14 @@ VOID nicRxProcessRFBs(IN P_ADAPTER_T prAdapter)
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
 #if CFG_SUPPORT_SNIFFER
-					if (prAdapter->prGlueInfo->fgIsEnableMon) {
+					if (HAL_IS_RX_DIRECT(prAdapter)) {
+						spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
-						break;
+						spin_unlock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+					} else {
+						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
 					}
+					break;
 #endif
 					if (HAL_IS_RX_DIRECT(prAdapter)) {
 						spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
