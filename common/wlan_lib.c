@@ -4833,6 +4833,21 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	prAdapter->rWifiVar.ucP2pGoVht &= (!(prEventNicCapability->ucHwNotSupportAC));
 	prAdapter->rWifiVar.ucP2pGcVht &= (!(prEventNicCapability->ucHwNotSupportAC));
 
+	prAdapter->rWifiVar.ucStaVhtBfee &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucStaVhtMuBfee &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucStaVhtBfer &= (!(prEventNicCapability->ucHwNotSupportAC));
+
+	prAdapter->rWifiVar.ucVhtAmsduInAmpduRx &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucVhtAmsduInAmpduTx &= (!(prEventNicCapability->ucHwNotSupportAC));
+
+	if (prEventNicCapability->ucHwNotSupportAC) {
+		prAdapter->rWifiVar.ucStaBandwidth = MAX_BW_40MHZ;
+		prAdapter->rWifiVar.ucSta5gBandwidth =  MAX_BW_40MHZ;
+		prAdapter->rWifiVar.ucP2p5gBandwidth = MAX_BW_40MHZ;
+		prAdapter->rWifiVar.ucApBandwidth = MAX_BW_40MHZ;
+		prAdapter->rWifiVar.ucAp5gBandwidth = MAX_BW_40MHZ;
+	}
+
 	prAdapter->u4FwCompileFlag0 = prEventNicCapability->u4CompileFlag0;
 	prAdapter->u4FwCompileFlag1 = prEventNicCapability->u4CompileFlag1;
 	prAdapter->u4FwFeatureFlag0 = prEventNicCapability->u4FeatureFlag0;
