@@ -612,9 +612,8 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 #endif
 #endif
-
 		/* Check if it is disabled by hardware */
-		if (prAdapter->fgIsHw5GBandDisabled || prRegInfo->ucSupport5GBand == 0)
+		if (prAdapter->fgIsHw5GBandDisabled)
 			prAdapter->fgEnable5GBand = FALSE;
 		else
 			prAdapter->fgEnable5GBand = TRUE;
