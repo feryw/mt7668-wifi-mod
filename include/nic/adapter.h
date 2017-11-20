@@ -934,6 +934,7 @@ struct CSI_DATA_T {
 	INT_16 ac2IData[256];
 	INT_16 ac2QData[256];
 	UINT_8 ucDbdcIdx;
+	UINT_8 ucDataOutputted; /* bit 0: I data, bit 1: Q data. Set to 1 if it's ouputted */
 };
 
 /*

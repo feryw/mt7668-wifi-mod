@@ -9765,6 +9765,10 @@ static int priv_driver_get_csi(IN struct net_device *prNetDev, IN char *pcComman
 	P_ADAPTER_T prAdapter = NULL;
 	UINT_8 ucBw = 20;
 	UINT_16 i = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_8 ucDataType = 0;
+	PINT_16 pri2Data = NULL;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -9775,6 +9779,15 @@ static int priv_driver_get_csi(IN struct net_device *prNetDev, IN char *pcComman
 	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc != 2 || kalkStrtou8(apcArgv[1], 0, &ucDataType) ||
+		ucDataType > 1) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"0 or 1 should be given as the parameter to output I or Q data!\n");
+		goto out;
+	}
 
 	if (prAdapter->rCsiData.u2DataCount == 0) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "No CSI Data\n");
@@ -9795,28 +9808,31 @@ static int priv_driver_get_csi(IN struct net_device *prNetDev, IN char *pcComman
 		prAdapter->rCsiData.bIsCck);
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "data count: %d\n",
 		prAdapter->rCsiData.u2DataCount);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "I data:\n");
+
+	if (ucDataType == 0) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "I data:\n");
+		pri2Data = prAdapter->rCsiData.ac2IData;
+		prAdapter->rCsiData.ucDataOutputted |= BIT(0);
+	} else {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Q data:\n");
+		pri2Data = prAdapter->rCsiData.ac2QData;
+		prAdapter->rCsiData.ucDataOutputted |= BIT(1);
+	}
 
 	for (i = 0; i < prAdapter->rCsiData.u2DataCount; i++) {
 		if ((i % 16) == 0)
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
 
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d ",
-			prAdapter->rCsiData.ac2IData[i]);
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d ", pri2Data[i]);
 	}
 
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\nQ data:\n");
-
-	for (i = 0; i < prAdapter->rCsiData.u2DataCount; i++) {
-		if ((i % 16) == 0)
-			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
-
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d ",
-			prAdapter->rCsiData.ac2QData[i]);
+	if (prAdapter->rCsiData.ucDataOutputted == 0x3) {
+		prAdapter->rCsiData.u2DataCount = 0;
+		 /* clean this indate I/Q data indicates that I & Q data are all outputted,
+		  * we can start to receive the new IQ data
+		  */
+		prAdapter->rCsiData.ucDataOutputted = 0;
 	}
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
-
-	prAdapter->rCsiData.u2DataCount = 0;
 
 out:
 	return i4BytesWritten;

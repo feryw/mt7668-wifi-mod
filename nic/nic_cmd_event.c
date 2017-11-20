@@ -3373,6 +3373,13 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	DBGLOG(NIC, INFO, "nicEventCSIData\n");
 
+	if (prAdapter->rCsiData.ucDataOutputted != 0) {
+		DBGLOG(NIC, INFO,
+			"Previous %s data is not outputted. Ignore this new data!\n",
+			(prAdapter->rCsiData.ucDataOutputted & BIT(0)) ? "Q" : "I");
+		return;
+	}
+
 	prCsiData = (struct EVENT_CSI_DATA_T *) (prEvent->aucBuffer);
 	prAdapter->rCsiData.ucDbdcIdx = prCsiData->ucDbdcIdx;
 	prAdapter->rCsiData.ucBw = prCsiData->ucBw;
