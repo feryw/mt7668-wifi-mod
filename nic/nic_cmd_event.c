@@ -3393,3 +3393,54 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	kalMemCopy(prAdapter->rCsiData.ac2QData,
 		prCsiData->ac2QData, sizeof(prCsiData->ac2QData));
 }
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+VOID nicCmdEventSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	P_WIFI_CMD_T prWifiCmd = NULL;
+	P_CMD_802_11_KEY prCmdKey = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	UINT_8 ucBssIndex = 0;
+	P_BSS_INFO_T prBssInfo = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	if (prCmdInfo->fgIsOid) {
+		/* Update Set Information Length */
+		kalOidComplete(prAdapter->prGlueInfo,
+			       prCmdInfo->fgSetQuery, prCmdInfo->u4InformationBufferLength, WLAN_STATUS_SUCCESS);
+	}
+
+	prWifiCmd = (P_WIFI_CMD_T) (prCmdInfo->pucInfoBuffer);
+	prCmdKey = (P_CMD_802_11_KEY) (prWifiCmd->aucBuffer);
+	ucBssIndex = prCmdKey->ucBssIdx;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	ASSERT(prBssInfo);
+
+	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+
+	if (pucEventBuf) {
+		prWifiCmd = (P_WIFI_CMD_T) (pucEventBuf);
+		prCmdKey = (P_CMD_802_11_KEY) (prWifiCmd->aucBuffer);
+		if (!prCmdKey->ucKeyType) {
+			prDetRplyInfo->ucCurKeyId = prCmdKey->ucKeyId;
+			prDetRplyInfo->ucKeyType = prCmdKey->ucKeyType;
+			prDetRplyInfo->arReplayPNInfo[prCmdKey->ucKeyId].fgRekey = TRUE;
+			prDetRplyInfo->arReplayPNInfo[prCmdKey->ucKeyId].fgFirstPkt = TRUE;
+			DBGLOG(NIC, TRACE, "Keyid is %d, ucKeyType is %d\n",
+				prCmdKey->ucKeyId, prCmdKey->ucKeyType);
+		}
+}
+}
+
+VOID nicOidCmdTimeoutSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+{
+	ASSERT(prAdapter);
+
+	DBGLOG(NIC, WARN, "Wlan setaddkey timeout.\n");
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery, 0, WLAN_STATUS_FAILURE);
+}
+#endif

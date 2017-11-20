@@ -187,6 +187,12 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	INT_32 i4Rslt = -EINVAL;
 	UINT_32 u4BufLen = 0;
 	UINT_8 tmp1[8], tmp2[8];
+#if CFG_SUPPORT_REPLAY_DETECTION
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	UINT_8 ucCheckZeroKey = 0;
+	UINT_8 i = 0;
+#endif
 
 	const UINT_8 aucBCAddr[] = BC_MAC_ADDR;
 	/* const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
@@ -258,6 +264,15 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	}
 
 	if (params->key) {
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+		for (i = 0; i < params->key_len; i++)
+			ucCheckZeroKey += params->key[i];
+
+		if (ucCheckZeroKey == 0)
+			return 0;
+#endif
+
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
 		if (rKey.ucCipher == CIPHER_SUITE_TKIP) {
 			kalMemCopy(tmp1, &params->key[16], 8);
@@ -271,6 +286,26 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 
 	rKey.u4KeyLength = params->key_len;
 	rKey.u4Length = ((ULONG)&(((P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+	ASSERT(prBssInfo);
+
+	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+
+	if ((!pairwise) && ((params->cipher == WLAN_CIPHER_SUITE_TKIP) || (params->cipher == WLAN_CIPHER_SUITE_CCMP))) {
+		if ((prDetRplyInfo->ucCurKeyId == key_index) &&
+			(!kalMemCmp(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len))) {
+			DBGLOG(RSN, TRACE, "M3/G1, KeyID and KeyValue equal.\n");
+			DBGLOG(RSN, TRACE, "hit group key reinstall case, so no update BC/MC PN.\n");
+		} else {
+			kalMemCopy(prDetRplyInfo->arReplayPNInfo[key_index].auPN, params->seq, params->seq_len);
+			prDetRplyInfo->ucCurKeyId = key_index;
+			prDetRplyInfo->u4KeyLength = params->key_len;
+			kalMemCopy(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len);
+		}
+	}
+#endif
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey, rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 
@@ -865,6 +900,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	ENUM_PARAM_OP_MODE_T eOpMode;
 	UINT_32 i, u4AkmSuite = 0;
 	P_DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY prEntry;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+#endif
+
 
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -891,6 +931,20 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
 	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
 	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	/* reset Detect replay information */
+	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
+	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+	ASSERT(prBssInfo);
+
+	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
+#endif
+
+
 #if CFG_SUPPORT_802_11W
 	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
 	switch (sme->mfp) {

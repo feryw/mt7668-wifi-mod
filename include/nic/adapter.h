@@ -483,6 +483,11 @@ struct _BSS_INFO_T {
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
 #endif
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+#endif
+
 };
 
 struct _AIS_SPECIFIC_BSS_INFO_T {

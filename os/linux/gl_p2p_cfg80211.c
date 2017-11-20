@@ -604,6 +604,12 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	UINT_8 ucRoleIdx = 0;
 	const UINT_8 aucBCAddr[] = BC_MAC_ADDR;
 	/* const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
+#if CFG_SUPPORT_REPLAY_DETECTION
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	UINT_8 ucCheckZeroKey = 0;
+	UINT_8 i = 0;
+#endif
 
 	ASSERT(wiphy);
 
@@ -683,11 +689,40 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	if (kalP2PGetRole(prGlueInfo, ucRoleIdx) == 2)
 		rKey.u4KeyIndex |= BIT(28); /* authenticator */
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+	if (params->key) {
+		for (i = 0; i < params->key_len; i++)
+			ucCheckZeroKey += params->key[i];
+
+		if (ucCheckZeroKey == 0)
+			return 0;
+	}
+#endif
 
 	if (params->key)
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
 	rKey.u4KeyLength = params->key_len;
 	rKey.u4Length = ((ULONG)&(((P_P2P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, rKey.ucBssIdx);
+
+	ASSERT(prBssInfo);
+	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+
+	if ((!pairwise) && ((params->cipher == WLAN_CIPHER_SUITE_TKIP) || (params->cipher == WLAN_CIPHER_SUITE_CCMP))) {
+		if ((prDetRplyInfo->ucCurKeyId == key_index) &&
+			(!kalMemCmp(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len))) {
+			DBGLOG(RSN, TRACE, "M3/G1, KeyID and KeyValue equal.\n");
+			DBGLOG(RSN, TRACE, "hit group key reinstall case, so no update BC/MC PN.\n");
+		} else {
+			kalMemCopy(prDetRplyInfo->arReplayPNInfo[key_index].auPN, params->seq, params->seq_len);
+			prDetRplyInfo->ucCurKeyId = key_index;
+			prDetRplyInfo->u4KeyLength = params->key_len;
+			kalMemCopy(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len);
+		}
+	}
+#endif
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey, rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 	if (rStatus == WLAN_STATUS_SUCCESS)
@@ -2438,6 +2473,11 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_MSG_P2P_CONNECTION_REQUEST_T prConnReqMsg = (P_MSG_P2P_CONNECTION_REQUEST_T) NULL;
 	UINT_8 ucRoleIdx = 0;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	UINT_8 ucBssIndex = 0;
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+#endif
 
 	do {
 		if ((wiphy == NULL) || (dev == NULL) || (sme == NULL))
@@ -2499,6 +2539,16 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prConnReqMsg, MSG_SEND_METHOD_BUF);
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIndex) != WLAN_STATUS_SUCCESS)
+			return -EINVAL;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+		ASSERT(prBssInfo);
+		prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+		kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
+#endif
 
 		i4Rslt = 0;
 	} while (FALSE);

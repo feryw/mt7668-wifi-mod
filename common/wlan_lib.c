@@ -6839,7 +6839,11 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucWowPwsMode = (UINT_8) wlanCfgGetUint32(prAdapter, "WowPwsMode", Param_PowerModeFast_PSP);
 	prWifiVar->ucListenDtimInterval =
 		(UINT_8) wlanCfgGetUint32(prAdapter, "ListenDtimInt", DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD);
-	prWifiVar->ucEapolOffload = (UINT_8) wlanCfgGetUint32(prAdapter, "EapolOffload", FEATURE_ENABLED);
+	/* prWifiVar->ucEapolOffload = (UINT_8) wlanCfgGetUint32(prAdapter, "EapolOffload", FEATURE_ENABLED); */
+
+	/* ucEapolOffload: only offload eapol rekey as suspen/resume case. */
+	prWifiVar->ucEapolOffload = FEATURE_DISABLED;
+
 
 #if CFG_WOW_SUPPORT
 	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
