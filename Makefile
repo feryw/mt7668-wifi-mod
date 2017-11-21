@@ -254,4 +254,14 @@ $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
 
-
+#
+# mtprealloc
+#
+ifeq ($(CONFIG_MTK_PREALLOC_MEMORY), y)
+ccflags-y += -DCFG_PREALLOC_MEMORY
+ccflags-y += -I$(src)/prealloc/include
+MODULE_NAME_PREALLOC = $(MODULE_NAME)_prealloc
+PREALLOC_OBJS := prealloc/prealloc.o
+$(MODULE_NAME_PREALLOC)-objs += $(PREALLOC_OBJS)
+obj-m += $(MODULE_NAME_PREALLOC).o
+endif

@@ -191,8 +191,12 @@ WLAN_STATUS nicAllocateAdapterMemory(IN P_ADAPTER_T prAdapter)
 		/* Allocate memory for the CMD_INFO_T and its MGMT memory pool. */
 		prAdapter->u4MgtBufCachedSize = MGT_BUFFER_SIZE;
 
+#ifdef CFG_PREALLOC_MEMORY
+		prAdapter->pucMgtBufCached = preallocGetMem(MEM_ID_NIC_ADAPTER);
+#else
 		LOCAL_NIC_ALLOCATE_MEMORY(prAdapter->pucMgtBufCached,
 					  prAdapter->u4MgtBufCachedSize, PHY_MEM_TYPE, "COMMON MGMT MEMORY POOL");
+#endif
 
 		/* 4 <2> Memory for RX Descriptor */
 		/* Initialize the number of rx buffers we will have in our queue. */
@@ -279,7 +283,9 @@ VOID nicReleaseAdapterMemory(IN P_ADAPTER_T prAdapter)
 	}
 	/* 4 <1> Memory for Management Memory Pool */
 	if (prAdapter->pucMgtBufCached) {
+#ifndef CFG_PREALLOC_MEMORY
 		kalMemFree((PVOID) prAdapter->pucMgtBufCached, PHY_MEM_TYPE, prAdapter->u4MgtBufCachedSize);
+#endif
 		prAdapter->pucMgtBufCached = (PUINT_8) NULL;
 	}
 

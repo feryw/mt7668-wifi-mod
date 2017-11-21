@@ -36,6 +36,8 @@ export CONFIG_MTK_COMBO_WIFI_HIF=$(hif)
 
 export CONFIG_MTK_COMBO_PLAT_PATH=x86
 
+export CONFIG_MTK_PREALLOC_MEMORY=n
+
 ##############################################################
 # Compile options
 ##############################################################

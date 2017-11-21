@@ -793,7 +793,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 		prUsbReq->prBufCtrl->pucBuf = usb_alloc_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE, GFP_ATOMIC,
 								 &prUsbReq->prUrb->transfer_dma);
 #else
+#ifdef CFG_PREALLOC_MEMORY
+		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_CMD);
+#else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_CMD_BUF_SIZE, GFP_ATOMIC);
+#endif
 #endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -848,7 +852,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 			    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
 					       &prUsbReq->prUrb->transfer_dma);
 #else
+#ifdef CFG_PREALLOC_MEMORY
+			prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_DATA);
+#else
 			prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
+#endif
 #endif
 			if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 				DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -874,7 +882,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUF_SIZE, GFP_ATOMIC,
 				       &prUsbReq->prUrb->transfer_dma);
 #else
+#ifdef CFG_PREALLOC_MEMORY
+		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_DATA);
+#else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUF_SIZE, GFP_ATOMIC);
+#endif
 #endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -893,7 +905,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxEventFreeQ, list) {
 		prUsbReq->prBufCtrl = &prHifInfo->rRxEventBufCtrl[i];
+#ifdef CFG_PREALLOC_MEMORY
+		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_RX_EVENT);
+#else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_RX_EVENT_BUF_SIZE, GFP_ATOMIC);
+#endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
@@ -908,7 +924,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataFreeQ, list) {
 		prUsbReq->prBufCtrl = &prHifInfo->rRxDataBufCtrl[i];
+#ifdef CFG_PREALLOC_MEMORY
+		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_RX_DATA);
+#else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_RX_DATA_BUF_SIZE, GFP_ATOMIC);
+#endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
@@ -959,7 +979,9 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 			usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
 				prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
 #else
+#ifndef CFG_PREALLOC_MEMORY
 			kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 #endif
 			usb_free_urb(prUsbReq->prUrb);
 		}
@@ -970,7 +992,9 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
 			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
 #else
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
@@ -991,7 +1015,9 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE,
 			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
 #else
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
@@ -1017,12 +1043,16 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataFreeQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxEventFreeQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 

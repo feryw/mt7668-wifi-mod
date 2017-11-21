@@ -24,6 +24,7 @@ endif
 export CONFIG_MTK_COMBO_WIFI_HIF=$(HIF)
 MODULE_NAME := wlan_$(WLAN_CHIP_ID)_$(HIF)
 
+export CONFIG_MTK_PREALLOC_MEMORY=n
 
 ##############################################################
 # Platform specific
