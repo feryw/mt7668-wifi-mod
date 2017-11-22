@@ -2404,7 +2404,7 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	WLAN_STATUS rStatus;
 	UINT_32 u4SetQueryInfoLen;
-	UINT32 ch_cnt;
+	UINT_32 ch_cnt;
 	struct wiphy *wiphy;
 	u8 band_idx, ch_idx;
 	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T prCmd[KAL_NUM_BANDS] = {NULL};

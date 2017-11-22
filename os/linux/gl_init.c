@@ -2804,9 +2804,6 @@ static int initWlan(void)
 		kalUninitIOBuffer();
 		return ret;
 	}
-#if (CFG_CHIP_RESET_SUPPORT)
-	glResetInit();
-#endif
 
 	return ret;
 }				/* end of initWlan() */
@@ -2824,9 +2821,6 @@ static int initWlan(void)
 static VOID exitWlan(void)
 {
 	/* printk("remove %p\n", wlanRemove); */
-#if CFG_CHIP_RESET_SUPPORT
-	glResetUninit();
-#endif
 
 	glUnregisterBus(wlanRemove);
 

@@ -7263,7 +7263,7 @@ INT_32 wlanCfgGetInt32(IN P_ADAPTER_T prAdapter, const PCHAR pucKey, INT_32 i4Va
 			DBGLOG(INIT, LOUD, "parse aucValue error i4Ret=%d\n", i4Ret);
 	}
 
-	wlanCfgRecordValue(prAdapter, pucKey, (UINT32)i4Value);
+	wlanCfgRecordValue(prAdapter, pucKey, (UINT_32)i4Value);
 
 	return i4Value;
 }

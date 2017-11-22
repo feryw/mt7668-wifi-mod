@@ -165,7 +165,7 @@ CFG_P2P_SCAN_REPORT_ALL_BSS=0
 # eg. insmod wlan_mt7668_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
-
+CFG_CHIP_RESET_SUPPORT=0
 
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
@@ -242,6 +242,10 @@ endif
 
 ifneq ($(CFG_SCAN_CHANNEL_SPECIFIED),)
 PLATFORM_FLAGS += -DCFG_SCAN_CHANNEL_SPECIFIED=$(CFG_SCAN_CHANNEL_SPECIFIED)
+endif
+
+ifneq ($(CFG_CHIP_RESET_SUPPORT),)
+PLATFORM_FLAGS += -DCFG_CHIP_RESET_SUPPORT=$(CFG_CHIP_RESET_SUPPORT)
 endif
 
 ##############################################################
