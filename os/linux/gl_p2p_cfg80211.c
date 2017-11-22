@@ -606,7 +606,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	/* const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
 #if CFG_SUPPORT_REPLAY_DETECTION
 	P_BSS_INFO_T prBssInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 	UINT_8 ucCheckZeroKey = 0;
 	UINT_8 i = 0;
 #endif
@@ -691,10 +691,12 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 	if (params->key) {
-		for (i = 0; i < params->key_len; i++)
-			ucCheckZeroKey += params->key[i];
+		for (i = 0; i < params->key_len; i++) {
+			if (params->key[i] == 0x00)
+				ucCheckZeroKey++;
+		}
 
-		if (ucCheckZeroKey == 0)
+		if (ucCheckZeroKey == params->key_len)
 			return 0;
 	}
 #endif
@@ -707,8 +709,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 #if CFG_SUPPORT_REPLAY_DETECTION
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, rKey.ucBssIdx);
 
-	ASSERT(prBssInfo);
-	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
 
 	if ((!pairwise) && ((params->cipher == WLAN_CIPHER_SUITE_TKIP) || (params->cipher == WLAN_CIPHER_SUITE_CCMP))) {
 		if ((prDetRplyInfo->ucCurKeyId == key_index) &&
@@ -2476,7 +2477,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 #if CFG_SUPPORT_REPLAY_DETECTION
 	UINT_8 ucBssIndex = 0;
 	P_BSS_INFO_T prBssInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 #endif
 
 	do {
@@ -2546,8 +2547,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 		ASSERT(prBssInfo);
-		prDetRplyInfo = &prBssInfo->prDetRplyInfo;
-		kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
+		prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+		kalMemZero(prDetRplyInfo, sizeof(struct SEC_DETECT_REPLAY_INFO));
 #endif
 
 		i4Rslt = 0;

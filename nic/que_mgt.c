@@ -5960,6 +5960,7 @@ BOOLEAN qmRxPNtoU64(PUINT_8 pucPN, UINT_8 uPNNum, PUINT_64 pu8Rets)
 {
 	UINT_8 ucCount = 0;
 	UINT_64 u8Data = 0;
+	UINT_8 ucTmp = 0;
 
 	if (!pu8Rets) {
 		DBGLOG(QM, ERROR, "Please input valid pu8Rets\n");
@@ -5973,7 +5974,8 @@ BOOLEAN qmRxPNtoU64(PUINT_8 pucPN, UINT_8 uPNNum, PUINT_64 pu8Rets)
 
 	*pu8Rets = 0;
 	for (; ucCount < uPNNum; ucCount++) {
-		u8Data = pucPN[ucCount] << 8*ucCount;
+		ucTmp = pucPN[ucCount];
+		u8Data = ucTmp << 8*ucCount;
 		*pu8Rets +=  u8Data;
 	}
 	return TRUE;
@@ -6008,7 +6010,7 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	UINT_8 ucSecMode = CIPHER_SUITE_NONE;		/* CIPHER_SUITE_NONE~CIPHER_SUITE_GCMP */
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_GL_WPA_INFO_T prWpaInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 	P_HW_MAC_RX_DESC_T prRxStatus = NULL;
 	UINT_8 ucBssIndex = 0;
 	P_BSS_INFO_T prBssInfo = NULL;
@@ -6022,6 +6024,9 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	ASSERT(prBssInfo);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prWpaInfo = &prGlueInfo->rWpaInfo;
 
 	/* BMC only need check CCMP and TKIP Cipher suite */
 	prRxStatus = prSwRfb->prRxStatus;
@@ -6044,9 +6049,7 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 		return TRUE;
 	}
 
-	prGlueInfo = prAdapter->prGlueInfo;
-	prWpaInfo = &prGlueInfo->rWpaInfo;
-	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
 
 	/* TODO : Need check fw rekey while fw rekey event. */
 	if (ucKeyID != prDetRplyInfo->ucCurKeyId) {

@@ -189,7 +189,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	UINT_8 tmp1[8], tmp2[8];
 #if CFG_SUPPORT_REPLAY_DETECTION
 	P_BSS_INFO_T prBssInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 	UINT_8 ucCheckZeroKey = 0;
 	UINT_8 i = 0;
 #endif
@@ -266,10 +266,12 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	if (params->key) {
 
 #if CFG_SUPPORT_REPLAY_DETECTION
-		for (i = 0; i < params->key_len; i++)
-			ucCheckZeroKey += params->key[i];
+		for (i = 0; i < params->key_len; i++) {
+			if (params->key[i] == 0x00)
+				ucCheckZeroKey++;
+		}
 
-		if (ucCheckZeroKey == 0)
+		if (ucCheckZeroKey == params->key_len)
 			return 0;
 #endif
 
@@ -289,9 +291,8 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
-	ASSERT(prBssInfo);
 
-	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
 
 	if ((!pairwise) && ((params->cipher == WLAN_CIPHER_SUITE_TKIP) || (params->cipher == WLAN_CIPHER_SUITE_CCMP))) {
 		if ((prDetRplyInfo->ucCurKeyId == key_index) &&
@@ -902,7 +903,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	P_DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY prEntry;
 #if CFG_SUPPORT_REPLAY_DETECTION
 	P_BSS_INFO_T prBssInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 #endif
 
 
@@ -934,14 +935,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 	/* reset Detect replay information */
-	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
-	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
-	ASSERT(prBssInfo);
 
-	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
-	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+	kalMemZero(prDetRplyInfo, sizeof(struct SEC_DETECT_REPLAY_INFO));
 #endif
 
 

@@ -3402,7 +3402,7 @@ VOID nicCmdEventSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, I
 {
 	P_WIFI_CMD_T prWifiCmd = NULL;
 	P_CMD_802_11_KEY prCmdKey = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 	UINT_8 ucBssIndex = 0;
 	P_BSS_INFO_T prBssInfo = NULL;
 
@@ -3422,7 +3422,7 @@ VOID nicCmdEventSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, I
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	ASSERT(prBssInfo);
 
-	prDetRplyInfo = &prBssInfo->prDetRplyInfo;
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
 
 	if (pucEventBuf) {
 		prWifiCmd = (P_WIFI_CMD_T) (pucEventBuf);

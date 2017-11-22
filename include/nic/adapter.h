@@ -485,7 +485,7 @@ struct _BSS_INFO_T {
 #endif
 
 #if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+	struct SEC_DETECT_REPLAY_INFO rDetRplyInfo;
 #endif
 
 };
