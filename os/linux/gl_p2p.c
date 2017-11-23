@@ -1035,6 +1035,10 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	struct wiphy *prWiphy = NULL;
 	struct wireless_dev *prWdev = NULL;
 	UINT_8	i = 0;
+	u32 band_idx, ch_idx;
+	struct ieee80211_supported_band *sband = NULL;
+	struct ieee80211_channel *chan = NULL;
+
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 	if (!prWdev) {
@@ -1060,6 +1064,33 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 
 	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
 	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
+
+	/*
+	 * Clear flags in ieee80211_channel before p2p registers to resolve
+	 * overriding flags issue. For example, when country is changed to US,
+	 * both WW and US flags are applied. The issue flow is:
+	 *
+	 * 1. Register wlan wiphy (wiphy_register()@core.c)
+	 *    chan->orig_flags = chan->flags = 0
+	 * 2. Apply WW regdomain (handle_channel()@reg.c):
+	 *    chan->flags = chan->orig_flags|reg_channel_flags = 0|WW_channel_flags
+	 * 3. Register p2p wiphy:
+	 *    chan->orig_flags = chan->flags = WW channel flags
+	 * 4. Apply US regdomain:
+	 *    chan->flags = chan->orig_flags|reg_channel_flags
+	 *                = WW_channel_flags|US_channel_flags
+	 *                  (Unexpected! It includes WW flags)
+	 */
+
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		sband = prWiphy->bands[band_idx];
+		if (!sband)
+			continue;
+		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
+			chan = &sband->channels[ch_idx];
+			chan->flags = 0;
+		}
+	}
 
 	prWiphy->mgmt_stypes = mtk_cfg80211_default_mgmt_stypes;
 	prWiphy->max_remain_on_channel_duration = 5000;
