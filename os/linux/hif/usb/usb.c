@@ -347,9 +347,10 @@ int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddres
 		return -EFAULT;
 	}
 
-	if (prHifInfo->state != USB_STATE_LINK_UP)
-		return -EFAULT;
-
+	/*
+	 * if (prHifInfo->state != USB_STATE_LINK_UP)
+	 *	return -EFAULT;
+	 */
 
 #if 0
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
