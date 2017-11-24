@@ -863,6 +863,7 @@
  */
 
 #define CFG_SUPPORT_EASY_DEBUG               1
+#define CFG_SUPPORT_FW_DBG_LEVEL_CTRL        1
 
 
 /*------------------------------------------------------------------------------

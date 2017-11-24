@@ -1515,7 +1515,12 @@ typedef struct _CMD_SW_DBG_CTRL_T {
 typedef struct _CMD_FW_LOG_2_HOST_CTRL_T {
 	UINT_8 ucFwLog2HostCtrl;
 	UINT_8 ucMcuDest;
+#if     CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+	UINT_8 ucFwLogLevel;
+	UINT_8 ucReserve;
+#else
 	UINT_8 ucReserve[2];
+#endif
 	UINT_32 u4HostTimeSec;
 	UINT_32 u4HostTimeMSec;
 } CMD_FW_LOG_2_HOST_CTRL_T, *P_CMD_FW_LOG_2_HOST_CTRL_T;

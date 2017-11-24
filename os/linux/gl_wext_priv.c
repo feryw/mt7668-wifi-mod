@@ -3693,6 +3693,9 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	UINT_32 u4McuDest = 0;
 	UINT_32 u4LogType = 0;
+#if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+	UINT_32 ucFwLogLevel = FW_DBG_LEVEL_DONT_SET;
+#endif
 	P_CMD_FW_LOG_2_HOST_CTRL_T prFwLog2HostCtrl = NULL;
 	UINT_32 u4Ret = 0;
 
@@ -3711,11 +3714,19 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 		goto out;
 	}
 
+#if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+	if ((i4Argc != 3) && (i4Argc != 4)) {
+		DBGLOG(REQ, ERROR, "argc %i  must be 3 or 4\n", i4Argc);
+		i4BytesWritten = -1;
+		goto out;
+	}
+#else
 	if (i4Argc != 3) {
 		DBGLOG(REQ, ERROR, "argc %i is not equal to 3\n", i4Argc);
 		i4BytesWritten = -1;
 		goto out;
 	}
+#endif
 
 	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4McuDest);
 	if (u4Ret)
@@ -3724,6 +3735,15 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 	u4Ret = kalkStrtou32(apcArgv[2], 0, &u4LogType);
 	if (u4Ret)
 		DBGLOG(REQ, LOUD, "parse u4LogType error u4Ret=%d\n", u4Ret);
+
+#if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+	if (i4Argc == 4) {
+		u4Ret = kalkStrtou32(apcArgv[3], 0, &ucFwLogLevel);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse ucFwLogLevel error u4Ret=%d\n", u4Ret);
+	}
+	prFwLog2HostCtrl->ucFwLogLevel = (UINT_8)ucFwLogLevel;
+#endif
 
 	prFwLog2HostCtrl->ucMcuDest = (UINT_8)u4McuDest;
 	prFwLog2HostCtrl->ucFwLog2HostCtrl = (UINT_8)u4LogType;

@@ -469,6 +469,16 @@ typedef enum _PARAM_DEVICE_POWER_STATE {
 	ParamDeviceStateMaximum
 } PARAM_DEVICE_POWER_STATE, *PPARAM_DEVICE_POWER_STATE;
 
+#if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+/* FW debug control level related definition and enumerations */
+#define FW_DBG_LEVEL_DONT_SET   0
+#define FW_DBG_LEVEL_ERROR      (1 << 0)
+#define FW_DBG_LEVEL_WARN       (1 << 1)
+#define FW_DBG_LEVEL_STATE      (1 << 2)
+#define FW_DBG_LEVEL_INFO       (1 << 3)
+#define FW_DBG_LEVEL_LOUD       (1 << 4)
+#endif
+
 typedef struct _PARAM_POWER_MODE_T {
 	UINT_8 ucBssIdx;
 	PARAM_POWER_MODE ePowerMode;
@@ -1211,7 +1221,7 @@ typedef struct _MU_SET_INIT_MCS_T {
 	UINT_8 ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
 	UINT_8 ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
 	UINT_8 ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	UINT_8 ucSpeIndex;	/*add new field to fill¡§special extension index¡¨which replace reserve */
+	UINT_8 ucSpeIndex;	/*add new field to fill special extension index which replace reserve */
 	UINT_32 u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
 } MU_SET_INIT_MCS_T, *P_MU_SET_INIT_MCS_T;
 
@@ -1223,7 +1233,7 @@ typedef struct _MU_SET_CALC_LQ_T {
 	UINT_8 ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
 	UINT_8 ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
 	UINT_8 ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	UINT_8 ucSpeIndex;	/*add new field to fill¡§special extension index¡¨which replace reserve */
+	UINT_8 ucSpeIndex;	/*add new field to fill special extension index which replace reserve */
 	UINT_32 u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
 } MU_SET_CALC_LQ_T, *P_MU_SET_CALC_LQ_T;
 

@@ -12036,7 +12036,13 @@ wlanoidSetFwLog2Host(
 	prFwLog2HostCtrl->u4HostTimeSec = (UINT_32)ts;
 	prFwLog2HostCtrl->u4HostTimeMSec = (UINT_32)(do_div(ts, 1000000000) / 1000);
 
-	DBGLOG(REQ, INFO, "McuDest %d, LogType %d\n", prFwLog2HostCtrl->ucMcuDest, prFwLog2HostCtrl->ucFwLog2HostCtrl);
+#if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
+	DBGLOG(REQ, INFO, "McuDest %d, LogType %d, (FwLogLevel %d)\n", prFwLog2HostCtrl->ucMcuDest,
+		prFwLog2HostCtrl->ucFwLog2HostCtrl, prFwLog2HostCtrl->ucFwLogLevel);
+#else
+	DBGLOG(REQ, INFO, "McuDest %d, LogType %d\n", prFwLog2HostCtrl->ucMcuDest,
+		prFwLog2HostCtrl->ucFwLog2HostCtrl);
+#endif
 
 	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_FW_LOG_2_HOST,
