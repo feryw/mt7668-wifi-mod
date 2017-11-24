@@ -3277,10 +3277,7 @@ enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
 		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE, pRequest);
 
 	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
-		DBGLOG(RLM, WARN, "============== WARNING ==============\n");
 		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
-		DBGLOG(RLM, WARN, "Regulatory rule is updated by IE.\n");
-		DBGLOG(RLM, WARN, "============== WARNING ==============\n");
 
 		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE, pRequest);
 
