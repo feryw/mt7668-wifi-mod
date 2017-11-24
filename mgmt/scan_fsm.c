@@ -291,6 +291,7 @@ VOID scnSendScanReqV2(IN P_ADAPTER_T prAdapter)
 	rCmdScanReq.ucBssIndex = prScanParam->ucBssIndex;
 	rCmdScanReq.ucScanType = (UINT_8) prScanParam->eScanType;
 	rCmdScanReq.ucSSIDType = prScanParam->ucSSIDType;
+	rCmdScanReq.ucSSIDNum = prScanParam->ucSSIDNum;
 
 	for (i = 0; i < prScanParam->ucSSIDNum; i++) {
 		COPY_SSID(rCmdScanReq.arSSID[i].aucSsid,

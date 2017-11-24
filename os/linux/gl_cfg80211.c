@@ -813,6 +813,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+	kalMemZero(&rScanRequest, sizeof(rScanRequest));
 
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL)
