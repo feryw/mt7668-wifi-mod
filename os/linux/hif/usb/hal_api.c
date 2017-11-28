@@ -755,7 +755,9 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 				case RX_PKT_TYPE_RX_DATA:
 #if CFG_SUPPORT_SNIFFER
 					if (prGlueInfo->fgIsEnableMon) {
+						spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
+						spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 						break;
 					}
 #endif

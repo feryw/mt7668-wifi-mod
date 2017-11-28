@@ -2758,14 +2758,15 @@ VOID nicRxProcessRFBs(IN P_ADAPTER_T prAdapter)
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
 #if CFG_SUPPORT_SNIFFER
-					if (HAL_IS_RX_DIRECT(prAdapter)) {
+					if (prAdapter->prGlueInfo->fgIsEnableMon && HAL_IS_RX_DIRECT(prAdapter)) {
 						spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
 						spin_unlock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
-					} else {
+						break;
+					} else if (prAdapter->prGlueInfo->fgIsEnableMon) {
 						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
+						break;
 					}
-					break;
 #endif
 					if (HAL_IS_RX_DIRECT(prAdapter)) {
 						spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
