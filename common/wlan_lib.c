@@ -2237,6 +2237,33 @@ WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerM
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief This function is called to set g_fgKeepFullPwr flag in firmware
+*
+* \param[IN] prAdapter        Pointer to the Adapter structure.
+* \param[IN] fgEnable         Boolean of enable
+*                             True: wlan stays awake and keeps working in full power state
+*                             False: wlan may go to sleep and consumes less power.
+*
+* \return WLAN_STATUS_SUCCESS
+* \return WLAN_STATUS_FAILURE
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS wlanKeepFullPwr(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable)
+{
+	struct CMD_KEEP_FULL_PWR_T rCmdKeepFullPwr;
+
+	ASSERT(prAdapter);
+
+	rCmdKeepFullPwr.ucEnable = fgEnable;
+	DBGLOG(HAL, STATE, "KeepFullPwr: %d\n", rCmdKeepFullPwr.ucEnable);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_KEEP_FULL_PWR, TRUE, FALSE, FALSE, NULL, NULL,
+				   sizeof(struct CMD_KEEP_FULL_PWR_T), (PUINT_8)&rCmdKeepFullPwr, NULL, 0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief This function is called to check if it is RF test mode and
 *        the OID is allowed to be called or not
 *
@@ -9547,6 +9574,9 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	PARAM_POWER_MODE ePwrMode;
 	P_BSS_INFO_T prBssInfo;
 
+	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
+		wlanKeepFullPwr(prGlueInfo->prAdapter, FALSE);
+
 	/* if wifi.cfg EAPOL offload is 0, we set rekey offload when enter wow */
 	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
 		wlanSuspendRekeyOffload(prGlueInfo, FALSE);
@@ -9614,5 +9644,8 @@ VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
 				prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, ePwrMode, FALSE, FALSE);
 		}
 	}
+
+	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
+		wlanKeepFullPwr(prGlueInfo->prAdapter, TRUE);
 }
 

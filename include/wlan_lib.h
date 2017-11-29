@@ -203,6 +203,10 @@
 #define INVALID_WOW_WAKE_UP_REASON 255
 #endif
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+#define KEEP_FULL_PWR_TRAFFIC_REPORT_BIT BIT(0)
+#define KEEP_FULL_PWR_NOISE_HISTOGRAM_BIT BIT(1)
+#endif
 
 typedef enum _CMD_VER_T {
 	CMD_VER_1, /* Type[2]+String[32]+Value[32] */
@@ -1071,6 +1075,8 @@ UINT_32 wlanCRC32(PUINT_8 buf, UINT_32 len);
 WLAN_STATUS wlanSendDummyCmd(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsReqTxRsrc);
 
 WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerMode);
+
+WLAN_STATUS wlanKeepFullPwr(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable);
 
 BOOLEAN wlanIsHandlerAllowedInRFTest(IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN BOOLEAN fgSetInfo);
 

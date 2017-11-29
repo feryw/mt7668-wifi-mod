@@ -1166,6 +1166,12 @@ struct _ADAPTER_T {
 	UINT_32 u4CtiaPowerMode;
 	BOOLEAN fgEnCtiaPowerMode;
 
+	/* Bitmap is defined as #define KEEP_FULL_PWR_{FEATURE}_BIT in wlan_lib.h
+	 * Each feature controls KeepFullPwr(CMD_ID_KEEP_FULL_PWR) should
+	 * register bitmap to ensure low power during suspend.
+	 */
+	UINT_32 u4IsKeepFullPwrBitmap;
+
 	UINT_32 fgEnArpFilter;
 
 	UINT_32 u4UapsdAcBmp;

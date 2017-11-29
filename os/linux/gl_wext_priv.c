@@ -9366,9 +9366,11 @@ static int priv_driver_get_traffic_report(IN struct net_device *prNetDev, IN cha
 	cmd->ucBand = ucBand;
 
 	if (strnicmp(apcArgv[1], "ENABLE", strlen("ENABLE")) == 0) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap |= KEEP_FULL_PWR_TRAFFIC_REPORT_BIT;
 		cmd->ucAction = CMD_GET_REPORT_ENABLE;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 	} else if (strnicmp(apcArgv[1], "DISABLE", strlen("DISABLE")) == 0) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap &= ~KEEP_FULL_PWR_TRAFFIC_REPORT_BIT;
 		cmd->ucAction = CMD_GET_REPORT_DISABLE;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 	} else if (strnicmp(apcArgv[1], "RESET", strlen("RESET")) == 0) {
@@ -10192,9 +10194,11 @@ static int priv_driver_noise_histogram(IN struct net_device *prNetDev, IN char *
 	cmd->u2Len = sizeof(*cmd);
 
 	if (strnicmp(apcArgv[1], "ENABLE", strlen("ENABLE")) == 0) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap |= KEEP_FULL_PWR_NOISE_HISTOGRAM_BIT;
 		cmd->ucAction = CMD_NOISE_HISTOGRAM_ENABLE;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 	} else if (strnicmp(apcArgv[1], "DISABLE", strlen("DISABLE")) == 0) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap &= ~KEEP_FULL_PWR_NOISE_HISTOGRAM_BIT;
 		cmd->ucAction = CMD_NOISE_HISTOGRAM_DISABLE;
 		cmd->u2Type |= CMD_ADV_CONTROL_SET;
 	} else if (strnicmp(apcArgv[1], "RESET", strlen("RESET")) == 0) {

@@ -447,6 +447,8 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_P2P_ABORT,	/* 0x26 (Set) */
 	CMD_ID_SET_DBDC_PARMS = 0x28,	/* 0x28 (Set) */
 
+	CMD_ID_KEEP_FULL_PWR = 0x2A,	/* 0x2A (Set) */
+
 	/* SLT commands */
 	CMD_ID_RANDOM_RX_RESET_EN = 0x2C,	/* 0x2C (Set ) */
 	CMD_ID_RANDOM_RX_RESET_DE = 0x2D,	/* 0x2D (Set ) */
@@ -1548,6 +1550,12 @@ typedef struct _CMD_NIC_POWER_CTRL {
 	UINT_8 ucPowerMode;
 	UINT_8 aucReserved[3];
 } CMD_NIC_POWER_CTRL, *P_CMD_NIC_POWER_CTRL;
+
+/* CMD_ID_KEEP_FULL_PWR */
+struct CMD_KEEP_FULL_PWR_T {
+	UINT_8 ucEnable;
+	UINT_8 aucReserved[3];
+};
 
 /* CMD_ID_POWER_SAVE_MODE */
 typedef struct _CMD_PS_PROFILE_T {
