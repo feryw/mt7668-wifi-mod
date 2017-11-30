@@ -3258,7 +3258,7 @@ VOID nicEventDebugMsg(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 			if (*(pucChr - 1) == '\n')
 				*(pucChr - 1) = '\0';
 
-			DBGLOG(SW4, INFO, "<FW>%s\n", pucMsg);
+			DBGLOG(SW4, EVENT, "<FW>%s\n", pucMsg);
 		} else if (ucMsgType == DEBUG_MSG_TYPE_MEM8) {
 			DBGLOG(SW4, INFO, "<FW>Dump MEM8\n");
 			DBGLOG_MEM8(SW4, INFO, pucMsg, u2MsgSize);

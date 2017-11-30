@@ -6836,7 +6836,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 
 	prWifiVar->ucMacAddrOverride = (UINT_8) wlanCfgGetInt32(prAdapter, "MacOverride", 0);
 	if (wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr, "00:0c:e7:66:32:e1", 0))
-		DBGLOG(INIT, ERROR, "get MacAddr fail, use defaul\n");
+		DBGLOG(INIT, INFO, "get MacAddr fail, use defaul\n");
 
 	prWifiVar->ucCtiaMode = (UINT_8) wlanCfgGetUint32(prAdapter, "CtiaMode", 0);
 
@@ -7867,7 +7867,7 @@ VOID wlanFeatureToFw(IN P_ADAPTER_T prAdapter)
 
 
 
-			DBGLOG(INIT, WARN, "Send key word (%s) WITH (%s) to firmware\n",
+			DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
 				rCmd_v1.itemString, rCmd_v1.itemValue);
 
 			kalMemCopy(((P_CMD_FORMAT_V1_T)rCmdV1Header.buffer)+ucTimes,
@@ -8096,7 +8096,7 @@ WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32
 				}
 			}
 
-			DBGLOG(INIT, WARN, "Save to driver temp buffer as [%s]\n", ucTmp);
+			DBGLOG(INIT, INFO, "Save to driver temp buffer as [%s]\n", ucTmp);
 			wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ucTmp, NULL);
 #else
 			wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ppcArgs[1], NULL);
