@@ -9094,13 +9094,17 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev, IN char 
 		for (cIdx2 = 0; cIdx2 < ucChannelNum; cIdx2++) {
 			if (prChnLoadInfo->rChnRankList[cIdx].ucChannel ==
 				prChannelList[cIdx2].ucChannelNum) {
-				u4Offset = kalSprintf(pcCommand + i4BytesWritten,
+				u4Offset = kalSnprintf(pcCommand + i4BytesWritten,
+							i4TotalLen - i4BytesWritten,
 							"\nch %03u -> dirtiness %lu",
 							prChnLoadInfo->rChnRankList[cIdx].ucChannel,
 							prChnLoadInfo->rChnRankList[cIdx].u4Dirtiness);
 				i4BytesWritten += u4Offset;
 				break;
 			}
+
+			if (i4BytesWritten >= i4TotalLen)
+				return i4BytesWritten;
 		}
 	}
 

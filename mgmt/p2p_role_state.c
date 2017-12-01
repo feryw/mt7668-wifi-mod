@@ -85,8 +85,7 @@ VOID p2pRoleStateInit_SCAN(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_
 			prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 			if (prP2pDevFsmInfo) {
 				prDevScanReqInfo = &(prP2pDevFsmInfo->rScanReqInfo);
-				if ((prDevScanReqInfo->u4BufLength != 0) &&
-					(prDevScanReqInfo->aucIEBuf)) {
+				if (prDevScanReqInfo->u4BufLength != 0) {
 					/* IE Buffer */
 					kalMemCopy(prScanReqInfo->aucIEBuf, prDevScanReqInfo->aucIEBuf,
 							prDevScanReqInfo->u4BufLength);
