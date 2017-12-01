@@ -2422,14 +2422,14 @@ P_SW_RFB_T qmHandleRxPackets(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfbList
 				QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prCurrSwRfb);
 				continue;
 			}
-		}
-		if (fgIsBMC
-			&& prBssInfoRly
-			&& (IS_BSS_AIS(prBssInfoRly) || IS_BSS_P2P(prBssInfoRly))
-			&& qmHandleRxReplay(prAdapter, prCurrSwRfb)) {
-			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prCurrSwRfb);
-			continue;
+			if (fgIsBMC
+				&& prBssInfoRly
+				&& (IS_BSS_AIS(prBssInfoRly) || IS_BSS_P2P(prBssInfoRly))
+				&& qmHandleRxReplay(prAdapter, prCurrSwRfb)) {
+				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prCurrSwRfb);
+				continue;
+			}
 		}
 #endif
 
@@ -5960,7 +5960,7 @@ BOOLEAN qmRxPNtoU64(PUINT_8 pucPN, UINT_8 uPNNum, PUINT_64 pu8Rets)
 {
 	UINT_8 ucCount = 0;
 	UINT_64 u8Data = 0;
-	UINT_8 ucTmp = 0;
+	UINT_64 ucTmp = 0;
 
 	if (!pu8Rets) {
 		DBGLOG(QM, ERROR, "Please input valid pu8Rets\n");
