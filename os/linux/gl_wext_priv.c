@@ -2373,6 +2373,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SET_MAX_RFGAIN        "SET_MAX_RFGAIN"
 #define CMD_GET_MAX_RFGAIN        "GET_MAX_RFGAIN"
 #define CMD_NOISE_HISTOGRAM   "NOISE_HISTOGRAM"
+#define CMD_SET_ADM_CTRL	"SET_ADM"
 
 enum {
 	CMD_ADVCTL_NOISE_ID = 1,
@@ -2380,6 +2381,7 @@ enum {
 	CMD_ADVCTL_ED_ID,
 	CMD_ADVCTL_PD_ID,
 	CMD_ADVCTL_MAX_RFGAIN_ID,
+	CMD_ADVCTL_ADM_CTRL_ID,
 	CMD_ADVCTL_MAX
 };
 #endif
@@ -10268,6 +10270,70 @@ noise_histogram_invalid:
 				"\nformat:get_report [enable|disable|get|reset]");
 	return i4BytesWritten;
 }
+
+static int priv_driver_set_adm_ctrl(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	INT_32 u4Ret = 0;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + CMD_ADVCTL_ADM_CTRL_ID;
+	UINT_32 u4Enable = 0, u4TimeRatio = 100, u4AdmBase = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	rSwCtrlInfo.u4Id = u4Id;
+
+	if ((i4Argc > 4) || (i4Argc < 2)) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: set_admission_ctrl\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Enable);
+	if (u4Ret)
+		DBGLOG(REQ, ERROR, "parse u4Enable error u4Ret=%d\n", u4Ret);
+
+	if (i4Argc > 2) {
+		/* u4AdmTime default is 100% */
+		u4Ret = kalkStrtos32(apcArgv[2], 0, &u4TimeRatio);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse u4AdmTime error u4Ret=%d\n", u4Ret);
+	}
+
+	if (i4Argc > 3) {
+		u4Ret = kalkStrtos32(apcArgv[3], 0, &u4AdmBase);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse u4AdmBase error u4Ret=%d\n", u4Ret);
+	}
+
+	rSwCtrlInfo.u4Data = ((u4AdmBase & 0xFFFF) | ((u4TimeRatio & 0xFF) << 16) |
+				((u4Enable & 0xFF) << 24));
+	DBGLOG(REQ, LOUD, "u4Enable=%d u4AdmTime=%d, u4AdmBase=%d, u4Data=0x%x,\n",
+		u4Enable, u4TimeRatio, u4AdmBase, rSwCtrlInfo.u4Data);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetSwCtrlWrite,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+
 #endif
 
 static int priv_driver_set_csi(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -10737,6 +10803,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_maxrfgain(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_NOISE_HISTOGRAM, strlen(CMD_NOISE_HISTOGRAM)) == 0)
 			i4BytesWritten = priv_driver_noise_histogram(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_ADM_CTRL, strlen(CMD_SET_ADM_CTRL)) == 0)
+			i4BytesWritten = priv_driver_set_adm_ctrl(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else
 		i4BytesWritten = priv_cmd_not_support(prNetDev, pcCommand, i4TotalLen);
