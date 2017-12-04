@@ -12010,7 +12010,7 @@ wlanoidSetFwLog2Host(
 	OUT PUINT_32 pu4SetInfoLen)
 {
 	P_CMD_FW_LOG_2_HOST_CTRL_T prFwLog2HostCtrl;
-	u64 ts = KAL_GET_HOST_CLOCK();
+	UINT_64 ts = KAL_GET_HOST_CLOCK();
 
 	DEBUGFUNC("wlanoidSetFwLog2Host");
 
@@ -12033,8 +12033,8 @@ wlanoidSetFwLog2Host(
 	}
 
 	prFwLog2HostCtrl = (P_CMD_FW_LOG_2_HOST_CTRL_T)pvSetBuffer;
-	prFwLog2HostCtrl->u4HostTimeSec = (UINT_32)ts;
 	prFwLog2HostCtrl->u4HostTimeMSec = (UINT_32)(do_div(ts, 1000000000) / 1000);
+	prFwLog2HostCtrl->u4HostTimeSec = (UINT_32)ts;
 
 #if CFG_SUPPORT_FW_DBG_LEVEL_CTRL
 	DBGLOG(REQ, INFO, "McuDest %d, LogType %d, (FwLogLevel %d)\n", prFwLog2HostCtrl->ucMcuDest,
