@@ -6028,6 +6028,9 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	prGlueInfo = prAdapter->prGlueInfo;
 	prWpaInfo = &prGlueInfo->rWpaInfo;
 
+	if (!(prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1)))
+		return FALSE;
+
 	/* BMC only need check CCMP and TKIP Cipher suite */
 	prRxStatus = prSwRfb->prRxStatus;
 	ucSecMode = HAL_RX_STATUS_GET_SEC_MODE(prRxStatus);
@@ -6035,11 +6038,12 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 		&& ucSecMode != CIPHER_SUITE_TKIP) {
 		DBGLOG(QM, TRACE, "SecMode: %d and CipherGroup: %d, no need check replay\n",
 				ucSecMode, prWpaInfo->u4CipherGroup);
-
+#if 0
 		if (!(prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))) {
 			DBGLOG(QM, ERROR, "Group 1 invalid\n");
 			return TRUE;
 		}
+#endif
 		return FALSE;
 	}
 
