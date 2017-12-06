@@ -5094,7 +5094,7 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 	UINT_32 ii, u4BufLen, wait = 0;
 
 	kalMemZero(&rCmdWowlanParam, sizeof(CMD_WOWLAN_PARAM_T));
-
+	kalMemZero(&rFwLog2HostCtrl, sizeof(rFwLog2HostCtrl));
 	kalMemZero(&rCmdPacket_Filter_Cap, sizeof(CMD_PACKET_FILTER_CAP_T));
 
 	prGlueInfo->prAdapter->fgSetPfCapabilityDone = FALSE;
