@@ -1196,8 +1196,11 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
 	    (UINT_16) OFFSET_OF(WLAN_BEACON_FRAME_BODY_T, aucInfoElem[0]);
 
-	if (u2IELength > CFG_IE_BUFFER_SIZE)
+	if (u2IELength > CFG_IE_BUFFER_SIZE) {
 		u2IELength = CFG_IE_BUFFER_SIZE;
+		DBGLOG(SCN, WARN, "IE len(%u) > Max IE buffer size(%u), truncate IE!\n",
+			   u2IELength, CFG_IE_BUFFER_SIZE);
+	}
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
@@ -1334,7 +1337,12 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	}
 #if 1
 
-	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
+	if (prSwRfb->u2PacketLen > CFG_RAW_BUFFER_SIZE) {
+		DBGLOG(SCN, WARN, "Pkt len(%u) > Max RAW buffer size(%u), truncate it!\n",
+			   prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+		prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
+	} else
+		prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
 	kalMemCopy(prBssDesc->aucRawBuf, prWlanBeaconFrame, prBssDesc->u2RawLength);
 #endif
 
@@ -1361,6 +1369,7 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	if (u2IELength > CFG_IE_BUFFER_SIZE) {
 		u2IELength = CFG_IE_BUFFER_SIZE;
 		prBssDesc->fgIsIEOverflow = TRUE;
+		DBGLOG(SCN, WARN, "IE is truncated!\n");
 	} else {
 		prBssDesc->fgIsIEOverflow = FALSE;
 	}

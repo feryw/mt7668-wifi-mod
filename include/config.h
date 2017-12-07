@@ -430,7 +430,7 @@
 #define CFG_RAW_BUFFER_SIZE                      1024
 
 /*! Maximum size of IE buffer of each SCAN record */
-#define CFG_IE_BUFFER_SIZE                      512
+#define CFG_IE_BUFFER_SIZE                      800
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Power management
