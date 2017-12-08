@@ -4893,20 +4893,39 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 #endif
 
 #if CFG_SISO_SW_DEVELOP
-	if ((!prEventNicCapability->ucHwNotSupportDBDC) && (!prEventNicCapability->ucHwSetNss1x1)) {
+	if ((!prEventNicCapability->ucHwNotSupportDBDC) &&
+		(!prEventNicCapability->ucHwSetNss1x1) &&
+		(!prEventNicCapability->ucHwWiFiZeroOnly)) {
 		prAdapter->rWifiFemCfg.u2WifiPath =
 			(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
-	} else if ((!prEventNicCapability->ucHwNotSupportDBDC) && (prEventNicCapability->ucHwSetNss1x1)) {
+	} else if ((!prEventNicCapability->ucHwNotSupportDBDC) &&
+			(prEventNicCapability->ucHwSetNss1x1) &&
+			(!prEventNicCapability->ucHwWiFiZeroOnly)) {
 		prAdapter->rWifiFemCfg.u2WifiPath =
 			(WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1);
-	} else if ((prEventNicCapability->ucHwNotSupportDBDC) && (prEventNicCapability->ucHwSetNss1x1)) {
+	} else if ((prEventNicCapability->ucHwNotSupportDBDC) &&
+		(prEventNicCapability->ucHwSetNss1x1) &&
+		(!prEventNicCapability->ucHwWiFiZeroOnly)) {
 		prAdapter->rWifiFemCfg.u2WifiPath =
 			(WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1);
-	} else if ((prEventNicCapability->ucHwNotSupportDBDC) && (!prEventNicCapability->ucHwSetNss1x1)) {
+	} else if ((prEventNicCapability->ucHwNotSupportDBDC) &&
+		(!prEventNicCapability->ucHwSetNss1x1) &&
+		(!prEventNicCapability->ucHwWiFiZeroOnly)) {
 		prAdapter->rWifiFemCfg.u2WifiPath =
 			(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
-	} else
+	} else if ((prEventNicCapability->ucHwNotSupportDBDC) &&
+		(prEventNicCapability->ucHwSetNss1x1) &&
+		(prEventNicCapability->ucHwWiFiZeroOnly)) {
+		prAdapter->rWifiFemCfg.u2WifiPath =
+			(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0);
+	} else {
+		DBGLOG(INIT, ERROR, "ucHwNotSupportDBDC = %d\n", prEventNicCapability->ucHwNotSupportDBDC);
+		DBGLOG(INIT, ERROR, "ucHwSetNss1x1 = %d\n", prEventNicCapability->ucHwSetNss1x1);
+		DBGLOG(INIT, ERROR, "ucHwWiFiZeroOnly = %d\n", prEventNicCapability->ucHwWiFiZeroOnly);
 		ASSERT(0);
+	}
+
+	DBGLOG(INIT, INFO, "wifi path = %8x\n", prAdapter->rWifiFemCfg.u2WifiPath);
 #endif
 
 	return WLAN_STATUS_SUCCESS;
