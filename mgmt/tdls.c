@@ -1263,12 +1263,15 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 		 *  FTIE
 		 *  Timeout Interval
 		 */
-		if (ucActionCode != TDLS_FRM_ACTION_CONFIRM) {
+
+		if (ucActionCode != TDLS_FRM_ACTION_CONFIRM && ucActionCode != TDLS_FRM_ACTION_DISCOVERY_REQ) {
 			/* 3. Frame Formation - (4) Capability: 0x31 0x04, privacy bit will be set */
 			u2CapInfo = assocBuildCapabilityInfo(prAdapter, prStaRec);
 			WLAN_SET_FIELD_16(pPkt, u2CapInfo);
 			LR_TDLS_FME_FIELD_FILL(2);
+		}
 
+		if (ucActionCode != TDLS_FRM_ACTION_CONFIRM) {
 			/* 4. Append general IEs */
 			/*
 			 *  TODO check HT: prAdapter->rWifiVar.rConnSettings.uc2G4BandwidthMode
