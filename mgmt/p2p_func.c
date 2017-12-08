@@ -1209,18 +1209,18 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 					prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
 	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
 
-	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan)
-		cnmMemFree(prGlueInfo->prAdapter,
-			prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
+	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef) {
+		if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan) {
+			cnmMemFree(prGlueInfo->prAdapter,
+				prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
+			prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
+		}
 
-	prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
-
-	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef)
 		cnmMemFree(prGlueInfo->prAdapter,
 			prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
-
-	prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
-}				/* p2pFuncDfsSwitchCh */
+		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
+	}
+} /* p2pFuncDfsSwitchCh */
 
 BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
 {
