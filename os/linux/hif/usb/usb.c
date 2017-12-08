@@ -167,6 +167,14 @@ static struct usb_driver mtk_usb_driver = {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id *id);
+static void mtk_usb_disconnect(struct usb_interface *intf);
+static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message);
+static int mtk_usb_resume(struct usb_interface *intf);
+static int mtk_usb_reset_resume(struct usb_interface *intf);
+static int mtk_usb_bulk_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR * buffer, int InEp);
+static int mtk_usb_intr_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR * buffer, int InEp);
+static int mtk_usb_bulk_out_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, IN UCHAR * buffer, int OutEp);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -227,7 +235,7 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 	ASSERT(intf);
 	prGlueInfo  = (P_GLUE_INFO_T)usb_get_intfdata(intf);
 
-	prGlueInfo->rHifInfo.state = USB_STATE_LINK_DOWN;
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_DOWN);
 
 	if (g_fgDriverProbed)
 		pfWlanRemove();
@@ -240,7 +248,7 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 	DBGLOG(HAL, STATE, "mtk_usb_disconnect() done\n");
 }
 
-int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
+static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
 	UINT_8 count = 0;
@@ -262,17 +270,19 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 		count++;
 	}
 
-	prGlueInfo->rHifInfo.state = USB_STATE_SUSPEND;
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_SUSPEND);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 	halTxCancelAllSending(prGlueInfo->prAdapter);
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 
-	/* TODO */
+	if (ret && PMSG_IS_AUTO(message))
+		mtk_usb_resume(intf);
+
 	return ret;
 }
 
-int mtk_usb_resume(struct usb_interface *intf)
+static int mtk_usb_resume(struct usb_interface *intf)
 {
 	int ret = 0;
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
@@ -287,11 +297,11 @@ int mtk_usb_resume(struct usb_interface *intf)
 	if (ret)
 		DBGLOG(HAL, ERROR, "VendorRequest FeatureSetResume ERROR: %x\n", (unsigned int)ret);
 
-	prGlueInfo->rHifInfo.state = USB_STATE_PRE_RESUME;
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
 	/* To trigger CR4 path */
 	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
 
-	prGlueInfo->rHifInfo.state = USB_STATE_LINK_UP;
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_UP);
 	halEnableInterrupt(prGlueInfo->prAdapter);
 
 	wlanResumePmHandle(prGlueInfo);
@@ -302,7 +312,7 @@ int mtk_usb_resume(struct usb_interface *intf)
 	return 0;
 }
 
-int mtk_usb_reset_resume(struct usb_interface *intf)
+static int mtk_usb_reset_resume(struct usb_interface *intf)
 {
 	DBGLOG(HAL, STATE, "mtk_usb_reset_resume()\n");
 
@@ -347,16 +357,6 @@ int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddres
 		return -EFAULT;
 	}
 
-	/*
-	 * if (prHifInfo->state != USB_STATE_LINK_UP)
-	 *	return -EFAULT;
-	 */
-
-#if 0
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
-		return FALSE;
-#endif
-
 	if (unlikely(TransferBufferLength > prHifInfo->vendor_req_buf_sz)) {
 		DBGLOG(REQ, ERROR, "len %u exceeds limit %zu\n", TransferBufferLength,
 			prHifInfo->vendor_req_buf_sz);
@@ -399,7 +399,7 @@ int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddres
 /*!
 * \brief USB Bulk IN msg
 *
-* \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
 * \param[in] len
 * \param[in] buffer
 * \param[in] InEp
@@ -475,7 +475,7 @@ static int mtk_usb_intr_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT
 /*!
 * \brief USB Bulk OUT msg
 *
-* \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
 * \param[in] len
 * \param[in] buffer
 * \param[in] OutEp
@@ -678,7 +678,7 @@ P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead,
 /*!
 * \brief This function borrow UsbReq from Tx data FFA queue to the spcified TC Tx data free queue
 *
-* \param[in] prGlueInfo Pointer to HIF info structure
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
 * \param[in] ucTc       Specify TC index
 *
 * \retval TRUE          operation success
@@ -698,6 +698,66 @@ BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc)
 	list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ[ucTc]);
 
 	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function set USB state
+*
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
+* \param[in] state      Specify TC index
+*
+* \retval TRUE          operation success
+* \retval FALSE         operation fail
+*/
+/*----------------------------------------------------------------------------*/
+VOID glUsbSetState(P_GL_HIF_INFO_T prHifInfo, enum usb_state state)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
+	prHifInfo->state = state;
+	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function is a wrapper of submit urb to ensure driver can transmit
+*        WiFi packet when WiFi path of device is allowed.
+*
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
+* \param[in] type       Specify submit type
+*
+* \retval 0		Successful submissions.
+* \retval negative	Error number.
+*/
+/*----------------------------------------------------------------------------*/
+INT_32 glUsbSubmitUrb(P_GL_HIF_INFO_T prHifInfo, struct urb *urb, enum usb_submit_type type)
+{
+	unsigned long flags;
+	int ret = 0;
+
+	if (type == SUBMIT_TYPE_RX_EVENT || type == SUBMIT_TYPE_RX_DATA)
+		return usb_submit_urb(urb, GFP_ATOMIC);
+
+	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
+	if (type == SUBMIT_TYPE_TX_CMD) {
+		if (!(prHifInfo->state == USB_STATE_LINK_UP || prHifInfo->state == USB_STATE_PRE_RESUME)) {
+			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+			DBGLOG(HAL, INFO, "WiFi path is not allowed to transmit CMD packet. (%d)\n", prHifInfo->state);
+			return -ESHUTDOWN;
+		}
+	} else if (type == SUBMIT_TYPE_TX_DATA) {
+		if (prHifInfo->state != USB_STATE_LINK_UP) {
+			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+			DBGLOG(HAL, INFO, "WiFi path is not allowed to transmit DATA packet. (%d)\n", prHifInfo->state);
+			return -ESHUTDOWN;
+		}
+	}
+	ret = usb_submit_urb(urb, GFP_ATOMIC);
+	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+
+	return ret;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -759,9 +819,9 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 
 	spin_lock_init(&prHifInfo->rTxCmdQLock);
 	spin_lock_init(&prHifInfo->rTxDataQLock);
-	spin_lock_init(&prHifInfo->rTxDataFreeQLock);
 	spin_lock_init(&prHifInfo->rRxEventQLock);
 	spin_lock_init(&prHifInfo->rRxDataQLock);
+	spin_lock_init(&prHifInfo->rStateLock);
 
 	mutex_init(&prHifInfo->vendor_req_sem);
 	prHifInfo->vendor_req_buf = kzalloc(VND_REQ_BUF_SIZE, GFP_KERNEL);
@@ -945,7 +1005,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataCompleteQ, 0);
 
-	prHifInfo->state = USB_STATE_LINK_UP;
+	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
 
 	return;
 
