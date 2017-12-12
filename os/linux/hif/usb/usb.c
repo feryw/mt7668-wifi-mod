@@ -822,7 +822,11 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
 				       &prUsbReq->prUrb->transfer_dma);
 #else
+#ifdef CFG_PREALLOC_MEMORY
+		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_DATA_FFA);
+#else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
+#endif
 #endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -1005,7 +1009,9 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
 			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
 #else
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}

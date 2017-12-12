@@ -254,6 +254,9 @@ static int __init preallocInit(void)
 	preallocAddBlock(MEM_ID_TX_CMD, "TX CMD",
 			USB_REQ_TX_CMD_CNT, USB_TX_CMD_BUF_SIZE,
 			GFP_KERNEL);
+	preallocAddBlock(MEM_ID_TX_DATA_FFA, "TX DATA FFA",
+			USB_REQ_TX_DATA_FFA_CNT, USB_TX_DATA_BUFF_SIZE,
+			GFP_KERNEL);
 #if CFG_USB_TX_AGG
 	preallocAddBlock(MEM_ID_TX_DATA, "TX AGG DATA",
 			(USB_TC_NUM * USB_REQ_TX_DATA_CNT), USB_TX_DATA_BUFF_SIZE,
