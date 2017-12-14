@@ -1546,6 +1546,14 @@ void mtk_p2p_wext_set_Multicastlist(P_GLUE_INFO_T prGlueInfo)
 		UINT_32 i = 0;
 
 		netdev_for_each_mc_addr(ha, prDev) {
+			/* Check mc count before accessing to ha to prevent from
+			 * kernel crash. One example crash log reported:
+			 *   Unable to handle kernel NULL pointer dereference at
+			 *   virtual address 00000008
+			 *   PC is at mtk_p2p_wext_set_Multicastlist+0x150/0x22c
+			 */
+			if (i == u4McCount || !ha)
+				break;
 			if (i < MAX_NUM_GROUP_ADDR) {
 				COPY_MAC_ADDR(&(prGlueInfo->prP2PDevInfo->aucMCAddrList[i]), GET_ADDR(ha));
 				i++;
