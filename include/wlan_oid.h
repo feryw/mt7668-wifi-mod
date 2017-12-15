@@ -571,14 +571,16 @@ typedef struct _PARAM_PMKID_CANDIDATE_LIST_T {
 #define NL80211_KCK_LEN                 16
 #define NL80211_KEK_LEN                 16
 #define NL80211_REPLAY_CTR_LEN          8
+#define NL80211_KEYRSC_LEN		8
 
 typedef struct _PARAM_GTK_REKEY_DATA {
 	UINT_8 aucKek[NL80211_KEK_LEN];
 	UINT_8 aucKck[NL80211_KCK_LEN];
 	UINT_8 aucReplayCtr[NL80211_REPLAY_CTR_LEN];
 	UINT_8 ucBssIndex;
-	UINT_8 ucRekeyDisable; /* disable rekey offload. 0: enable */
-	UINT_8 ucRsv[2];
+	UINT_8 ucRekeyMode;
+	UINT_8 ucCurKeyId;
+	UINT_8 ucRsv;
 	UINT_32 u4Proto;
 	UINT_32 u4PairwiseCipher;
 	UINT_32 u4GroupCipher;

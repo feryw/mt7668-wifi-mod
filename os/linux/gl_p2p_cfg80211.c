@@ -740,6 +740,8 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 			prDetRplyInfo->u4KeyLength = params->key_len;
 			kalMemCopy(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len);
 		}
+
+		prDetRplyInfo->fgKeyRscFresh = TRUE;
 	}
 #endif
 

@@ -189,6 +189,9 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 #endif
 	{EVENT_ID_CSI_DATA,                 nicEventCSIData},
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+	{EVENT_ID_GET_GTK_REKEY_DATA,       nicEventGetGtkDataSync},
+#endif
 };
 
 /*******************************************************************************

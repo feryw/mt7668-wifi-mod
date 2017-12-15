@@ -3486,7 +3486,7 @@ VOID nicCmdEventSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, I
 			DBGLOG(NIC, TRACE, "Keyid is %d, ucKeyType is %d\n",
 				prCmdKey->ucKeyId, prCmdKey->ucKeyType);
 		}
-}
+	}
 }
 
 VOID nicOidCmdTimeoutSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
@@ -3497,4 +3497,39 @@ VOID nicOidCmdTimeoutSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdIn
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery, 0, WLAN_STATUS_FAILURE);
 }
+
+
+VOID nicEventGetGtkDataSync(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	P_PARAM_GTK_REKEY_DATA prGtkData = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	UINT_8 ucCurKeyId;
+
+	prGtkData = (P_PARAM_GTK_REKEY_DATA) (prEvent->aucBuffer);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prAdapter->prAisBssInfo->ucBssIndex);
+
+	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+	prDetRplyInfo->ucCurKeyId = prGtkData->ucCurKeyId;
+	ucCurKeyId = prDetRplyInfo->ucCurKeyId;
+
+	kalMemZero(prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN, NL80211_REPLAY_CTR_LEN);
+
+#if 0
+	/* if Drv alread rx a new PN value large than fw PN, then skip PN update */
+	if (qmRxDetectReplay(prGtkData->aucReplayCtr,
+		prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN))
+		return;
+#endif
+
+	kalMemCopy(prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN,
+		prGtkData->aucReplayCtr, 6);
+
+	DBGLOG(RSN, INFO, "Get BC/MC PN update from fw.\n");
+
+	DBGLOG_MEM8(RSN, INFO, (PUINT_8)prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN, NL80211_REPLAY_CTR_LEN);
+}
+
 #endif

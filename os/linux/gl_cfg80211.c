@@ -259,6 +259,12 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 		rKey.u4KeyIndex |= BIT(31);
 		rKey.u4KeyIndex |= BIT(30);
 		COPY_MAC_ADDR(rKey.arBSSID, mac_addr);
+
+		/* reset KCK, KEK, EAPOL Replay counter */
+		kalMemZero(prGlueInfo->rWpaInfo.aucKek, NL80211_KEK_LEN);
+		kalMemZero(prGlueInfo->rWpaInfo.aucKck, NL80211_KCK_LEN);
+		kalMemZero(prGlueInfo->rWpaInfo.aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+
 	} else {		/* Group key */
 		COPY_MAC_ADDR(rKey.arBSSID, aucBCAddr);
 	}
@@ -305,6 +311,8 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 			prDetRplyInfo->u4KeyLength = params->key_len;
 			kalMemCopy(prDetRplyInfo->aucKeyMaterial, params->key, params->key_len);
 		}
+
+		prDetRplyInfo->fgKeyRscFresh = TRUE;
 	}
 #endif
 
@@ -1608,7 +1616,7 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy, struct net_device *dev, str
 	prGtkData->u4KeyMgmt = prGlueInfo->rWpaInfo.u4KeyMgmt;
 	prGtkData->u4MgmtGroupCipher = 0;
 
-	prGtkData->ucRekeyDisable = FALSE;
+	prGtkData->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_ON;
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetGtkRekeyData,

@@ -6014,6 +6014,8 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	P_HW_MAC_RX_DESC_T prRxStatus = NULL;
 	UINT_8 ucBssIndex = 0;
 	P_BSS_INFO_T prBssInfo = NULL;
+	UINT_8 ucCheckZeroPN;
+	UINT_8 i;
 
 	if (!prAdapter)
 		return TRUE;
@@ -6083,12 +6085,32 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[3],
 			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[4],
 			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[5]);
+
+	if (prDetRplyInfo->fgKeyRscFresh == TRUE) {
+
+		/* PN non-fresh setting */
+		prDetRplyInfo->fgKeyRscFresh = FALSE;
+		ucCheckZeroPN = 0;
+
+		for (i = 0; i < 8; i++) {
+			if (prSwRfb->prRxStatusGroup1->aucPN[i] == 0x0)
+				ucCheckZeroPN++;
+		}
+
+		/* for AP start PN from 0, bypass PN check and update */
+		if (ucCheckZeroPN == 8) {
+			DBGLOG(QM, WARN, "Fresh BC_PN with AP PN=0\n");
+			return FALSE;
+		}
+	}
+
 	if (qmRxDetectReplay(pucPN, prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN)) {
 		DBGLOG(QM, WARN, "Drop BC replay packet!\n");
 		return TRUE;
 	}
 
 	HAL_RX_STATUS_GET_PN(prSwRfb->prRxStatusGroup1, prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN);
+
 	return FALSE;
 }
 

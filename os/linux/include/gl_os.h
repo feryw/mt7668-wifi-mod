@@ -323,6 +323,7 @@ struct SEC_DETECT_REPLAY_INFO {
 	UINT_32 u4KeyLength;
 	UINT_8 aucKeyMaterial[32];
 	BOOLEAN fgPairwiseInstalled;
+	BOOLEAN fgKeyRscFresh;
 };
 #endif
 

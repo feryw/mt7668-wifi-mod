@@ -821,6 +821,10 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucListenDtimInterval; /* adjust the listen interval by dtim interval */
 	UINT_8 ucEapolOffload; /* eapol offload when active mode / wow mode */
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+	UINT_8 ucRpyDetectOffload; /* eapol offload when active mode / wow mode */
+#endif
+
 	UINT_8 u4SwTestMode;
 	UINT_8	ucCtrlFlagAssertPath;
 	UINT_8	ucCtrlFlagDebugLevel;

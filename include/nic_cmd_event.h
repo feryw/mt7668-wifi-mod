@@ -611,6 +611,7 @@ typedef enum _ENUM_EVENT_ID_T {
 	EVENT_ID_BATCH_RESULT = 0x2b,	/* 0x2b (Query) */
 
 	EVENT_ID_CSI_DATA = 0x3c, /* 0x3c (Query) */
+	EVENT_ID_GET_GTK_REKEY_DATA = 0x3d, /* 0x3d (Query) */
 
 	EVENT_ID_UART_ACK = 0x40,	/* 0x40 (Unsolicited) */
 	EVENT_ID_UART_NAK,	/* 0x41 (Unsolicited) */
@@ -3334,6 +3335,8 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 #if CFG_SUPPORT_REPLAY_DETECTION
 VOID nicCmdEventSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 VOID nicOidCmdTimeoutSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
+
+VOID nicEventGetGtkDataSync(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 #endif
 
 /*******************************************************************************

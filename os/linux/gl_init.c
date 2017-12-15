@@ -2218,6 +2218,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	INT_32 i4RetVal = 0;
 #endif
+#if CFG_SUPPORT_REPLAY_DETECTION
+	UINT_8 ucRpyDetectOffload;
+#endif
 
 #if 0
 		PUINT_8 pucConfigBuf = NULL, pucCfgBuf = NULL;
@@ -2564,6 +2567,20 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
 		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
 	}
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	ucRpyDetectOffload = prAdapter->rWifiVar.ucRpyDetectOffload;
+
+	if (ucRpyDetectOffload == FEATURE_ENABLED) {
+		DBGLOG(INIT, INFO, "Send CMD to enable Replay Detection offload feature\n");
+		wlanSuspendRekeyOffload(prAdapter->prGlueInfo,
+			GTK_REKEY_CMD_MODE_RPY_OFFLOAD_ON);
+	} else {
+		DBGLOG(INIT, INFO, "Send CMD to disable Replay Detection offload feature\n");
+		wlanSuspendRekeyOffload(prAdapter->prGlueInfo,
+			GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF);
+	}
+#endif
 
 	return i4Status;
 }				/* end of wlanProbe() */

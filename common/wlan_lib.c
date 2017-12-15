@@ -6890,6 +6890,9 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	/* ucEapolOffload: only offload eapol rekey as suspen/resume case. */
 	prWifiVar->ucEapolOffload = FEATURE_DISABLED;
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+	prWifiVar->ucRpyDetectOffload = (UINT_8) wlanCfgGetUint32(prAdapter, "rpydetectoffload", FEATURE_ENABLED);
+#endif
 
 #if CFG_WOW_SUPPORT
 	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
@@ -9500,14 +9503,36 @@ WLAN_STATUS wlanUpdateExtInfo(IN P_ADAPTER_T prAdapter)
 * @return VOID
 */
 /*----------------------------------------------------------------------------*/
-int wlanSuspendRekeyOffload(P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRekeyDisable)
+int wlanSuspendRekeyOffload(P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRekeyMode)
 {
 	UINT_32 u4BufLen;
 	P_PARAM_GTK_REKEY_DATA prGtkData;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	INT_32 i4Rslt = -EINVAL;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	UINT_8 ucCurKeyId;
+	UINT_8 ucRpyOffload;
+#endif
 
 	ASSERT(prGlueInfo);
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	ucRpyOffload = prGlueInfo->prAdapter->rWifiVar.ucRpyDetectOffload;
+
+	if ((ucRekeyMode == GTK_REKEY_CMD_MODE_SET_BCMC_PN) &&
+		(ucRpyOffload == FALSE)) {
+		DBGLOG(RSN, INFO, "Set PN to fw, but feature off. no action\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if ((ucRekeyMode == GTK_REKEY_CMD_MODE_GET_BCMC_PN) &&
+		(ucRpyOffload == FALSE)) {
+		DBGLOG(RSN, INFO, "Get PN from fw, but feature off. no action\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif
 
 	prGtkData =
 		(P_PARAM_GTK_REKEY_DATA) kalMemAlloc(sizeof(PARAM_GTK_REKEY_DATA), VIR_MEM_TYPE);
@@ -9515,10 +9540,13 @@ int wlanSuspendRekeyOffload(P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRekeyDisable)
 	if (!prGtkData)
 		return WLAN_STATUS_SUCCESS;
 
-	/* if enable => enable FW rekey offload. if disable, let rekey back to supplicant */
-	prGtkData->ucRekeyDisable = ucRekeyDisable;
+	kalMemZero(prGtkData, sizeof(PARAM_GTK_REKEY_DATA));
 
-	if (!ucRekeyDisable) {
+	/* if enable => enable FW rekey offload. if disable, let rekey back to supplicant */
+	prGtkData->ucRekeyMode = ucRekeyMode;
+	DBGLOG(RSN, INFO, "GTK Rekey ucRekeyMode = %d\n", ucRekeyMode);
+
+	if (ucRekeyMode == GTK_REKEY_CMD_MODE_OFFLOAD_ON) {
 		DBGLOG(RSN, INFO, "kek\n");
 		DBGLOG_MEM8(RSN, ERROR, (PUINT_8)prGlueInfo->rWpaInfo.aucKek, NL80211_KEK_LEN);
 		DBGLOG(RSN, INFO, "kck\n");
@@ -9557,10 +9585,42 @@ int wlanSuspendRekeyOffload(P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRekeyDisable)
 		prGtkData->u4KeyMgmt = prGlueInfo->rWpaInfo.u4KeyMgmt;
 		prGtkData->u4MgmtGroupCipher = 0;
 
-	} else {
+	}
+
+	if (ucRekeyMode == GTK_REKEY_CMD_MODE_OFLOAD_OFF) {
 		/* inform FW disable EAPOL offload */
 		DBGLOG(RSN, INFO, "Disable EAPOL offload\n");
 	}
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	if (ucRekeyMode == GTK_REKEY_CMD_MODE_RPY_OFFLOAD_ON)
+		DBGLOG(RSN, INFO, "ucRekeyMode(rpy rekey offload on): %d\n", ucRekeyMode);
+
+	if (ucRekeyMode == GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF)
+		DBGLOG(RSN, INFO, "ucRekeyMode(rpy rekey offload off): %d\n", ucRekeyMode);
+
+	if ((ucRekeyMode == GTK_REKEY_CMD_MODE_SET_BCMC_PN) &&
+		(ucRpyOffload == TRUE)) {
+		prGtkData->ucBssIndex = prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+		prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+		ucCurKeyId = prDetRplyInfo->ucCurKeyId;
+		prGtkData->ucCurKeyId = ucCurKeyId;
+		DBGLOG_MEM8(RSN, INFO, (PUINT_8)prGtkData->aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+		kalMemCopy(prGtkData->aucReplayCtr,
+			prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN,
+			NL80211_REPLAY_CTR_LEN);
+
+		/* set bc/mc PN zero before suspend */
+		kalMemZero(prDetRplyInfo->arReplayPNInfo[ucCurKeyId].auPN, NL80211_REPLAY_CTR_LEN);
+	}
+
+	if ((ucRekeyMode == GTK_REKEY_CMD_MODE_GET_BCMC_PN) &&
+		(ucRpyOffload == TRUE)) {
+		prGtkData->ucBssIndex = prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+	}
+#endif
 
 	rStatus = kalIoctl(prGlueInfo,
 				wlanoidSetGtkRekeyData,
@@ -9592,13 +9652,71 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	UINT_8 idx;
 	PARAM_POWER_MODE ePwrMode;
 	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucKekZeroCnt = 0;
+	UINT_8 ucKckZeroCnt = 0;
+	UINT_8 ucGtkOffload = TRUE;
+	UINT_8 i = 0;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	UINT_8 ucIdx = 0;
+	UINT_8 ucKeyIdx = 0;
+	UINT_8 ucRpyOffload = 0;
+#endif
 
 	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
 		wlanKeepFullPwr(prGlueInfo->prAdapter, FALSE);
 
 	/* if wifi.cfg EAPOL offload is 0, we set rekey offload when enter wow */
 	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
-		wlanSuspendRekeyOffload(prGlueInfo, FALSE);
+
+		/*
+		 * check if KCK, KEK not sync from supplicant.
+		 * if no these info updated from supplicant,
+		 *disable GTK offload feature.
+		 */
+		for (i = 0; i < NL80211_KEK_LEN; i++) {
+			if (prGlueInfo->rWpaInfo.aucKek[i] == 0x00)
+				ucKekZeroCnt++;
+		}
+
+		for (i = 0; i < NL80211_KCK_LEN; i++) {
+			if (prGlueInfo->rWpaInfo.aucKck[i] == 0x00)
+				ucKckZeroCnt++;
+		}
+
+		if ((ucKekZeroCnt == NL80211_KCK_LEN) ||
+				(ucKckZeroCnt == NL80211_KCK_LEN)) {
+			DBGLOG(RSN, INFO, "no rekey offload, due to no KCK/KEK from cfg80211\n");
+
+			prGlueInfo->prAdapter->rWifiVar.ucRpyDetectOffload = FEATURE_DISABLED;
+
+			ucGtkOffload = FALSE;
+			/* set bc/mc replay detection off to fw */
+			wlanSuspendRekeyOffload(prGlueInfo,
+				GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF);
+		}
+
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+		ucRpyOffload = prGlueInfo->prAdapter->rWifiVar.ucRpyDetectOffload;
+
+		if (ucRpyOffload && ucGtkOffload)
+			wlanSuspendRekeyOffload(prGlueInfo, GTK_REKEY_CMD_MODE_SET_BCMC_PN);
+#endif
+		if (ucGtkOffload)
+			wlanSuspendRekeyOffload(prGlueInfo, GTK_REKEY_CMD_MODE_OFFLOAD_ON);
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+		prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+
+		for (ucKeyIdx = 0; ucKeyIdx < 4; ucKeyIdx++) {
+			for (ucIdx = 0; ucIdx < 6; ucIdx++)
+				prDetRplyInfo->arReplayPNInfo[ucKeyIdx].auPN[ucIdx] = 0x0;
+		}
+#endif
 		DBGLOG(HAL, STATE, "Suspend rekey offload\n");
 	}
 
@@ -9645,11 +9763,72 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
 {
 	PARAM_POWER_MODE ePwrMode = Param_PowerModeCAM;
+	UINT_8 ucKekZeroCnt = 0;
+	UINT_8 ucKckZeroCnt = 0;
+	UINT_8 ucGtkOffload = TRUE;
+	UINT_8 i = 0;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct SEC_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	UINT_8 ucIdx = 0;
+	UINT_8 ucKeyIdx = 0;
+	UINT_8 ucRpyOffload = 0;
+#endif
 
 	/* if wifi.cfg EAPOL offload is disble, we disable FW offload when leave wow */
 	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
-		wlanSuspendRekeyOffload(prGlueInfo, TRUE);
+
+		/*
+		 * check if KCK, KEK not sync from supplicant.
+		 * if no these info updated from supplicant,
+		 *disable GTK offload feature.
+		 */
+		for (i = 0; i < NL80211_KEK_LEN; i++) {
+			if (prGlueInfo->rWpaInfo.aucKek[i] == 0x00)
+				ucKekZeroCnt++;
+		}
+
+		for (i = 0; i < NL80211_KCK_LEN; i++) {
+			if (prGlueInfo->rWpaInfo.aucKck[i] == 0x00)
+				ucKckZeroCnt++;
+		}
+
+		if ((ucKekZeroCnt == NL80211_KCK_LEN) ||
+				(ucKckZeroCnt == NL80211_KCK_LEN)) {
+
+			DBGLOG(RSN, INFO, "no rekey offload, due to no KCK/KEK from cfg80211\n");
+
+			prGlueInfo->prAdapter->rWifiVar.ucRpyDetectOffload = FEATURE_DISABLED;
+
+			ucGtkOffload = FALSE;
+			/* set bc/mc replay detection off to fw */
+			wlanSuspendRekeyOffload(prGlueInfo,
+				GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF);
+
+		}
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+		prDetRplyInfo = &prBssInfo->rDetRplyInfo;
+
+		/* as resume performed, reset BC/MC KeyRSC, to prevent incorrect replay detection. */
+		for (ucKeyIdx = 0; ucKeyIdx < 4; ucKeyIdx++) {
+			for (ucIdx = 0; ucIdx < NL80211_KEYRSC_LEN; ucIdx++)
+				prDetRplyInfo->arReplayPNInfo[ucKeyIdx].auPN[ucIdx] = 0x0;
+		}
+
+		ucRpyOffload = prGlueInfo->prAdapter->rWifiVar.ucRpyDetectOffload;
+
+		/* sync BC/MC PN */
+		if (ucRpyOffload && ucGtkOffload)
+			wlanSuspendRekeyOffload(prGlueInfo, GTK_REKEY_CMD_MODE_GET_BCMC_PN);
+#endif
+
+		if (ucGtkOffload) {
+			wlanSuspendRekeyOffload(prGlueInfo, GTK_REKEY_CMD_MODE_OFLOAD_OFF);
 		DBGLOG(HAL, STATE, "Resume rekey offload disable\n");
+	}
 	}
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {

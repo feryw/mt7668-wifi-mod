@@ -955,6 +955,7 @@ VOID qmResetTcControlResource(IN P_ADAPTER_T prAdapter);
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+BOOLEAN qmRxDetectReplay(PUINT_8 pucPNS, PUINT_8 pucPNT);
 #endif
 
 /*******************************************************************************
