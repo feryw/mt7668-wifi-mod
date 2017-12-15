@@ -2547,6 +2547,12 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 					kalMemCopy(prCmdKey->aucPeerAddr, prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
 				}
 
+				/* overflow check */
+				if (prCmdKey->ucKeyId >= MAX_KEY_NUM) {
+					DBGLOG(RSN, ERROR, "invalid keyId: %d\n", prCmdKey->ucKeyId);
+					prCmdKey->ucKeyId &= 0x3;
+				}
+
 				if (fgNoHandshakeSec) {	/* WEP: STA and AP */
 					prBssInfo->wepkeyWlanIdx = prCmdKey->ucWlanIndex;
 					prBssInfo->wepkeyUsed[prCmdKey->ucKeyId] = TRUE;
@@ -2559,6 +2565,7 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 					DBGLOG(RSN, INFO, "BMCWlanIndex kid = %d, index = %d\n", prCmdKey->ucKeyId,
 					       prCmdKey->ucWlanIndex);
 				}
+
 				if (prCmdKey->ucTxKey) {	/* */
 					prBssInfo->fgBcDefaultKeyExist = TRUE;
 					prBssInfo->ucBcDefaultKeyIdx = prCmdKey->ucKeyId;
