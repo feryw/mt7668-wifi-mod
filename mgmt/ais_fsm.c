@@ -3137,7 +3137,12 @@ VOID aisFsmRunEventDeauthTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 VOID aisRxMcsCollectionTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 {
 	static UINT_8 ucSmapleCnt;
-	UINT_8 ucStaIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
+	UINT_8 ucStaIdx = 0;
+
+	if (prAdapter->prAisBssInfo->prStaRecOfAP == NULL)
+		return;
+
+	ucStaIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
 
 	if (prAdapter->arStaRec[ucStaIdx].fgIsValid && prAdapter->arStaRec[ucStaIdx].fgIsInUse) {
 		prAdapter->arStaRec[ucStaIdx].au4RxVect0Que[ucSmapleCnt] = prAdapter->arStaRec[ucStaIdx].u4RxVector0;

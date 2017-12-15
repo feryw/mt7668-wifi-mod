@@ -8839,6 +8839,7 @@ static int priv_driver_get_mcs_info(IN struct net_device *prNetDev, IN char *pcC
 	if (!prHwWlanInfo)
 		return -1;
 
+	prHwWlanInfo->u4Index = prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
 	rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryWlanInfo,
 				   prHwWlanInfo, sizeof(PARAM_HW_WLAN_INFO_T), TRUE, TRUE, TRUE, &u4BufLen);
