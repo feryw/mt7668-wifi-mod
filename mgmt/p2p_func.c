@@ -643,6 +643,19 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
 #endif
+
+#ifdef CFG_SUPPORT_P2P_OPEN_SECURITY
+		BOOLEAN fgIsOpenP2P = TRUE;
+#else
+		BOOLEAN fgIsOpenP2P = FALSE;
+#endif
+
+#ifdef CFG_SUPPORT_P2P_PROBERESP_RATE1M
+		BOOLEAN fgIs1MProbeResp = TRUE;
+#else
+		BOOLEAN fgIs1MProbeResp = FALSE;
+#endif
+
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -706,7 +719,8 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 			/* Depend on eBand */
 			prBssInfo->ucPhyTypeSet = (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AN);
 			prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;	/* Depend on eCurrentOPMode and ucPhyTypeSet */
-		} else if (prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_PURE_AP) {
+		} else if ((prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_PURE_AP) ||
+			   fgIs1MProbeResp) {
 			/* Depend on eBand */
 			prBssInfo->ucPhyTypeSet = (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11BGN);
 			/* Depend on eCurrentOPMode and ucPhyTypeSet */
@@ -730,7 +744,7 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 		prBssInfo->u2OperationalRateSet =
 		    rNonHTPhyAttributes[prBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
 
-		if (prBssInfo->ucAllSupportedRatesLen == 0) {
+		if ((prBssInfo->ucAllSupportedRatesLen == 0) || fgIs1MProbeResp) {
 			rateGetDataRatesFromRateSet(prBssInfo->u2OperationalRateSet,
 						    prBssInfo->u2BSSBasicRateSet,
 						    prBssInfo->aucAllSupportedRates,
@@ -743,10 +757,12 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 		/* 3 <2> Update BSS_INFO_T common part */
 #if CFG_SUPPORT_AAA
 		prBssInfo->fgIsProtection = FALSE;
-		if (prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GO) {
-			prBssInfo->fgIsProtection = TRUE;	/* Always enable protection at P2P GO */
+		/* Always enable protection at P2P GO But OOBE AP */
+		if ((prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GO) && (!fgIsOpenP2P)) {
+			prBssInfo->fgIsProtection = TRUE;
 		} else {
-			ASSERT(prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_PURE_AP);
+			if (!fgIsOpenP2P)
+				ASSERT(prP2pConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_PURE_AP);
 			if (kalP2PGetCipher(prAdapter->prGlueInfo, (UINT_8) prBssInfo->u4PrivateData))
 				prBssInfo->fgIsProtection = TRUE;
 		}
