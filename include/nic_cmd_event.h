@@ -1210,6 +1210,7 @@ typedef enum _NIC_CAPABILITY_V2_TAG_T {
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 typedef struct _NIC_CSUM_OFFLOAD_T {
 	UINT_8 ucIsSupportCsumOffload;  /* 1: Support, 0: Not Support */
+	UINT_8 acReseved[3];
 } NIC_CSUM_OFFLOAD_T, *P_NIC_CSUM_OFFLOAD_T;
 #endif
 
