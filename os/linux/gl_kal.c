@@ -1503,14 +1503,40 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	 *     Else, remians the original threshold.
 	*/
 	if (prGlueInfo->prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_SIGMA_AC_N_PMF) {
+		P_BSS_INFO_T prWmmBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIndex];
+
 		if ((u2QueueIdx < 3) &&
-		   (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx+1])
-		    > 64))
-			u4MaxTxPendingNum = (prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh >> 3);
+			(GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx+1])
+			> CFG_CERT_WMM_MAX_TX_PENDING)) {
+			/*
+			*	Use au8Statistics[RX_SIZE_ERR_DROP_COUNT] to track RX traffic in certification.
+			*/
+			if ((prWmmBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
+				((prDev->stats.rx_packets -
+				(prGlueInfo->prAdapter->rRxCtrl.au8Statistics[RX_SIZE_ERR_DROP_COUNT]))
+				> CFG_CERT_WMM_MAX_RX_NUM))
+
+				u4MaxTxPendingNum = CFG_CERT_WMM_LOW_STOP_TX_WITH_RX;
+
+			else
+				u4MaxTxPendingNum = CFG_CERT_WMM_LOW_STOP_TX_WO_RX;
+		}
 		else if ((u2QueueIdx > 0) &&
 			(GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx-1])
-		    > 64))
-			u4MaxTxPendingNum = (prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh * 3);
+			> CFG_CERT_WMM_MAX_TX_PENDING)) {
+			/*
+			*	Use au8Statistics[RX_SIZE_ERR_DROP_COUNT] to track RX traffic in certification.
+			*/
+			if ((prWmmBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
+				((prDev->stats.rx_packets -
+				(prGlueInfo->prAdapter->rRxCtrl.au8Statistics[RX_SIZE_ERR_DROP_COUNT]))
+				> CFG_CERT_WMM_MAX_RX_NUM))
+
+				u4MaxTxPendingNum = CFG_CERT_WMM_HIGH_STOP_TX_WITH_RX;
+
+			else
+				u4MaxTxPendingNum = CFG_CERT_WMM_HIGH_STOP_TX_WO_RX;
+		}
 		else
 			u4MaxTxPendingNum = prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh;
 	}
@@ -1525,6 +1551,10 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 		       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 					[u2QueueIdx]));
+
+		/* Re-use au8Statistics[RX_SIZE_ERR_DROP_COUNT] buffer to track RX traffic in certification */
+		if (prGlueInfo->prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_SIGMA_AC_N_PMF)
+			prGlueInfo->prAdapter->rRxCtrl.au8Statistics[RX_SIZE_ERR_DROP_COUNT] = prDev->stats.rx_packets;
 	}
 
 	/* Update NetDev statisitcs */
