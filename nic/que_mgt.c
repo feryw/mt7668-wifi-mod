@@ -6057,14 +6057,6 @@ BOOLEAN qmHandleRxReplay(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 
 	prDetRplyInfo = &prBssInfo->rDetRplyInfo;
 
-	/* TODO : Need check fw rekey while fw rekey event. */
-	if (ucKeyID != prDetRplyInfo->ucCurKeyId) {
-		DBGLOG(QM, TRACE,
-			"use last keyID while detect replay information.(0x%x->0x%x)\n",
-			prDetRplyInfo->ucCurKeyId, ucKeyID);
-		ucKeyID = prDetRplyInfo->ucCurKeyId;
-	}
-
 #if 0
 	if (prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt) {
 		prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt = FALSE;
