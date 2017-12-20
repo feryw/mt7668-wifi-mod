@@ -977,9 +977,10 @@ WLAN_STATUS authProcessRxDeauthFrame(IN P_SW_RFB_T prSwRfb, IN UINT_8 aucBSSID[]
 	P_WLAN_DEAUTH_FRAME_T prDeauthFrame;
 	UINT_16 u2RxReasonCode;
 
-	ASSERT(prSwRfb);
-	ASSERT(aucBSSID);
-	ASSERT(pu2ReasonCode);
+	if (!prSwRfb || !aucBSSID || !pu2ReasonCode) {
+		DBGLOG(SAA, WARN, "Invalid parameters, ignore this pkt!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* 4 <1> locate the Deauthentication Frame. */
 	prDeauthFrame = (P_WLAN_DEAUTH_FRAME_T) prSwRfb->pvHeader;

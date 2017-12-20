@@ -766,8 +766,10 @@ assocCheckRxReAssocRspFrameStatus(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	UINT_16 u2RxStatusCode;
 	UINT_16 u2RxAssocId;
 
-	ASSERT(prSwRfb);
-	ASSERT(pu2StatusCode);
+	if (!prSwRfb || !pu2StatusCode) {
+		DBGLOG(SAA, ERROR, "Invalid parameter, ignore!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) < (CAP_INFO_FIELD_LEN +
 							     STATUS_CODE_FIELD_LEN + AID_FIELD_LEN)) {
@@ -780,13 +782,20 @@ assocCheckRxReAssocRspFrameStatus(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	DBGLOG(SAA, LOUD, "prSwRfb->u2PayloadLength = %d\n", prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	ASSERT(prStaRec);
 
-	if (!prStaRec)
+	if (!prStaRec) {
+		DBGLOG(SAA, ERROR, "Invalid prStaRec, ignore!\n");
 		return WLAN_STATUS_INVALID_PACKET;
+	}
 
 	/* 4 <1> locate the (Re)Association Resp Frame. */
 	prAssocRspFrame = (P_WLAN_ASSOC_RSP_FRAME_T) prSwRfb->pvHeader;
+
+	/* if Association Response's BSSID doesn't match our target, ignore */
+	if (!EQUAL_MAC_ADDR(prAssocRspFrame->aucBSSID, prStaRec->aucMacAddr)) {
+		DBGLOG(SAA, INFO, "Unknown BSSID\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* 4 <2> Parse the Header of (Re)Association Resp Frame. */
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
@@ -1067,9 +1076,10 @@ assocProcessRxDisassocFrame(IN P_ADAPTER_T prAdapter,
 	P_WLAN_DISASSOC_FRAME_T prDisassocFrame;
 	UINT_16 u2RxReasonCode;
 
-	ASSERT(prSwRfb);
-	ASSERT(aucBSSID);
-	ASSERT(pu2ReasonCode);
+	if (!prSwRfb || !aucBSSID || !pu2ReasonCode) {
+		DBGLOG(SAA, WARN, "Invalid parameters, ignore this pkt!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* 4 <1> locate the Disassociation Frame. */
 	prDisassocFrame = (P_WLAN_DISASSOC_FRAME_T) prSwRfb->pvHeader;
@@ -1131,9 +1141,10 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 	BOOLEAN fgIsHT = FALSE, fgIsTKIP = FALSE;
 	UINT_32 i;
 
-	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
-	ASSERT(pu2StatusCode);
+	if (!prAdapter || !prSwRfb || !pu2StatusCode) {
+		DBGLOG(SAA, WARN, "Invalid parameters, ignore this pkt!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
@@ -1257,6 +1268,14 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 			}
 #endif
 			break;
+		case ELEM_ID_IBSS_PARAM_SET:
+			/* Check IBSS parameter set length to avoid abnormal content */
+			if (IE_LEN(pucIE) != ELEM_MAX_LEN_IBSS_PARAMETER_SET) {
+				*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
+				DBGLOG(SAA, WARN, "Invalid IBSS Parameter IE length!\n");
+				return WLAN_STATUS_FAILURE;
+			}
+			break;
 		default:
 			for (i = 0; i < (sizeof(rxAssocReqIETable) / sizeof(VERIFY_IE_ENTRY_T)); i++) {
 
@@ -1295,42 +1314,38 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 		prStaRec->u2OperationalRateSet = 0;
 		prStaRec->u2BSSBasicRateSet = 0;
 
-		if (prIeSupportedRate || prIeExtSupportedRate) {
-			/* Ignore any Basic Bit */
-			rateGetRateSetFromIEs(prIeSupportedRate, prIeExtSupportedRate,
-					      &prStaRec->u2OperationalRateSet, &u2BSSBasicRateSet,
-					      &fgIsUnknownBssBasicRate);
-
-			if ((prBssInfo->u2BSSBasicRateSet & prStaRec->u2OperationalRateSet) !=
-			    prBssInfo->u2BSSBasicRateSet) {
-
-				u2StatusCode = STATUS_CODE_ASSOC_DENIED_RATE_NOT_SUPPORTED;
-				break;
-			}
-
-			/* Accpet the Sta, update BSSBasicRateSet from Bss */
-
-			prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
-
-			prStaRec->u2DesiredNonHTRateSet = (prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
-
-			if (HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus) == BAND_2G4) {
-				if (prStaRec->u2OperationalRateSet & RATE_SET_OFDM)
-					prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_ERP;
-				if (prStaRec->u2OperationalRateSet & RATE_SET_HR_DSSS)
-					prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HR_DSSS;
-			} else {	/* (BAND_5G == prBssDesc->eBande) */
-				if (prStaRec->u2OperationalRateSet & RATE_SET_OFDM)
-					prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
-			}
-
-			/* Update default Tx rate */
-			nicTxUpdateStaRecDefaultRate(prStaRec);
-		} else {
-			DBGLOG(SAA, WARN, "No SupportedRate and ExtendedSupportedRate.\n");
+		if (!prIeSupportedRate) {
+			DBGLOG(SAA, WARN, "Supported Rate IE not present!\n");
 			u2StatusCode = STATUS_CODE_ASSOC_DENIED_RATE_NOT_SUPPORTED;
 			break;
 		}
+		/* Ignore any Basic Bit */
+		rateGetRateSetFromIEs(prIeSupportedRate, prIeExtSupportedRate,
+				      &prStaRec->u2OperationalRateSet, &u2BSSBasicRateSet,
+				      &fgIsUnknownBssBasicRate);
+
+		if ((prBssInfo->u2BSSBasicRateSet & prStaRec->u2OperationalRateSet) !=
+		    prBssInfo->u2BSSBasicRateSet) {
+			u2StatusCode = STATUS_CODE_ASSOC_DENIED_RATE_NOT_SUPPORTED;
+			DBGLOG(SAA, WARN, "Basic rate not supported!\n");
+			break;
+		}
+
+		/* Accpet the Sta, update BSSBasicRateSet from Bss */
+		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
+		prStaRec->u2DesiredNonHTRateSet = (prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
+
+		if (HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus) == BAND_2G4) {
+			if (prStaRec->u2OperationalRateSet & RATE_SET_OFDM)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_ERP;
+			if (prStaRec->u2OperationalRateSet & RATE_SET_HR_DSSS)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HR_DSSS;
+		} else {	/* (BAND_5G == prBssDesc->eBande) */
+			if (prStaRec->u2OperationalRateSet & RATE_SET_OFDM)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
+		}
+		/* Update default Tx rate */
+		nicTxUpdateStaRecDefaultRate(prStaRec);
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 		if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
