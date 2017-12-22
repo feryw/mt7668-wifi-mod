@@ -2488,7 +2488,9 @@ struct EVENT_CSI_DATA_T {
 	INT_16 ac2IData[256];
 	INT_16 ac2QData[256];
 	UINT_8 ucDbdcIdx;
-	UINT_8 aucReserved[3];
+	INT_8 cRssi;
+	UINT_8 ucSNR;
+	UINT_8 aucReserved[1];
 };
 
 #if CFG_SUPPORT_ADVANCE_CONTROL

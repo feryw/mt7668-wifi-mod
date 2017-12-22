@@ -3427,6 +3427,12 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	DBGLOG(NIC, INFO, "nicEventCSIData\n");
 
+	if (prAdapter->rCsiData.bIsOutputing) {
+		DBGLOG(NIC, INFO,
+			"Previous CSI is now outputted via /proc. Ignore this new data!\n");
+		return;
+	}
+
 	if (prAdapter->rCsiData.ucDataOutputted != 0) {
 		DBGLOG(NIC, INFO,
 			"Previous %s data is not outputted. Ignore this new data!\n",
@@ -3438,7 +3444,9 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	prAdapter->rCsiData.ucDbdcIdx = prCsiData->ucDbdcIdx;
 	prAdapter->rCsiData.ucBw = prCsiData->ucBw;
 	prAdapter->rCsiData.bIsCck = prCsiData->bIsCck;
-	prAdapter->rCsiData.u2DataCount = prCsiData->u2DataCount;
+	prAdapter->rCsiData.cRssi = prCsiData->cRssi;
+	prAdapter->rCsiData.ucSNR = prCsiData->ucSNR;
+	prAdapter->rCsiData.u8TimeStamp = kalGetBootTime() / USEC_PER_MSEC;
 	kalMemZero(prAdapter->rCsiData.ac2IData, sizeof(prAdapter->rCsiData.ac2IData));
 	kalMemZero(prAdapter->rCsiData.ac2QData, sizeof(prAdapter->rCsiData.ac2QData));
 	kalMemCopy(prAdapter->rCsiData.ac2IData,
@@ -3446,6 +3454,10 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	kalMemCopy(prAdapter->rCsiData.ac2QData,
 		prCsiData->ac2QData, sizeof(prCsiData->ac2QData));
+
+	prAdapter->rCsiData.u2DataCount = prCsiData->u2DataCount;
+
+	wake_up_interruptible(&(prAdapter->rCsiData.waitq));
 }
 
 #if CFG_SUPPORT_REPLAY_DETECTION

@@ -95,6 +95,7 @@
 #define PROC_DRIVER_CMD                         "driver"
 #define PROC_CFG                                "cfg"
 #define PROC_EFUSE_DUMP                         "efuse_dump"
+#define PROC_CSI_DATA_NAME                     "csi_data"
 
 
 
@@ -110,6 +111,15 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+
+struct PROC_CSI_FORMAT_T {
+	UINT_8 ucMagicNum;
+	UINT_8 ucCsiType;
+	UINT_16 u2Length;
+	UINT_64 u8TimeStamp;
+	INT_8 cRssi;
+	UINT_8 ucSNR;
+} __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -144,6 +154,134 @@ static UINT_32 g_u4NextDriverReadLen;
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+
+static int procCsiDataOpen(struct inode *n, struct file *f)
+{
+	struct CSI_DATA_T *prCsiData = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
+		prCsiData = &(g_prGlueInfo_proc->prAdapter->rCsiData);
+		prCsiData->bIncomplete = FALSE;
+		prCsiData->bIsOutputing = FALSE;
+	}
+
+	return 0;
+}
+
+static int procCsiDataRelease(struct inode *n, struct file *f)
+{
+	struct CSI_DATA_T *prCsiData = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
+		prCsiData = &(g_prGlueInfo_proc->prAdapter->rCsiData);
+		prCsiData->bIncomplete = FALSE;
+		prCsiData->bIsOutputing = FALSE;
+	}
+
+	return 0;
+}
+
+static ssize_t procCsiDataPrepare(UINT_8 *buf, struct CSI_DATA_T *prCsiData)
+{
+	INT_32 i4Pos = 0;
+	enum ENUM_CSI_MODULATION_BW_TYPE_T eModulationType = CSI_TYPE_CCK_BW20;
+	struct PROC_CSI_FORMAT_T rProcCsiData;
+
+
+	if (prCsiData->ucBw == 0)
+		eModulationType = prCsiData->bIsCck ? CSI_TYPE_CCK_BW20 : CSI_TYPE_OFDM_BW20;
+	else if (prCsiData->ucBw == 1)
+		eModulationType = CSI_TYPE_OFDM_BW40;
+	else if (prCsiData->ucBw == 2)
+		eModulationType = CSI_TYPE_OFDM_BW80;
+
+	rProcCsiData.ucMagicNum = 0xAB; /* magic number */
+	rProcCsiData.ucCsiType  = eModulationType;
+	rProcCsiData.u2Length = (UINT_16) (14 + prCsiData->u2DataCount * sizeof(INT_16) * 2);
+
+	kalMemCopy(&(rProcCsiData.u8TimeStamp), &(prCsiData->u8TimeStamp), sizeof(UINT_64));
+	rProcCsiData.cRssi = prCsiData->cRssi;
+	rProcCsiData.ucSNR = prCsiData->ucSNR;
+
+	i4Pos = sizeof(rProcCsiData);
+	kalMemCopy(buf, &rProcCsiData, i4Pos);
+
+	kalMemCopy(&buf[i4Pos], prCsiData->ac2IData, prCsiData->u2DataCount * sizeof(INT_16));
+	i4Pos += prCsiData->u2DataCount * sizeof(INT_16);
+	kalMemCopy(&buf[i4Pos], prCsiData->ac2QData, prCsiData->u2DataCount * sizeof(INT_16));
+	i4Pos += prCsiData->u2DataCount * sizeof(INT_16);
+
+	return i4Pos;
+}
+
+static ssize_t procCsiDataRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	UINT_8 *temp = &g_aucProcBuf[0];
+	UINT_32 u4CopySize = 0;
+	UINT_32 u4StartIdx = 0;
+	INT_32 i4Pos = 0;
+	struct CSI_DATA_T *prCsiData = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter)
+		prCsiData = &(g_prGlueInfo_proc->prAdapter->rCsiData);
+	else
+		return 0;
+
+	if (prCsiData->bIncomplete == FALSE) {
+		/*
+		 * No older CSI data in buffer waiting for reading out, so prepare a new one
+		 * for reading.
+		 */
+
+		wait_event_interruptible(prCsiData->waitq, prCsiData->u2DataCount != 0);
+
+		prCsiData->bIsOutputing = TRUE;
+
+		i4Pos = procCsiDataPrepare(temp, prCsiData);
+	}
+
+	if (prCsiData->bIncomplete == FALSE) {
+		/* The frist run of reading the CSI data */
+
+		u4StartIdx = 0;
+		if (i4Pos > count) {
+			u4CopySize = count;
+			prCsiData->u4RemainingDataSize = i4Pos - count;
+			prCsiData->u4CopiedDataSize = count;
+			prCsiData->bIncomplete = TRUE;
+		} else {
+			u4CopySize = i4Pos;
+			prCsiData->bIncomplete = FALSE;
+		}
+	} else {
+		/* Reading the remaining CSI data in the buffer */
+
+		u4StartIdx = prCsiData->u4CopiedDataSize;
+		if (prCsiData->u4RemainingDataSize > count) {
+			u4CopySize = count;
+			prCsiData->u4RemainingDataSize -= count;
+			prCsiData->u4CopiedDataSize += count;
+		} else {
+			u4CopySize = prCsiData->u4RemainingDataSize;
+			prCsiData->bIncomplete = FALSE;
+		}
+	}
+
+	if (copy_to_user(buf, &g_aucProcBuf[u4StartIdx], u4CopySize)) {
+		DBGLOG(INIT, ERROR, "copy to user failed\n");
+		return -EFAULT;
+	}
+
+	*f_pos += u4CopySize;
+
+	if (prCsiData->bIncomplete == FALSE) {
+		prCsiData->bIsOutputing = FALSE;
+		prCsiData->u2DataCount = 0;
+	}
+
+	return (ssize_t)u4CopySize;
+}
+
 static ssize_t procDbgLevelRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
 		UINT_8 *temp = &g_aucProcBuf[0];
@@ -491,6 +629,15 @@ static const struct file_operations dbglevel_ops = {
 	.write = procDbgLevelWrite,
 };
 
+
+static const struct file_operations csidata_ops = {
+	.owner = THIS_MODULE,
+	.read = procCsiDataRead,
+	.open = procCsiDataOpen,
+	.release = procCsiDataRelease,
+};
+
+
 #if WLAN_INCLUDE_PROC
 #if	CFG_SUPPORT_EASY_DEBUG
 
@@ -831,6 +978,7 @@ INT_32 procRemoveProcfs(VOID)
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
+	remove_proc_entry(PROC_CSI_DATA_NAME, gprProcRoot);
 
 #if CFG_SUPPORT_DEBUG_FS
 	remove_proc_entry(PROC_ROAM_PARAM, gprProcRoot);
@@ -890,7 +1038,11 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 			DBGLOG(INIT, ERROR, "Unable to create /proc entry dbgLevel\n\r");
 			return -1;
 		}
-
+	prEntry = proc_create(PROC_CSI_DATA_NAME, 0664, gprProcRoot, &csidata_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry csidata\n\r");
+		return -1;
+	}
 	return 0;
 }
 

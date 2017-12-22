@@ -1751,6 +1751,9 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 #endif
 
+	/* init CSI wait queue  */
+	init_waitqueue_head(&(prGlueInfo->prAdapter->rCsiData.waitq));
+
 	return prWdev;
 
 netcreate_err:
