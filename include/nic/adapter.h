@@ -1285,6 +1285,10 @@ struct _ADAPTER_T {
 #endif
 	WIFI_FEM_CFG_T rWifiFemCfg;
 	struct CSI_DATA_T rCsiData;
+
+	UINT_8 ucRModeOnlyFlag;
+	UINT_8 ucRModeReserve[7];
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

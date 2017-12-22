@@ -1204,6 +1204,7 @@ typedef enum _NIC_CAPABILITY_V2_TAG_T {
 	TAG_CAP_CSUM_OFFLOAD = 0x4,
 #endif
 	TAG_CAP_EFUSE_OFFSET = 0x5,
+	TAG_CAP_R_MODE_CAP = 0xf,
 	TAG_CAP_TOTAL
 } NIC_CAPABILITY_V2_TAG_T;
 
@@ -1226,6 +1227,12 @@ typedef struct _NIC_EFUSE_ADDRESS_T {
 struct _NIC_EFUSE_OFFSET_T {
 	UINT_32 u4TotalItem;	/* Efuse offset items */
 	UINT_32 u4WlanMacAddr;  /* Efuse Offset 1 */
+};
+
+
+struct _CAP_R_MODE_CAP_T {
+	UINT_8 ucRModeOnlyFlag;     /* 1: R mode only, 0:not R mode only */
+	UINT_8 ucRModeReserve[7];   /* reserve fields for future use */
 };
 
 typedef struct _NIC_TX_RESOURCE_T {
@@ -3289,6 +3296,8 @@ WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 p
 WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryEfuseOffset(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+
+WLAN_STATUS nicCmdEventQueryRModeCapability(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 

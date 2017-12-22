@@ -86,6 +86,7 @@ const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
 	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
 #endif
 	{TAG_CAP_EFUSE_OFFSET, nicCmdEventQueryEfuseOffset},
+	{TAG_CAP_R_MODE_CAP, nicCmdEventQueryRModeCapability}
 };
 
 /*******************************************************************************
@@ -2570,6 +2571,15 @@ WLAN_STATUS nicCmdEventQueryEfuseOffset(IN P_ADAPTER_T prAdapter, IN PUINT_8 puc
 	return WLAN_STATUS_SUCCESS;
 }
 
+
+WLAN_STATUS nicCmdEventQueryRModeCapability(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct _CAP_R_MODE_CAP_T *prRModeOffset = (struct _CAP_R_MODE_CAP_T *)pucEventBuf;
+
+	prAdapter->ucRModeOnlyFlag = prRModeOffset->ucRModeOnlyFlag;
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {
