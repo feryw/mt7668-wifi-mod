@@ -3456,7 +3456,7 @@ VOID nicEventCSIData(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	prAdapter->rCsiData.bIsCck = prCsiData->bIsCck;
 	prAdapter->rCsiData.cRssi = prCsiData->cRssi;
 	prAdapter->rCsiData.ucSNR = prCsiData->ucSNR;
-	prAdapter->rCsiData.u8TimeStamp = kalGetBootTime() / USEC_PER_MSEC;
+	prAdapter->rCsiData.u8TimeStamp = kalDivU64(kalGetBootTime(), USEC_PER_MSEC);
 	kalMemZero(prAdapter->rCsiData.ac2IData, sizeof(prAdapter->rCsiData.ac2IData));
 	kalMemZero(prAdapter->rCsiData.ac2QData, sizeof(prAdapter->rCsiData.ac2QData));
 	kalMemCopy(prAdapter->rCsiData.ac2IData,

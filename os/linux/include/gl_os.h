@@ -186,6 +186,8 @@
 #include <net/iw_handler.h>
 #endif
 
+#include <linux/math64.h>
+
 #ifdef CFG_CFG80211_VERSION
 #define CFG80211_VERSION_CODE CFG_CFG80211_VERSION
 #else

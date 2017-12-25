@@ -1258,4 +1258,9 @@ static inline void kal_skb_reset_mac_len(struct sk_buff *skb)
 }
 #endif
 
+static inline UINT_64 kalDivU64(UINT_64 dividend, UINT_32 divisor)
+{
+	return div_u64(dividend, divisor);
+}
+
 #endif /* _GL_KAL_H */
