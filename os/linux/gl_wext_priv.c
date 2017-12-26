@@ -2374,6 +2374,8 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_MAX_RFGAIN        "GET_MAX_RFGAIN"
 #define CMD_NOISE_HISTOGRAM   "NOISE_HISTOGRAM"
 #define CMD_SET_ADM_CTRL	"SET_ADM"
+#define CMD_SET_BCN_TH      "SET_BCN_TH"
+#define CMD_GET_BCN_TH      "GET_BCN_TH"
 
 enum {
 	CMD_ADVCTL_NOISE_ID = 1,
@@ -2382,6 +2384,7 @@ enum {
 	CMD_ADVCTL_PD_ID,
 	CMD_ADVCTL_MAX_RFGAIN_ID,
 	CMD_ADVCTL_ADM_CTRL_ID,
+	CMD_ADVCTL_BCN_TH_ID = 9,
 	CMD_ADVCTL_MAX
 };
 #endif
@@ -10339,6 +10342,108 @@ static int priv_driver_set_adm_ctrl(IN struct net_device *prNetDev, IN char *pcC
 	return i4BytesWritten;
 }
 
+static int priv_driver_set_bcn_th(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	INT_32 i4Ret = 0;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + CMD_ADVCTL_BCN_TH_ID;
+	UINT_8 ucAdhoc, ucInfra, ucWithbt;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	rSwCtrlInfo.u4Id = u4Id;
+
+	if (i4Argc != 4) {
+		i4BytesWritten += scnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\nformat:set_bcn_th <adhoc> <infra> <withbt>");
+		return i4BytesWritten;
+	}
+
+	i4Ret = kalkStrtou8(apcArgv[1], 0, &ucAdhoc);
+	if (i4Ret)
+		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error i4Ret=%d\n", i4Ret);
+	i4Ret = kalkStrtou8(apcArgv[2], 0, &ucInfra);
+	if (i4Ret)
+		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error i4Ret=%d\n", i4Ret);
+	i4Ret = kalkStrtou8(apcArgv[3], 0, &ucWithbt);
+	if (i4Ret)
+		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error i4Ret=%d\n", i4Ret);
+
+	rSwCtrlInfo.u4Data = (ucAdhoc | (ucInfra << 8) | (ucWithbt << 16));
+	DBGLOG(REQ, LOUD, "u4Withbt=%d u4Infra=%d, u4Withbt=%d u4Data=0x%x,\n",
+		ucAdhoc, ucInfra, ucWithbt, rSwCtrlInfo.u4Data);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetSwCtrlWrite,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+
+static int priv_driver_get_bcn_th(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + CMD_ADVCTL_BCN_TH_ID;
+	UINT_8 ucAdhoc, ucInfra, ucWithbt;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc != 1) {
+		i4BytesWritten += scnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"\nformat:get_bcn_th");
+		return i4BytesWritten;
+	}
+
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id   = u4Id;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidQuerySwCtrlRead,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	ucAdhoc  = rSwCtrlInfo.u4Data & 0xFF;
+	ucInfra  = (rSwCtrlInfo.u4Data >> 8) & 0xFF;
+	ucWithbt = (rSwCtrlInfo.u4Data >> 16) & 0xFF;
+
+	i4BytesWritten += scnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"\nBeacon loss threshold: ADHOC:%d, INFRA:%d, With BT:%d\n",
+			ucAdhoc, ucInfra, ucWithbt);
+
+	return i4BytesWritten;
+}
 #endif
 
 static int priv_driver_set_csi(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -10810,6 +10915,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_noise_histogram(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_ADM_CTRL, strlen(CMD_SET_ADM_CTRL)) == 0)
 			i4BytesWritten = priv_driver_set_adm_ctrl(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_BCN_TH, strlen(CMD_SET_BCN_TH)) == 0)
+			i4BytesWritten = priv_driver_set_bcn_th(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_BCN_TH, strlen(CMD_GET_BCN_TH)) == 0)
+			i4BytesWritten = priv_driver_get_bcn_th(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else
 		i4BytesWritten = priv_cmd_not_support(prNetDev, pcCommand, i4TotalLen);
