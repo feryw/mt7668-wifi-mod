@@ -1263,4 +1263,7 @@ static inline UINT_64 kalDivU64(UINT_64 dividend, UINT_32 divisor)
 	return div_u64(dividend, divisor);
 }
 
+VOID kalInitDevWakeup(P_ADAPTER_T prAdapter, struct device *prDev);
+
+
 #endif /* _GL_KAL_H */

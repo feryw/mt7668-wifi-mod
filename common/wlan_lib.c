@@ -9846,4 +9846,3 @@ VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
 	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
 		wlanKeepFullPwr(prGlueInfo->prAdapter, TRUE);
 }
-
