@@ -85,7 +85,7 @@ const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
 #endif
-	{TAG_CAP_EFUSE_OFFSET, nicCmdEventQueryEfuseOffset},
+	{TAG_CAP_MAC_EFUSE_OFFSET, nicCmdEventQueryEfuseOffset},
 	{TAG_CAP_R_MODE_CAP, nicCmdEventQueryRModeCapability}
 };
 
