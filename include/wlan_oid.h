@@ -1840,6 +1840,42 @@ struct PARAM_TX_MCS_INFO {
 };
 #endif
 
+struct PARAM_CMD_GET_TXPWR_TBL {
+	UINT_8 ucDbdcIdx;
+	UINT_8 ucCenterCh;
+	struct POWER_LIMIT tx_pwr_tbl[TXPWR_TBL_NUM];
+};
+
+enum ENUM_TXPWR_TYPE {
+	DSSS = 0,
+	OFDM_24G,
+	OFDM_5G,
+	HT20,
+	HT40,
+	VHT20,
+	VHT40,
+	VHT80,
+	TXPWR_TYPE_NUM,
+};
+
+enum ENUM_STREAM_MODE {
+	STREAM_SISO,
+	STREAM_CDD,
+	STREAM_MIMO,
+	STREAM_NUM
+};
+
+struct txpwr_table_entry {
+	char mcs[STREAM_NUM][8];
+	unsigned int idx;
+};
+
+struct txpwr_table {
+	char phy_mode[8];
+	struct txpwr_table_entry *tables;
+	int n_tables;
+};
+
 /*--------------------------------------------------------------*/
 /*! \brief For Fixed Rate Configuration (Registry)              */
 /*--------------------------------------------------------------*/
@@ -2845,6 +2881,12 @@ wlanoidSetCSIControl(
 	IN PVOID pvSetBuffer,
 	IN UINT_32 u4SetBufferLen,
 	OUT PUINT_32 pu4SetInfoLen);
+
+WLAN_STATUS
+wlanoidGetTxPwrTbl(IN P_ADAPTER_T prAdapter,
+		   IN PVOID pvQueryBuffer,
+		   IN UINT_32 u4QueryBufferLen,
+		   OUT PUINT_32 pu4QueryInfoLen);
 
 /*******************************************************************************
 *                              F U N C T I O N S

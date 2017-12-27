@@ -3555,3 +3555,49 @@ VOID nicEventGetGtkDataSync(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 }
 
 #endif
+
+VOID nicCmdEventGetTxPwrTbl(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo,
+			    IN PUINT_8 pucEventBuf)
+{
+	UINT_32 u4QueryInfoLen;
+	P_GLUE_INFO_T prGlueInfo;
+	struct EVENT_GET_TXPWR_TBL *prTxPwrTblEvent = NULL;
+	struct PARAM_CMD_GET_TXPWR_TBL *prTxPwrTbl = NULL;
+	void *info_buf = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+	ASSERT(prCmdInfo->pvInformationBuffer);
+
+	if (!prCmdInfo)
+		return;
+
+	if (!prAdapter || !pucEventBuf || !prCmdInfo->pvInformationBuffer) {
+		if (prCmdInfo->fgIsOid) {
+			kalOidComplete(prAdapter->prGlueInfo,
+				       prCmdInfo->fgSetQuery,
+				       0,
+				       WLAN_STATUS_FAILURE);
+		}
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		info_buf = prCmdInfo->pvInformationBuffer;
+		prTxPwrTblEvent = (struct EVENT_GET_TXPWR_TBL *) pucEventBuf;
+		prTxPwrTbl = (struct PARAM_CMD_GET_TXPWR_TBL *) info_buf;
+
+		u4QueryInfoLen = sizeof(struct PARAM_CMD_GET_TXPWR_TBL);
+
+		prTxPwrTbl->ucCenterCh = prTxPwrTblEvent->ucCenterCh;
+
+		kalMemCopy(prTxPwrTbl->tx_pwr_tbl,
+			   prTxPwrTblEvent->tx_pwr_tbl,
+			   sizeof(prTxPwrTblEvent->tx_pwr_tbl));
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}

@@ -542,6 +542,7 @@ typedef enum _ENUM_CMD_ID_T {
 #if CFG_SUPPORT_LAST_SEC_MCS_INFO
 	CMD_ID_TX_MCS_INFO	= 0xCF, /* 0xcf (Query) */
 #endif
+	CMD_ID_GET_TXPWR_TBL = 0xD0, /* 0xd0 (Query) */
 
 	CMD_ID_SET_RDD_CH = 0xE1,
 
@@ -658,6 +659,7 @@ typedef enum _ENUM_EVENT_ID_T {
 #if CFG_SUPPORT_LAST_SEC_MCS_INFO
 	EVENT_ID_TX_MCS_INFO = 0xCF,
 #endif
+	EVENT_ID_GET_TXPWR_TBL = 0xD0,
 
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,		/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 /*#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)*/
@@ -3150,6 +3152,17 @@ struct CMD_CSI_CONTROL_T {
 	UINT_8 ucReserved[2];
 };
 
+struct CMD_GET_TXPWR_TBL {
+	UINT_8 ucDbdcIdx;
+	UINT_8 aucReserved[3];
+};
+
+struct EVENT_GET_TXPWR_TBL {
+	UINT_8 ucCenterCh;
+	UINT_8 aucReserved[3];
+	struct POWER_LIMIT tx_pwr_tbl[TXPWR_TBL_NUM];
+};
+
 /*#endif*/
 
 /*******************************************************************************
@@ -3350,6 +3363,10 @@ VOID nicOidCmdTimeoutSetAddKey(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdIn
 
 VOID nicEventGetGtkDataSync(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 #endif
+
+VOID nicCmdEventGetTxPwrTbl(IN P_ADAPTER_T prAdapter,
+			    IN P_CMD_INFO_T prCmdInfo,
+			    IN PUINT_8 pucEventBuf);
 
 /*******************************************************************************
 *                              F U N C T I O N S
