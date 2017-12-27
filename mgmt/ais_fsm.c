@@ -446,6 +446,10 @@ VOID aisFsmStateInit_JOIN(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc)
 	/* 4 <2> Setup corresponding STA_RECORD_T */
 	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
 					      STA_TYPE_LEGACY_AP, prAdapter->prAisBssInfo->ucBssIndex, prBssDesc);
+	if (!prStaRec) {
+		DBGLOG(AIS, ERROR, "prStaRec is NULL!\n");
+		return;
+	}
 
 	prAisFsmInfo->prTargetStaRec = prStaRec;
 
@@ -680,7 +684,10 @@ VOID aisFsmStateInit_IBSS_MERGE(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc
 	/* 4 <2> Setup corresponding STA_RECORD_T */
 	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
 					      STA_TYPE_ADHOC_PEER, prAdapter->prAisBssInfo->ucBssIndex, prBssDesc);
-
+	if (!prStaRec) {
+		DBGLOG(AIS, ERROR, "prStaRec is NULL!\n");
+		return;
+	}
 	prStaRec->fgIsMerging = TRUE;
 
 	prAisFsmInfo->prTargetStaRec = prStaRec;

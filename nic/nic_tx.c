@@ -3368,7 +3368,10 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
-	ASSERT(prStaRec);
+	if (!prStaRec) {
+		DBGLOG(TX, WARN, "prStaRec is NULL!\n");
+		return;
+	}
 
 	QUEUE_CONCATENATE_QUEUES(&prAdapter->rStaPsQueue[ucStaRecIndex], prQue);
 	QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, P_QUE_ENTRY_T);

@@ -4121,9 +4121,13 @@ p2pFuncComposeBeaconProbeRspTemplate(IN P_ADAPTER_T prAdapter,
 				cnmMgtPktFree(prAdapter, prP2pProbeRspInfo->prProbeRspMsduTemplate);
 
 			prP2pProbeRspInfo->prProbeRspMsduTemplate = cnmMgtPktAlloc(prAdapter, u4BcnBufLen);
+			if (!prP2pProbeRspInfo->prProbeRspMsduTemplate) {
+				DBGLOG(P2P, ERROR, "cnmMgtPktAlloc fail!\n");
+				rWlanStatus = WLAN_STATUS_FAILURE;
+				break;
+			}
 
 			prMsduInfo = prP2pProbeRspInfo->prProbeRspMsduTemplate;
-
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->ucStaRecIndex = 0xFF;
 			prMsduInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;

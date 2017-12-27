@@ -234,8 +234,10 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 
 	ASSERT(intf);
 	prGlueInfo  = (P_GLUE_INFO_T)usb_get_intfdata(intf);
-
-	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_DOWN);
+	if (prGlueInfo)
+		glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_DOWN);
+	else
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!!\n");
 
 	if (g_fgDriverProbed)
 		pfWlanRemove();
@@ -288,6 +290,10 @@ static int mtk_usb_resume(struct usb_interface *intf)
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume()\n");
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -EFAULT;
+	}
 
 	/* NOTE: USB bus may not really do suspend and resume*/
 	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
@@ -614,6 +620,10 @@ PVOID glUsbInitQ(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, UINT_32 u4
 	INIT_LIST_HEAD(prHead);
 
 	prUsbReqs = kcalloc(u4Cnt, sizeof(struct _USB_REQ_T), GFP_ATOMIC);
+	if (!prUsbReqs) {
+		DBGLOG(HAL, ERROR, "kcalloc fail!\n");
+		return NULL;
+	}
 	prUsbReq = prUsbReqs;
 
 	for (i = 0; i < u4Cnt; ++i) {

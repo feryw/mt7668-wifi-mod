@@ -949,6 +949,10 @@ kalP2PIndicateChannelExpired(IN P_GLUE_INFO_T prGlueInfo,
 		rRfChannelInfo.ucChannelNum = u4ChannelNum;
 
 		prIEEE80211ChnlStruct = kalP2pFuncGetChannelEntry(prGlueP2pInfo, &rRfChannelInfo);
+		if (!prIEEE80211ChnlStruct) {
+			DBGLOG(P2P, ERROR, "prIEEE80211ChnlStruct is NULL!\n");
+			break;
+		}
 
 		kalP2pFuncGetChannelType(eSco, &eChnlType);
 
