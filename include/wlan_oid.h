@@ -593,6 +593,9 @@ typedef struct _PARAM_CUSTOM_MCR_RW_STRUCT_T {
 	UINT_32 u4McrData;
 } PARAM_CUSTOM_MCR_RW_STRUCT_T, *P_PARAM_CUSTOM_MCR_RW_STRUCT_T;
 
+#define COEX_CTRL_BUF_LEN 500
+#define COEX_INFO_LEN 125
+
 /* CMD_COEX_CTRL & EVENT_COEX_CTRL */
 /************************************************/
 /*  UINT_32 u4SubCmd : Coex Ctrl Sub Command    */
@@ -601,7 +604,7 @@ typedef struct _PARAM_CUSTOM_MCR_RW_STRUCT_T {
 /************************************************/
 struct PARAM_COEX_CTRL {
 	UINT_32 u4SubCmd;
-	UINT_8  aucBuffer[64];
+	UINT_8  aucBuffer[COEX_CTRL_BUF_LEN];
 };
 
 /* Isolation Structure */
@@ -617,6 +620,15 @@ struct PARAM_COEX_ISO_DETECT {
 	/*UINT_32 u4Band;*/
 	UINT_32 u4Isolation;
 };
+
+/* Coex Info Structure */
+/************************************************/
+/*  char   cCoexInfo[];                        */
+/************************************************/
+struct PARAM_COEX_GET_INFO {
+	UINT_32   u4CoexInfo[COEX_INFO_LEN];
+};
+
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 /*
@@ -2471,6 +2483,10 @@ wlanoidQueryStatistics(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidQueryCoexIso(IN P_ADAPTER_T prAdapter,
 		       IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
+
+WLAN_STATUS
+wlanoidQueryCoexGetInfo(IN P_ADAPTER_T prAdapter,
+		    IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 
 #ifdef LINUX
 

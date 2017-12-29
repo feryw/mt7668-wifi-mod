@@ -132,6 +132,38 @@ VOID nicCmdEventQueryMcrRead(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 
 }
 
+VOID nicCmdEventQueryCoexGetInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	UINT_32 u4QueryInfoLen;
+	P_GLUE_INFO_T prGlueInfo;
+
+	struct CMD_COEX_CTRL *prCmdCoexCtrl;
+	struct CMD_COEX_GET_INFO *prCmdCoexGetInfo;
+	struct PARAM_COEX_CTRL *prCoexCtrl;
+	struct PARAM_COEX_GET_INFO *prCoexGetInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCmdCoexCtrl = (struct CMD_COEX_CTRL *) (pucEventBuf);
+		u4QueryInfoLen  = sizeof(struct PARAM_COEX_CTRL);
+		prCmdCoexGetInfo = (struct CMD_COEX_GET_INFO *) &prCmdCoexCtrl->aucBuffer[0];
+
+		prCoexCtrl = (struct PARAM_COEX_CTRL *) prCmdInfo->pvInformationBuffer;
+		prCoexGetInfo  = (struct PARAM_COEX_GET_INFO *) &prCoexCtrl->aucBuffer[0];
+
+		kalMemCopy(prCoexGetInfo->u4CoexInfo, prCmdCoexGetInfo->u4CoexInfo,
+			sizeof(prCmdCoexGetInfo->u4CoexInfo));
+		DBGLOG(REQ, INFO, "nicCmdEventQueryCoexGetInfo!!\n");
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+}
+
 VOID nicCmdEventQueryCoexIso(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
 {
 	UINT_32 u4QueryInfoLen;

@@ -5604,6 +5604,69 @@ wlanoidQueryCoexIso(IN P_ADAPTER_T prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief This routine is called to get coex information.
+
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+*                                   the query.
+* \param[in] u4QueryBufLen The length of the query buffer.
+* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+*                                   bytes written into the query buffer. If the call
+*                                   failed due to invalid length of the query buffer,
+*                            returns the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+wlanoidQueryCoexGetInfo(IN P_ADAPTER_T prAdapter,
+		    IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
+{
+	struct PARAM_COEX_CTRL *prParaCoexCtrl;
+	struct PARAM_COEX_GET_INFO *prParaCoexGetInfo;
+	struct CMD_COEX_CTRL rCmdCoexCtrl;
+	struct CMD_COEX_GET_INFO rCmdCoexGetInfo;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_COEX_CTRL);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_COEX_CTRL))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prParaCoexCtrl = (struct PARAM_COEX_CTRL *) pvQueryBuffer;
+	prParaCoexGetInfo = (struct PARAM_COEX_GET_INFO *) &prParaCoexCtrl->aucBuffer[0];
+
+	kalMemZero(rCmdCoexGetInfo.u4CoexInfo, sizeof(rCmdCoexGetInfo.u4CoexInfo));
+
+	rCmdCoexCtrl.u4SubCmd = prParaCoexCtrl->u4SubCmd;
+
+	/* Copy Memory */
+	kalMemCopy(rCmdCoexCtrl.aucBuffer, &rCmdCoexGetInfo, sizeof(rCmdCoexGetInfo));
+	DBGLOG(REQ, INFO, "wlanoidQueryCoexGetInfo end\n");
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_COEX_CTRL,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventQueryCoexGetInfo,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_COEX_CTRL),
+				(unsigned char *) &rCmdCoexCtrl,
+				pvQueryBuffer,
+				u4QueryBufferLen);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief This routine is called to query MCR value.
 *
 * \param[in] pvAdapter Pointer to the Adapter structure.

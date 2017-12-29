@@ -2411,6 +2411,37 @@ struct android_wifi_priv_cmd {
 };
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
+/* Coex Ctrl Cmd - Coex Info Content */
+struct COEX_REF_TABLE {
+	UINT_16 ucCoexInfoId;
+	char *cContent;
+};
+
+const struct COEX_REF_TABLE coex_ref_table[] = {
+	{1, "Isolation Detection Value"},
+	{2, "Coex FDD Parameter"},
+	{3, "Coex WMT Config"},
+	{4, "Active BSSID"},
+	{5, "Coex Mode"},
+	{6, "Hybrid Mode"},
+	{7, "Coex Iso"},
+	{8, "Coex Channel Info"},
+	{9, "Coex BT Profile"},
+	{10, "BT Long Rx Disable WF Tx"},
+	{11, "BT Port"},
+	{12, "BT Tx Power"},
+	{13, "TDD Band"},
+	{30, "Perpkt Stat"},
+	{31, "Perpkt BTHitCnt"},
+	{32, "Perpkt RxProtectCtl"},
+	{33, "Perpkt WfProtTime"},
+	{34, "Perpkt BTDuration"},
+	{35, "BtRxGainInfo"},
+	{36, "BtTxPwrDist"},
+	{37, "WfRxGainDist"}
+};
+
+
 int priv_driver_get_dbg_level(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -3633,6 +3664,39 @@ static int priv_driver_iso_detect(IN P_GLUE_INFO_T prGlueInfo,
 		return u4Ret;
 }
 
+/* Private Coex Ctrl Subcmd for Getting Coex Info */
+static int priv_driver_get_coex_info(IN P_GLUE_INFO_T prGlueInfo,
+				IN struct CMD_COEX_CTRL *prCmdCoexCtrl, IN signed char *argv[])
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	UINT_32 u4Ret = 0;
+
+	struct CMD_COEX_GET_INFO rCmdCoexGetInfo;
+
+	kalMemSet(&rCmdCoexGetInfo, 0, sizeof(struct CMD_COEX_GET_INFO));
+
+	/* Copy Memory */
+	kalMemCopy(prCmdCoexCtrl->aucBuffer, &rCmdCoexGetInfo, sizeof(struct CMD_COEX_GET_INFO));
+	DBGLOG(REQ, INFO, "priv_driver_get_coex_info end\n");
+
+	/* Ioctl Get Coex Info */
+	rStatus = kalIoctl(prGlueInfo,
+			wlanoidQueryCoexGetInfo,
+			prCmdCoexCtrl,
+			sizeof(struct CMD_COEX_CTRL),
+			TRUE,
+			TRUE,
+			TRUE,
+			&u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	/* If all pass, return u4Ret to 0 */
+	return u4Ret;
+}
+
 /* Private Command for Coex Ctrl */
 static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -3642,6 +3706,8 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 	INT_32 i4ArgNum = 2;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
 	UINT_32 u4Ret = 0;
+	UINT_32 u4Offset = 0;
+	INT_32 i4SubArgNum;
 	enum ENUM_COEX_CTRL_CMD CoexCtrlCmd;
 	struct CMD_COEX_CTRL rCmdCoexCtrl;
 
@@ -3668,22 +3734,97 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 		/* Isolation Detection */
 		case ENUM_COEX_CTRL_ISO_DETECT:
 		{
-			INT_32 i4SubArgNum = 4;
+			struct CMD_COEX_ISO_DETECT *prCmdCoexIsoDetect;
+
+			i4SubArgNum = 4;
 			/* Safely dereference "argv[3]".*/
-			if (i4Argc >= i4SubArgNum) {
-				struct CMD_COEX_ISO_DETECT *prCmdCoexIsoDetect;
+			if (i4Argc < i4SubArgNum)
+				break;
+			/* Isolation Detection Method */
+			u4Ret = priv_driver_iso_detect(prGlueInfo, &rCmdCoexCtrl, apcArgv);
+			if (u4Ret)
+				return -1;
 
-				/* Isolation Detection Method */
-				u4Ret = priv_driver_iso_detect(prGlueInfo, &rCmdCoexCtrl, apcArgv);
-				if (u4Ret)
-					return -1;
+			/* Get Isolation value */
+			prCmdCoexIsoDetect = (struct CMD_COEX_ISO_DETECT *) rCmdCoexCtrl.aucBuffer;
 
-				/* Get Isolation value */
-				prCmdCoexIsoDetect = (struct CMD_COEX_ISO_DETECT *) rCmdCoexCtrl.aucBuffer;
+			/* Set Return i4BytesWritten Value */
+			u4Offset = snprintf(pcCommand, i4TotalLen, "%d",
+				prCmdCoexIsoDetect->u4Isolation);
+			DBGLOG(REQ, INFO, "Isolation: %d\n", prCmdCoexIsoDetect->u4Isolation);
+			break;
+		}
+		case ENUM_COEX_CTRL_GET_INFO:
+		{
+			struct CMD_COEX_GET_INFO *prCmdCoexGetInfo;
+			UINT_8 ucCoexTblSize = sizeof(coex_ref_table) / sizeof(struct COEX_REF_TABLE);
+			UINT_8 ucCoexInfoNum, ucIdx = 0, ucTblIdx;
+			UINT_16 u2CoexInfoId, u2CoexInfoLen;
 
-				/* Set Return i4BytesWritten Value */
-				i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%d", prCmdCoexIsoDetect->u4Isolation);
-				DBGLOG(REQ, INFO, "Isolation: %d\n", prCmdCoexIsoDetect->u4Isolation);
+			i4SubArgNum = 2;
+			/* Safely dereference "argv[1]".*/
+			if (i4Argc < i4SubArgNum)
+				break;
+			u4Ret = priv_driver_get_coex_info(prGlueInfo, &rCmdCoexCtrl, apcArgv);
+			if (u4Ret)
+				return -1;
+
+			prCmdCoexGetInfo = (struct CMD_COEX_GET_INFO *) rCmdCoexCtrl.aucBuffer;
+
+			ucCoexInfoNum = (prCmdCoexGetInfo->u4CoexInfo[0] & 0xff);
+			while (ucIdx < ucCoexInfoNum) {
+
+				u2CoexInfoId = (prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2] >> 16) & 0xffff;
+				u2CoexInfoLen = prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2] & 0xffff;
+
+				/* Find Coex Info Cmd Id from priv_driver_coex_info_table[] */
+				for (ucTblIdx = 0; ucTblIdx < ucCoexTblSize; ucTblIdx++) {
+					if (u2CoexInfoId == coex_ref_table[ucTblIdx].ucCoexInfoId) {
+						u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+							"\n%-25s:", coex_ref_table[ucTblIdx].cContent);
+						break;
+					}
+				}
+
+				/* If not found in priv_driver_coex_info_table[], show Unknown Id */
+				if (ucTblIdx == ucCoexTblSize) {
+					u4Offset += snprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset, "\nUnknown Cmd ID :%-9d:", u2CoexInfoId);
+				}
+
+				switch (u2CoexInfoLen) {
+				case 0x0001:
+				{
+					u4Offset += snprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset, "0x%02x",
+					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					break;
+				}
+				case 0x0002:
+				{
+					u4Offset += snprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset, "0x%04x",
+					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					break;
+				}
+				case 0x0003:
+				{
+					u4Offset += snprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset, "0x%06x",
+					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					break;
+				}
+				case 0x0004:
+				{
+					u4Offset += snprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset, "0x%08x",
+					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					break;
+				}
+				default:
+					break;
+				}
+				ucIdx++;
 			}
 			break;
 		}
@@ -3691,6 +3832,9 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 		default:
 			break;
 		}
+
+	 /* Set Return i4BytesWritten Value */
+	i4BytesWritten = (INT_32)u4Offset;
 	}
 	return i4BytesWritten;
 }

@@ -1298,6 +1298,9 @@ typedef struct _CMD_ACCESS_REG {
 	UINT_32 u4Data;
 } CMD_ACCESS_REG, *P_CMD_ACCESS_REG;
 
+#define COEX_CTRL_BUF_LEN 500
+#define COEX_INFO_LEN 125
+
 /* CMD_COEX_CTRL & EVENT_COEX_CTRL */
 /************************************************/
 /*  UINT_32 u4SubCmd : Coex Ctrl Sub Command    */
@@ -1306,7 +1309,7 @@ typedef struct _CMD_ACCESS_REG {
 /************************************************/
 struct CMD_COEX_CTRL {
 	UINT_32 u4SubCmd;
-	UINT_8  aucBuffer[64];
+	UINT_8  aucBuffer[COEX_CTRL_BUF_LEN];
 };
 
 /* Sub Command Data Structure */
@@ -1323,9 +1326,18 @@ struct CMD_COEX_ISO_DETECT {
 	UINT_32 u4Isolation;
 };
 
+
+/************************************************/
+/*  PCHAR   pucCoexInfo : CoexInfoTag           */
+/************************************************/
+struct CMD_COEX_GET_INFO {
+	UINT_32   u4CoexInfo[COEX_INFO_LEN];
+};
+
 /* Use for Coex Ctrl Cmd */
 enum ENUM_COEX_CTRL_CMD {
 	ENUM_COEX_CTRL_ISO_DETECT = 1,
+	ENUM_COEX_CTRL_GET_INFO = 2,
 	ENUM_COEX_CTRL_NUM
 };
 
@@ -3185,8 +3197,10 @@ struct EVENT_GET_TXPWR_TBL {
 ********************************************************************************
 */
 VOID nicCmdEventQueryMcrRead(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+
 /* Nic cmd/event for Coex related */
 VOID nicCmdEventQueryCoexIso(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+VOID nicCmdEventQueryCoexGetInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 
 #if CFG_SUPPORT_QA_TOOL
 VOID nicCmdEventQueryRxStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
