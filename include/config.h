@@ -83,7 +83,7 @@
 #ifdef CONFIG_X86
 #define MTK_WCN_HIF_SDIO        0
 #else
-#define MTK_WCN_HIF_SDIO        1
+#define MTK_WCN_HIF_SDIO        0
 #endif
 #else
 #define MTK_WCN_HIF_SDIO            0
