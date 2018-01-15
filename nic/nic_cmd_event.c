@@ -3597,21 +3597,30 @@ VOID nicCmdEventGetTxPwrTbl(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo,
 	struct PARAM_CMD_GET_TXPWR_TBL *prTxPwrTbl = NULL;
 	void *info_buf = NULL;
 
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-	ASSERT(pucEventBuf);
-	ASSERT(prCmdInfo->pvInformationBuffer);
-
-	if (!prCmdInfo)
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
 		return;
+	}
 
-	if (!prAdapter || !pucEventBuf || !prCmdInfo->pvInformationBuffer) {
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf || !prCmdInfo->pvInformationBuffer) {
 		if (prCmdInfo->fgIsOid) {
 			kalOidComplete(prAdapter->prGlueInfo,
 				       prCmdInfo->fgSetQuery,
 				       0,
 				       WLAN_STATUS_FAILURE);
 		}
+
+		if (!pucEventBuf)
+			DBGLOG(NIC, WARN, "NULL pucEventBuf!\n");
+
+		if (!prCmdInfo->pvInformationBuffer)
+			DBGLOG(NIC, WARN, "NULL pvInformationBuffer!\n");
+
 		return;
 	}
 

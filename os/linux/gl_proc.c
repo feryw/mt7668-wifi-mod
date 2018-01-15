@@ -730,8 +730,6 @@ void print_txpwr_tbl(struct txpwr_table *txpwr_tbl, unsigned char ch,
 			case STREAM_MIMO:
 				kalStrnCpy(prefix, "mimo", sizeof(prefix));
 				break;
-			default:
-				break;
 			}
 
 			*pos += kalScnprintf(buf + *pos, TMP_SZ - *pos,
@@ -821,7 +819,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 	}
 
 	buffer = (char *) kalMemAlloc(buf_len, VIR_MEM_TYPE);
-	if (!buf)
+	if (!buffer)
 		return -ENOMEM;
 
 	for (i = 0; i < STREAM_NUM; i++) {
