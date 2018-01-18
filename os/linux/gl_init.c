@@ -2223,6 +2223,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 	INT_32 i4Status = 0;
 	BOOL bRet = FALSE;
 	P_REG_INFO_T prRegInfo;
+	UINT_8 i = 0;
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	INT_32 i4RetVal = 0;
 #endif
@@ -2391,10 +2392,6 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 			       prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling);
 		}
 
-		/* Disable 5G band for AIS */
-		if (prAdapter->fgEnable5GBand == FALSE)
-			prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
-
 		g_u4HaltFlag = 0;
 
 #if CFG_SUPPORT_BUFFER_MODE
@@ -2508,6 +2505,23 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 #endif
 	} while (FALSE);
+
+	/* Configure 5G band for registered wiphy */
+	if (prAdapter->fgEnable5GBand)
+		prWdev->wiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
+	else
+		prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
+
+	for (i = 0 ; i < KAL_P2P_NUM; i++) {
+		if (gprP2pRoleWdev[i] == NULL)
+			continue;
+
+		if (prAdapter->fgEnable5GBand)
+			gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
+								&mtk_band_5ghz;
+		else
+			gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] = NULL;
+	}
 
 	if (i4Status == 0) {
 #if CFG_SUPPORT_AGPS_ASSIST
