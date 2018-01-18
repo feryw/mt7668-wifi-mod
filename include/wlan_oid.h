@@ -593,8 +593,8 @@ typedef struct _PARAM_CUSTOM_MCR_RW_STRUCT_T {
 	UINT_32 u4McrData;
 } PARAM_CUSTOM_MCR_RW_STRUCT_T, *P_PARAM_CUSTOM_MCR_RW_STRUCT_T;
 
-#define COEX_CTRL_BUF_LEN 500
-#define COEX_INFO_LEN 125
+#define COEX_CTRL_BUF_LEN 460
+#define COEX_INFO_LEN 115
 
 /* CMD_COEX_CTRL & EVENT_COEX_CTRL */
 /************************************************/

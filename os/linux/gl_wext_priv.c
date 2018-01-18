@@ -3736,7 +3736,7 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 		{
 			struct CMD_COEX_ISO_DETECT *prCmdCoexIsoDetect;
 
-			i4SubArgNum = 4;
+			i4SubArgNum = 3;
 			/* Safely dereference "argv[3]".*/
 			if (i4Argc < i4SubArgNum)
 				break;
@@ -3750,8 +3750,9 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 
 			/* Set Return i4BytesWritten Value */
 			u4Offset = snprintf(pcCommand, i4TotalLen, "%d",
-				prCmdCoexIsoDetect->u4Isolation);
-			DBGLOG(REQ, INFO, "Isolation: %d\n", prCmdCoexIsoDetect->u4Isolation);
+				(prCmdCoexIsoDetect->u4Isolation/2));
+			DBGLOG(REQ, INFO, "Isolation: %d\n",
+				(prCmdCoexIsoDetect->u4Isolation/2));
 			break;
 		}
 		case ENUM_COEX_CTRL_GET_INFO:
@@ -3760,22 +3761,19 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 			UINT_8 ucCoexTblSize = sizeof(coex_ref_table) / sizeof(struct COEX_REF_TABLE);
 			UINT_8 ucCoexInfoNum, ucIdx = 0, ucTblIdx;
 			UINT_16 u2CoexInfoId, u2CoexInfoLen;
+			PUINT_32 pu4CoexInfo;
 
-			i4SubArgNum = 2;
-			/* Safely dereference "argv[1]".*/
-			if (i4Argc < i4SubArgNum)
-				break;
 			u4Ret = priv_driver_get_coex_info(prGlueInfo, &rCmdCoexCtrl, apcArgv);
 			if (u4Ret)
 				return -1;
 
 			prCmdCoexGetInfo = (struct CMD_COEX_GET_INFO *) rCmdCoexCtrl.aucBuffer;
 
-			ucCoexInfoNum = (prCmdCoexGetInfo->u4CoexInfo[0] & 0xff);
+			pu4CoexInfo = &prCmdCoexGetInfo->u4CoexInfo[0];
+			ucCoexInfoNum = *pu4CoexInfo++ & 0xff;
 			while (ucIdx < ucCoexInfoNum) {
-
-				u2CoexInfoId = (prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2] >> 16) & 0xffff;
-				u2CoexInfoLen = prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2] & 0xffff;
+				u2CoexInfoId = (*pu4CoexInfo >> 16) & 0xffff;
+				u2CoexInfoLen = *pu4CoexInfo++ & 0xffff;
 
 				/* Find Coex Info Cmd Id from priv_driver_coex_info_table[] */
 				for (ucTblIdx = 0; ucTblIdx < ucCoexTblSize; ucTblIdx++) {
@@ -3797,28 +3795,28 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev, IN char *pcComm
 				{
 					u4Offset += snprintf(pcCommand + u4Offset,
 					i4TotalLen - u4Offset, "0x%02x",
-					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					*pu4CoexInfo++);
 					break;
 				}
 				case 0x0002:
 				{
 					u4Offset += snprintf(pcCommand + u4Offset,
 					i4TotalLen - u4Offset, "0x%04x",
-					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					*pu4CoexInfo++);
 					break;
 				}
 				case 0x0003:
 				{
 					u4Offset += snprintf(pcCommand + u4Offset,
 					i4TotalLen - u4Offset, "0x%06x",
-					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					*pu4CoexInfo++);
 					break;
 				}
 				case 0x0004:
 				{
 					u4Offset += snprintf(pcCommand + u4Offset,
 					i4TotalLen - u4Offset, "0x%08x",
-					prCmdCoexGetInfo->u4CoexInfo[(ucIdx + 1) * 2 + 1]);
+					*pu4CoexInfo++);
 					break;
 				}
 				default:

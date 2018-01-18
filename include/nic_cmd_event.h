@@ -1298,8 +1298,8 @@ typedef struct _CMD_ACCESS_REG {
 	UINT_32 u4Data;
 } CMD_ACCESS_REG, *P_CMD_ACCESS_REG;
 
-#define COEX_CTRL_BUF_LEN 500
-#define COEX_INFO_LEN 125
+#define COEX_CTRL_BUF_LEN 460
+#define COEX_INFO_LEN 115
 
 /* CMD_COEX_CTRL & EVENT_COEX_CTRL */
 /************************************************/
