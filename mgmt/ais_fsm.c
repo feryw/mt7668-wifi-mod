@@ -3147,7 +3147,7 @@ VOID aisRxMcsCollectionTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 	UINT_8 ucStaIdx = 0;
 
 	if (prAdapter->prAisBssInfo->prStaRecOfAP == NULL)
-		return;
+		goto out;
 
 	ucStaIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucIndex;
 
@@ -3157,6 +3157,7 @@ VOID aisRxMcsCollectionTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 		ucSmapleCnt = (ucSmapleCnt + 1) % MCS_INFO_SAMPLE_CNT;
 	}
 
+out:
 	cnmTimerStartTimer(prAdapter, &prAdapter->rRxMcsInfoTimer, 100);
 }
 #endif
