@@ -14,8 +14,10 @@ export CONFIG_MTK_COMBO_COMM_SDIO=m
 export CONFIG_MT_WIFI_CHRDEV=m
 WLAN_CHIP_ID := mt7668
 
-PWD=$(shell pwd)
-DRIVER_DIR=$(PWD)
+ifeq ($(DRIVER_DIR),)
+    PWD=$(shell pwd)
+    DRIVER_DIR=$(PWD)
+endif
 
 ifeq ($(HIF),)
     HIF=usb
@@ -97,8 +99,8 @@ endif
 else
 LINUX_SRC=$(KERNEL_OBJ_ROOT)/$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
 # overwrite $(OUT_STA_KO) for MT53XX platform
-OUT_STA_KO = $(OBJ_ROOT)/linux_mts/ko_modules/wlan_driver/gen4m/$(MODULE_NAME).ko
-include $(LINUX_ROOT)/linux_mts/build/mak/toolchain.mak
+OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
+include $(LINUX_ROOT)/linux_mts/mak/toolchain.mak
 endif
 
 ifeq ($(CROSS_COMPILE),)
@@ -119,6 +121,37 @@ endif
 # MT53XX end
 #= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# MT8516 start
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ifeq ($(PLATFORM),MT8516)
+export CONFIG_MTK_COMBO_WIFI_HIF=$(HIF)
+
+WMT_DIR = $(TOPDIR)/../src/connectivity/combo_tool/mt7668_wmt_drv
+
+TARGET = LINUX
+
+$(warning =============================================)
+$(warning wifi driver compiling for MT8516+MT7668)
+$(warning PWD=$(PWD))
+$(warning HIF=$(HIF))
+$(warning WLAN_CHIP_ID=$(WLAN_CHIP_ID))
+$(warning MODULE_NAME=$(MODULE_NAME))
+$(warning WMT_DIR=$(WMT_DIR))
+$(warning DRIVER_DIR=$(DRIVER_DIR))
+$(warning LINUX_SRC=$(LINUX_SRC))
+$(warning CROSS_COMPILE=$(CROSS_COMPILE))
+$(warning CC=$(CC))
+$(warning LD=$(LD))
+$(warning STRIP=$(STRIP))
+$(warning CFLAGS=$(CFLAGS))
+$(warning LDFLAGS=$(LDFLAGS))
+$(warning =============================================)
+
+endif
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# MT8516 end
+#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 ##############################################################
 # Compile options
@@ -174,8 +207,20 @@ CFG_CHIP_RESET_SUPPORT=0
 
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
-CFG_DRIVER_INITIAL_RUNNING_MODE=0
-CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
+endif
+
+ifeq ($(PLATFORM),MT8516)
+
+#CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=1
+
+CFG_SUPPORT_DFS_MASTER=1
+
+#CFG_USE_LINUX_GPIO_GLUE=1
+
+#CFG_WOW_WAKEUP_REASON_REPORT=1
+
+#CFG_SUPPORT_PMU_EN_CTRL=1
+
 endif
 
 
@@ -273,6 +318,10 @@ else
 endif
 endif
 
+ifeq ($(PLATFORM),MT8516)
+	@cd $(DRIVER_DIR) && $(CROSS_COMPILE)strip --strip-unneeded $(MODULE_NAME).ko
+endif
+
 ##############################################################
 # Post processing
 ##############################################################
@@ -283,58 +332,52 @@ endif
 ifeq ($(PLATFORM),MT53XX)
 ifneq ($(DRIVER_PARTIAL_BUILD), y)
 ifneq ($(ANDROID),true)
-	if [ ! -d $(OUTPUT_ROOT)/basic/wifi_ko ]; then \
-		mkdir -p $(OUTPUT_ROOT)/basic/wifi_ko/; \
+	if [ ! -d $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID) ]; then \
+		mkdir -p $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/; \
 	fi
-	if [ -d $(OUTPUT_ROOT)/basic/wifi_ko ]; then \
-		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/wifi_ko/$(MODULE_NAME).ko; \
-	fi
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(THIRDPARTY_LIB_ROOT)/wlan/$(KERNEL_VER_FOR_3RD)/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko
 else
-	if [ ! -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		mkdir -p $(OUTPUT_ROOT)/basic/modules/; \
+ifeq "$(BUILD_CFG)" "debug"
+	echo "ANDROID_VERSION=$(ANDROID_VERSION)"
+	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg ]; then \
+		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg; \
 	fi
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
+	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/dbg/$(MODULE_NAME).ko
+
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		cp -f $(OUT_STA_KO) $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+        fi
+
+else
+	if [ ! -d $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING) ]; then \
+		mkdir -p $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING); \
 	fi
-endif # ifneq ($(ANDROID),true)
-ifeq ($(S_PLATFORM),true)
+	cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
+	$(CROSS_COMPILE)strip --strip-unneeded $(LINUX_ROOT)/../android/$(ANDROID_VERSION)/vendor/mediatek/open/hardware/prebuilt/wifi/$(ANDROID_IC_SETTING)/$(MODULE_NAME).ko
+
 	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/WIFI_RAM_CODE_MT7668.bin $(OUTPUT_ROOT)/basic/modules; \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/WIFI_RAM_CODE2_USB_MT7668.bin $(OUTPUT_ROOT)/basic/modules; \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/wifi.cfg $(OUTPUT_ROOT)/basic/modules; \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/wifi/TxPwrLimit_MT76x8.dat $(OUTPUT_ROOT)/basic/modules; \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/bt/mt7668/mt7668_patch_e1_hdr.bin $(OUTPUT_ROOT)/basic/modules; \
-		cp -f $(ANDROID_BUILD_TOP)/vendor/mediatek/open/hardware/prebuilt/bt/mt7668/mt7668_patch_e2_hdr.bin $(OUTPUT_ROOT)/basic/modules; \
-	fi
+                cp -f $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WLAN_CHIP_ID)/$(MODULE_NAME).ko $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+                $(CROSS_COMPILE)strip --strip-unneeded $(OUTPUT_ROOT)/basic/modules/wlan.ko; \
+        fi
 endif
-endif # ifneq ($(DRIVER_PARTIAL_BUILD), y)
-endif # ifeq ($(PLATFORM),MT53XX)
+endif #ANDROID
+endif #DRIVER_PARTIAL_BUILD
+endif #MT53XX
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # MT53XX end
 #= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 clean: driver_clean
-ifeq ($(PLATFORM),MT53XX)
-ifeq ($(S_PLATFORM),true)
-	if [ -d $(OUTPUT_ROOT)/basic/modules ]; then \
-		rm -f $(OUTPUT_ROOT)/basic/modules/WIFI_RAM_CODE_MT7668.bin; \
-		rm -f $(OUTPUT_ROOT)/basic/modules/WIFI_RAM_CODE2_USB_MT7668.bin; \
-		rm -f $(OUTPUT_ROOT)/basic/modules/wifi.cfg; \
-		rm -f $(OUTPUT_ROOT)/basic/modules/TxPwrLimit_MT76x8.dat; \
-		rm -f $(OUTPUT_ROOT)/basic/modules/mt7668_patch_e1_hdr.bin; \
-		rm -f $(OUTPUT_ROOT)/basic/modules/mt7668_patch_e2_hdr.bin; \
-	fi
-endif
-endif
 
 driver_clean:
 ifneq ($(ANDROID),true)
 	rm -rf $(THIRDPARTY_LIB_ROOT)/wlan
 endif
-	if [ -d $(DRIVER_DIR) ] && [ -d $(LINUX_SRC) ]; then \
-		cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean; \
-	fi
-	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; fi;
+#	cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) MODULE_NAME=$(MODULE_NAME) clean
+#	if [ -e $(DRIVER_DIR)/$(MODULE_NAME).ko ]; then rm $(DRIVER_DIR)/$(MODULE_NAME).ko; \
+#        fi
 
 
 
