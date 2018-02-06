@@ -121,38 +121,6 @@ endif
 # MT53XX end
 #= = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
-#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
-# MT8516 start
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-ifeq ($(PLATFORM),MT8516)
-export CONFIG_MTK_COMBO_WIFI_HIF=$(HIF)
-
-WMT_DIR = $(TOPDIR)/../src/connectivity/combo_tool/mt7668_wmt_drv
-
-TARGET = LINUX
-
-$(warning =============================================)
-$(warning wifi driver compiling for MT8516+MT7668)
-$(warning PWD=$(PWD))
-$(warning HIF=$(HIF))
-$(warning WLAN_CHIP_ID=$(WLAN_CHIP_ID))
-$(warning MODULE_NAME=$(MODULE_NAME))
-$(warning WMT_DIR=$(WMT_DIR))
-$(warning DRIVER_DIR=$(DRIVER_DIR))
-$(warning LINUX_SRC=$(LINUX_SRC))
-$(warning CROSS_COMPILE=$(CROSS_COMPILE))
-$(warning CC=$(CC))
-$(warning LD=$(LD))
-$(warning STRIP=$(STRIP))
-$(warning CFLAGS=$(CFLAGS))
-$(warning LDFLAGS=$(LDFLAGS))
-$(warning =============================================)
-
-endif
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# MT8516 end
-#= = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
 ##############################################################
 # Compile options
 ##############################################################
@@ -208,21 +176,6 @@ CFG_CHIP_RESET_SUPPORT=0
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
 endif
-
-ifeq ($(PLATFORM),MT8516)
-
-#CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=1
-
-CFG_SUPPORT_DFS_MASTER=1
-
-#CFG_USE_LINUX_GPIO_GLUE=1
-
-#CFG_WOW_WAKEUP_REASON_REPORT=1
-
-#CFG_SUPPORT_PMU_EN_CTRL=1
-
-endif
-
 
 
 #/***** Manage configs into compile options ******/
