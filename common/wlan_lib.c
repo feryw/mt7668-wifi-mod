@@ -632,11 +632,6 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 				    prRegInfo->u4ArSysParam0,
 				    prRegInfo->u4ArSysParam1, prRegInfo->u4ArSysParam2, prRegInfo->u4ArSysParam3);
 #endif
-
-#if CFG_SUPPORT_DBDC
-		/* Update DBDC default setting */
-		cnmInitDbdcSetting(prAdapter);
-#endif /*CFG_SUPPORT_DBDC*/
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {

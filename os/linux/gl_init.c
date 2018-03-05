@@ -2401,6 +2401,15 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 #endif
 #endif
+
+#if CFG_SUPPORT_DBDC
+		/* Buffer mode delay cal will init dbdc as disable. So that,
+		 * we should setup dbdc after buffer mode process.
+		 */
+		/* Update DBDC default setting */
+		cnmInitDbdcSetting(prAdapter);
+#endif /*CFG_SUPPORT_DBDC*/
+
 		/* send regulatory information to firmware */
 		rlmDomainSendInfoToFirmware(prAdapter);
 
