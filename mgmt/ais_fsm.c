@@ -1011,6 +1011,7 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 					    prBssDesc->u4RsnSelectedPairwiseCipher;
 					prAisBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
 #if (CFG_HW_WMM_BY_BSS == 1)
+					prAisBssInfo->eBand = prBssDesc->eBand;
 					if (prAisBssInfo->fgIsWmmInited == FALSE)
 						prAisBssInfo->ucWmmQueSet =
 							cnmWmmIndexDecision(prAdapter, prAisBssInfo);

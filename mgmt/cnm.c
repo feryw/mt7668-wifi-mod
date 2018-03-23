@@ -990,7 +990,7 @@ UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNetworkType, BOOLEAN fgIsP2pDevice)
 {
 	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucBssIndex, ucOwnMacIdx;
+	UINT_8 i, ucBssIndex, ucOwnMacIdx;
 
 	ASSERT(prAdapter);
 
@@ -1006,6 +1006,15 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
 #endif
+
+		/* initialize wlan id and status for keys */
+		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+		for (i = 0; i < MAX_KEY_NUM; i++) {
+			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
+			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+			prBssInfo->wepkeyUsed[i] = FALSE;
+		}
 		return prBssInfo;
 	}
 
@@ -1071,12 +1080,21 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 
 	if (ucOwnMacIdx >= HW_BSSID_NUM || ucBssIndex >= BSS_INFO_NUM)
 		prBssInfo = NULL;
-#if CFG_SUPPORT_PNO
 	if (prBssInfo) {
+#if CFG_SUPPORT_PNO
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
-	}
 #endif
+
+		/* initialize wlan id and status for keys */
+		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+		for (i = 0; i < MAX_KEY_NUM; i++) {
+			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
+			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+			prBssInfo->wepkeyUsed[i] = FALSE;
+		}
+	}
 	return prBssInfo;
 }
 
@@ -1317,7 +1335,8 @@ VOID cnmDbdcEnableDecision(
 	P_BSS_INFO_T	prBssInfo;
 	UINT_8			ucBssIndex;
 
-	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
+	if ((prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC) &&
+		(prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_STATIC))
 		return;
 
 	if (prAdapter->rWifiVar.fgDbDcModeEn) {
@@ -1330,6 +1349,8 @@ VOID cnmDbdcEnableDecision(
 								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
 								DBDC_SWITCH_GUARD_TIME);
 		}
+		/* The DBDC is already ON, so renew WMM band information only */
+		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		return;
 	}
 

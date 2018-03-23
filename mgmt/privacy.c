@@ -840,21 +840,35 @@ VOID secRemoveBssBcEntry(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN
 			for (i = 0; i < MAX_KEY_NUM; i++) {
 				if (prBssInfo->ucBMCWlanIndexSUsed[i])
 					secPrivacyFreeForEntry(prAdapter, prBssInfo->ucBMCWlanIndexS[i]);
+
+#if 0
+				/* move to cfg delete cb function for sync. */
 				prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
 				prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+#endif
 			}
+
 			prBssInfo->fgBcDefaultKeyExist = FALSE;
 			prBssInfo->ucBcDefaultKeyIdx = 0xff;
 		}
 	} else {
+		/* According to wh.su's comment, it's ok to change to
+		 * reserved_entry here so that the entry is _NOT_ freed at all.
+		 * In this way, the same BSS(ucBssIndex) could reuse the same
+		 * entry next time in secPrivacySeekForBcEntry(), and we could
+		 * see the following log: "[Wlan index]: Reuse entry ...".
+		 */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 		secPrivacyFreeForEntry(prAdapter, prBssInfo->ucBMCWlanIndex);
 
 		for (i = 0; i < MAX_KEY_NUM; i++) {
 			if (prBssInfo->ucBMCWlanIndexSUsed[i])
 				secPrivacyFreeForEntry(prAdapter, prBssInfo->ucBMCWlanIndexS[i]);
+#if 0
+			/* move to cfg delete cb function for sync. */
 			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
 			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+#endif
 		}
 		for (i = 0; i < MAX_KEY_NUM; i++) {
 			if (prBssInfo->wepkeyUsed[i])

@@ -4867,6 +4867,13 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 		prAdapter->rWifiVar.ucP2p5gBandwidth = MAX_BW_40MHZ;
 		prAdapter->rWifiVar.ucApBandwidth = MAX_BW_40MHZ;
 		prAdapter->rWifiVar.ucAp5gBandwidth = MAX_BW_40MHZ;
+#if CFG_SUPPORT_MTK_SYNERGY
+		/* Disable the 2.4G 256QAM feature bit if N only chip*/
+		prAdapter->rWifiVar.aucMtkFeature[0] &=
+			~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
+		DBGLOG(INIT, WARN,
+			"Disable 2.4G 256QAM support if N only chip\n");
+#endif
 	}
 
 	prAdapter->u4FwCompileFlag0 = prEventNicCapability->u4CompileFlag0;
@@ -6685,7 +6692,8 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucDynBwRts = (UINT_8) wlanCfgGetUint32(prAdapter, "DynBwRts", FEATURE_DISABLED);
 	prWifiVar->ucTxopPsTx = (UINT_8) wlanCfgGetUint32(prAdapter, "TxopPsTx", FEATURE_DISABLED);
 
-	prWifiVar->ucStaHtBfee = (UINT_8) wlanCfgGetUint32(prAdapter, "StaHTBfee", FEATURE_ENABLED);
+	prWifiVar->ucStaHtBfee = (UINT_8) wlanCfgGetUint32(prAdapter,
+					"StaHTBfee", FEATURE_DISABLED);
 	prWifiVar->ucStaVhtBfee = (UINT_8) wlanCfgGetUint32(prAdapter, "StaVHTBfee", FEATURE_ENABLED);
 	prWifiVar->ucStaVhtMuBfee = (UINT_8)wlanCfgGetUint32(prAdapter, "StaVHTMuBfee", FEATURE_ENABLED);
 	prWifiVar->ucStaHtBfer = (UINT_8) wlanCfgGetUint32(prAdapter, "StaHTBfer", FEATURE_DISABLED);

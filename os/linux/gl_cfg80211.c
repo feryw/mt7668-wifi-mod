@@ -2017,11 +2017,11 @@ int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy, IN void *data, IN int
 	if (data && len)
 		prParams = (struct wpa_driver_hs20_data_s *)data;
 
-	DBGLOG(INIT, INFO, "[%s] Cmd Type (%d)\n", __func__, prParams->CmdType);
-
 	if (prParams) {
 		int i;
 
+		DBGLOG(INIT, INFO, "[%s] Cmd Type (%d)\n",
+		__func__, prParams->CmdType);
 		switch (prParams->CmdType) {
 		case HS20_CMD_ID_SET_BSSID_POOL:
 			DBGLOG(INIT, INFO,
@@ -2078,11 +2078,13 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy *wiphy, IN void *data, IN 
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
-	if (data && len)
-		prParams = (P_NL80211_DRIVER_SET_KEY_EXTS) data;
+	if (data == NULL || len == 0) {
+		DBGLOG(INIT, TRACE, "%s data or len is invalid\n", __func__);
+		return -EINVAL;
+	}
 
-	if (prParams)
-		prIWEncExt = (struct iw_encode_exts *)&prParams->ext;
+	prParams = (P_NL80211_DRIVER_SET_KEY_EXTS) data;
+	prIWEncExt = (struct iw_encode_exts *)&prParams->ext;
 
 	if (prIWEncExt->alg == IW_ENCODE_ALG_SMS4) {
 		/* KeyID */

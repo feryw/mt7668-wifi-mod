@@ -1171,7 +1171,7 @@ void glP2pDestroyWirelessDevice(void)
 #else
 	int i = 0;
 
-	set_wiphy_dev(gprP2pWdev->wiphy, NULL);
+	/* Move set_wiphy_dev(wiphy, NULL) in wlanNetDestroy */
 
 	wiphy_unregister(gprP2pWdev->wiphy);
 	wiphy_free(gprP2pWdev->wiphy);

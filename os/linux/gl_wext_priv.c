@@ -943,7 +943,7 @@ priv_get_int(IN struct net_device *prNetDev,
 	UINT_32 u4BufLen = 0;
 	int status = 0;
 	P_NDIS_TRANSPORT_STRUCT prNdisReq;
-	INT_32 ch[50];
+	INT_32 ch[MAX_CHN_NUM];
 
 	ASSERT(prNetDev);
 	ASSERT(prIwReqInfo);
@@ -1077,14 +1077,14 @@ priv_get_int(IN struct net_device *prNetDev,
 	case PRIV_CMD_GET_CH_LIST:
 		{
 			UINT_16 i, j = 0;
-			UINT_8 NumOfChannel = 50;
-			UINT_8 ucMaxChannelNum = 50;
-			RF_CHANNEL_INFO_T aucChannelList[50];
+			UINT_8 NumOfChannel = MAX_CHN_NUM;
+			UINT_8 ucMaxChannelNum = MAX_CHN_NUM;
+			RF_CHANNEL_INFO_T aucChannelList[MAX_CHN_NUM];
 
 			DBGLOG(RLM, INFO, "Domain: Query Channel List.\n");
 			kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum, &NumOfChannel, aucChannelList);
-			if (NumOfChannel > 50)
-				NumOfChannel = 50;
+			if (NumOfChannel > MAX_CHN_NUM)
+				NumOfChannel = MAX_CHN_NUM;
 
 			if (kalIsAPmode(prGlueInfo)) {
 				for (i = 0; i < NumOfChannel; i++) {
@@ -1243,7 +1243,7 @@ priv_get_ints(IN struct net_device *prNetDev,
 	UINT_32 u4SubCmd;
 	P_GLUE_INFO_T prGlueInfo;
 	int status = 0;
-	INT_32 ch[50];
+	INT_32 ch[MAX_CHN_NUM];
 
 	ASSERT(prNetDev);
 	ASSERT(prIwReqInfo);
@@ -1259,13 +1259,13 @@ priv_get_ints(IN struct net_device *prNetDev,
 	case PRIV_CMD_GET_CH_LIST:
 		{
 			UINT_16 i;
-			UINT_8 NumOfChannel = 50;
-			UINT_8 ucMaxChannelNum = 50;
-			RF_CHANNEL_INFO_T aucChannelList[50];
+			UINT_8 NumOfChannel = MAX_CHN_NUM;
+			UINT_8 ucMaxChannelNum = MAX_CHN_NUM;
+			RF_CHANNEL_INFO_T aucChannelList[MAX_CHN_NUM];
 
 			kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum, &NumOfChannel, aucChannelList);
-			if (NumOfChannel > 50)
-				NumOfChannel = 50;
+			if (NumOfChannel > MAX_CHN_NUM)
+				NumOfChannel = MAX_CHN_NUM;
 
 			for (i = 0; i < NumOfChannel; i++)
 				ch[i] = (INT_32) aucChannelList[i].ucChannelNum;
@@ -11196,6 +11196,16 @@ int android_private_support_driver_cmd(IN struct net_device *prNetDev,
 	}
 
 	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
+
+	if (bytes_written == -EOPNOTSUPP) {
+		/* Report positive status */
+		INT_32 i4BytesWritten = 0;
+
+		i4BytesWritten += kalSnprintf(command + i4BytesWritten,
+					priv_cmd.total_len - i4BytesWritten,
+					"%s", "NotSupport");
+		bytes_written = i4BytesWritten;
+	}
 
 	if (bytes_written >= 0) {
 		/* priv_cmd in but no response */

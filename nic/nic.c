@@ -1292,9 +1292,6 @@ WLAN_STATUS nicActivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	prBssInfo->ucBMCWlanIndex =
 	    secPrivacySeekForBcEntry(prAdapter, prBssInfo->ucBssIndex,
 				     prBssInfo->aucOwnMacAddr, STA_REC_INDEX_NOT_FOUND, CIPHER_SUITE_NONE, 0xFF);
-
-	prBssInfo->ucBMCWlanIndexSUsed[0] = TRUE;
-
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
 
 	kalMemZero(&rCmdActivateCtrl.ucReserved, sizeof(rCmdActivateCtrl.ucReserved));

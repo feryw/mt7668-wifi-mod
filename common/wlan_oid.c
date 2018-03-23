@@ -2718,6 +2718,11 @@ wlanoidSetRemoveKey(IN P_ADAPTER_T prAdapter,
 				if (u4KeyIndex != 0)
 					ASSERT(prBssInfo->ucBMCWlanIndexS[u4KeyIndex] < WTBL_SIZE);
 				ucRemoveBCKeyAtIdx = prBssInfo->ucBMCWlanIndexS[u4KeyIndex];
+
+				prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]
+					= FALSE;
+				prBssInfo->ucBMCWlanIndexS[u4KeyIndex]
+					= WTBL_RESERVED_ENTRY;
 			}
 		}
 
@@ -5835,10 +5840,6 @@ wlanoidSetMcrWrite(IN P_ADAPTER_T prAdapter,
 			}
 		}
 
-		if (prMcrWrInfo->u4McrData & 0x00000000) {
-			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
-			prBssInfo->eBssSCO = CHNL_EXT_SCN;
-		}
 		rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 	}
 	/* 0xFFFFFFFB for HT Capability */

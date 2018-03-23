@@ -278,7 +278,9 @@
 /* 1: Enable SDIO RX Tasklet De-Aggregation
  * 0(default): Disable
  */
-#define CFG_SDIO_RX_AGG_TASKLET			     0
+#ifndef CFG_SDIO_RX_AGG_TASKLET
+#define CFG_SDIO_RX_AGG_TASKLET			0
+#endif
 
 #if (CFG_SDIO_RX_AGG == 1) && (CFG_SDIO_INTR_ENHANCE == 0)
 #error "CFG_SDIO_INTR_ENHANCE should be 1 once CFG_SDIO_RX_AGG equals to 1"
@@ -875,11 +877,11 @@
 
 /*------------------------------------------------------------------------------
  * Flags for E1 IC workaround (SPI clock divided by 2)
+ * Disabled for MT7668 since external PMIC is NOT used.
+ * TBD: Let chip info structs decide.
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH       1
-
-
+#define CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH       0
 
 /*------------------------------------------------------------------------------
  * Flags of driver EEPROM pages for QA tool

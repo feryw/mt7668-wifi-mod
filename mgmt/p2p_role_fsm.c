@@ -958,6 +958,7 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 #if (CFG_HW_WMM_BY_BSS == 1)
 	if (prP2pBssInfo->fgIsWmmInited == FALSE)
 		prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
+	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 #endif
 #if CFG_SUPPORT_DBDC
 	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
@@ -1216,6 +1217,7 @@ VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 #if (CFG_HW_WMM_BY_BSS == 1)
 	if (prP2pBssInfo->fgIsWmmInited == FALSE)
 		prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
+	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 #endif
 #if CFG_SUPPORT_DBDC
 	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
@@ -1476,6 +1478,7 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 #if (CFG_HW_WMM_BY_BSS == 1)
 		if (prP2pBssInfo->fgIsWmmInited == FALSE)
 			prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
+		prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 #endif
 #if CFG_SUPPORT_DBDC
 		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prChnlReqInfo->eBand);
@@ -1978,6 +1981,7 @@ p2pRoleFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 #if (CFG_HW_WMM_BY_BSS == 1)
 				if (prP2pBssInfo->fgIsWmmInited == FALSE)
 					prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
+				prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 #endif
 #if CFG_SUPPORT_DBDC
 				cnmDbdcEnableDecision(prAdapter,

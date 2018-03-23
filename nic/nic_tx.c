@@ -3490,7 +3490,7 @@ static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssInd
 		if (prAdapter->u4BssAbsentBitmap)
 			DBGLOG(TX, INFO, "fgIsNetAbsent END!\n");
 		QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
-		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[prMsduInfo->ucStaRecIndex]))
+		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex]))
 			QUEUE_CONCATENATE_QUEUES(prQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
 	}
 	prAdapter->u4BssAbsentBitmap &= ~BIT(ucBssIndex);

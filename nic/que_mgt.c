@@ -211,6 +211,26 @@ do { \
 } while (0)
 #endif
 
+#define RX_DIRECT_REORDER_LOCK(pad, dbg) \
+do { \
+	P_GLUE_INFO_T _glue = pad->prGlueInfo; \
+	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_LOCK %d\n", __LINE__); \
+	spin_lock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
+} while (0)
+
+#define RX_DIRECT_REORDER_UNLOCK(pad, dbg) \
+do { \
+	P_GLUE_INFO_T _glue = pad->prGlueInfo; \
+	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_UNLOCK %u\n", __LINE__); \
+	spin_unlock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+} while (0)
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -713,6 +733,7 @@ P_SW_RFB_T qmFlushRxQueues(IN P_ADAPTER_T prAdapter)
 
 	DBGLOG(QM, TRACE, "QM: Enter qmFlushRxQueues()\n");
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 	for (i = 0; i < CFG_NUM_OF_RX_BA_AGREEMENTS; i++) {
 		if (QUEUE_IS_NOT_EMPTY(&(prQM->arRxBaTable[i].rReOrderQue))) {
 			if (!prSwRfbListHead) {
@@ -732,11 +753,16 @@ P_SW_RFB_T qmFlushRxQueues(IN P_ADAPTER_T prAdapter)
 			}
 
 			QUEUE_INITIALIZE(&(prQM->arRxBaTable[i].rReOrderQue));
-
+			if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
+				DBGLOG(QM, ERROR,
+					"QM: non-null tail->next at arRxBaTable[%u]\n",
+					i);
+			}
 		} else {
 			continue;
 		}
 	}
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 
 	if (prSwRfbListTail) {
 		/* Terminate the MSDU_INFO list with a NULL pointer */
@@ -782,7 +808,7 @@ P_SW_RFB_T qmFlushStaRxQueue(IN P_ADAPTER_T prAdapter, IN UINT_32 u4StaRecIdx, I
 
 	/* Note: For each queued packet, prCurrSwRfb->eDst equals RX_PKT_DESTINATION_HOST */
 	if (prReorderQueParm) {
-
+		RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 		if (QUEUE_IS_NOT_EMPTY(&(prReorderQueParm->rReOrderQue))) {
 
 			prSwRfbListHead = (P_SW_RFB_T)
@@ -791,11 +817,17 @@ P_SW_RFB_T qmFlushStaRxQueue(IN P_ADAPTER_T prAdapter, IN UINT_32 u4StaRecIdx, I
 			    QUEUE_GET_TAIL(&(prReorderQueParm->rReOrderQue));
 
 			QUEUE_INITIALIZE(&(prReorderQueParm->rReOrderQue));
-
 		}
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 	}
 
 	if (prSwRfbListTail) {
+		if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
+			DBGLOG(QM, ERROR,
+				"QM: non-empty tail->next at STA %u TID %u\n",
+				u4StaRecIdx, u4Tid);
+		}
+
 		/* Terminate the MSDU_INFO list with a NULL pointer */
 		QM_TX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
 	}
@@ -2645,9 +2677,10 @@ VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 	prReorderQueParm->u4SeqNo = u4SeqNo;
 #endif
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm, prReturnedQue);
-
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 }
 
 VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue)
@@ -2661,8 +2694,6 @@ VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QU
 	UINT_32 u4SSN;
 	UINT_32 u4WinStart;
 	UINT_32 u4WinEnd;
-	P_QUE_T prReorderQue;
-	/* P_SW_RFB_T prReorderedSwRfb; */
 
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
@@ -2706,7 +2737,7 @@ VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QU
 #endif
 
 	/* Check whether the BA agreement exists */
-	prReorderQueParm = ((prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
+	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[prSwRfb->ucTid];
 	if (!prReorderQueParm) {
 		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
 		DBGLOG(QM, WARN, "QM: (Warning) BAR for a NULL ReorderQueParm\n");
@@ -2714,8 +2745,9 @@ VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QU
 		return;
 	}
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
 	u4SSN = (UINT_32) (prSwRfb->u2SSN);
-	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	u4WinStart = (UINT_32) (prReorderQueParm->u2WinStart);
 	u4WinEnd = (UINT_32) (prReorderQueParm->u2WinEnd);
 
@@ -2727,32 +2759,32 @@ VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
-		DBGLOG(QM, TRACE,
-		       "QM:(BAR)[%d](%ld){%d,%d}\n", prSwRfb->ucTid, u4SSN,
-		       prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
+		DBGLOG(QM, TRACE, "QM:(BAR)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
+			u4SSN, prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinEnd);
 		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm, prReturnedQue);
 	} else {
-		DBGLOG(QM, TRACE, "QM:(BAR)(%d)(%ld){%ld,%ld}\n", prSwRfb->ucTid, u4SSN, u4WinStart, u4WinEnd);
+		DBGLOG(QM, TRACE, "QM:(BAR)(%u)(%u){%u,%u}\n", prSwRfb->ucTid,
+			u4SSN, u4WinStart, u4WinEnd);
 	}
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 }
 
 VOID qmInsertReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 	IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue)
 {
-	P_QUE_T prReorderQue;
-
 	UINT_32 u4SeqNo;
 	UINT_32 u4WinStart;
 	UINT_32 u4WinEnd;
 
 	/* Start to reorder packets */
 	u4SeqNo = (UINT_32) (prSwRfb->u2SSN);
-	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	u4WinStart = (UINT_32) (prReorderQueParm->u2WinStart);
 	u4WinEnd = (UINT_32) (prReorderQueParm->u2WinEnd);
 
 	/* Debug */
-	DBGLOG(QM, LOUD, "QM:(R)[%d](%ld){%ld,%ld}\n", prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+	DBGLOG(QM, LOUD, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid, u4SeqNo,
+		u4WinStart, u4WinEnd);
 
 	/* Case 1: Fall within */
 	if			/* 0 - start - sn - end - 4095 */
@@ -2767,7 +2799,8 @@ VOID qmInsertReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 #if QM_RX_WIN_SSN_AUTO_ADVANCING
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
 			/* Let the first received packet pass the reorder check */
-			DBGLOG(QM, LOUD, "QM:(A)[%d](%ld){%ld,%ld}\n", prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+			DBGLOG(QM, LOUD, "QM:(A)[%u](%u){%u,%u}\n",
+				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
 
 			prReorderQueParm->u2WinStart = (UINT_16) u4SeqNo;
 			prReorderQueParm->u2WinEnd =
@@ -2812,8 +2845,8 @@ VOID qmInsertReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 		/* Advance the window after inserting a new tail */
 		prReorderQueParm->u2WinEnd = (UINT_16) u4SeqNo;
 		prReorderQueParm->u2WinStart =
-		    (((prReorderQueParm->u2WinEnd) - (prReorderQueParm->u2WinSize) + MAX_SEQ_NO_COUNT + 1)
-		     % MAX_SEQ_NO_COUNT);
+			(prReorderQueParm->u2WinEnd + MAX_SEQ_NO_COUNT -
+			 prReorderQueParm->u2WinSize + 1) % MAX_SEQ_NO_COUNT;
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
@@ -2834,19 +2867,22 @@ VOID qmInsertReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 	else {
 #if QM_RX_WIN_SSN_AUTO_ADVANCING && QM_RX_INIT_FALL_BEHIND_PASS
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
-			DBGLOG(QM, LOUD, "QM:(P)[%d](%ld){%ld,%ld}\n", prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
-			qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
+			DBGLOG(QM, LOUD, "QM:(P)[%u](%u){%u,%u}\n",
+				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+			qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
+				RX_DATA_REORDER_BEHIND_COUNT);
 			return;
 		}
 #endif
 
 		/* An erroneous packet */
-		DBGLOG(QM, LOUD, "QM:(D)[%d](%ld){%ld,%ld}\n", prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+		DBGLOG(QM, LOUD, "QM:(D)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
+			u4SeqNo, u4WinStart, u4WinEnd);
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-		qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
+		qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
+			RX_DATA_REORDER_BEHIND_COUNT);
 		return;
 	}
-
 }
 
 VOID qmInsertFallWithinReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
@@ -2918,6 +2954,7 @@ VOID qmInsertFallWithinReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 #if CFG_SUPPORT_RX_AMSDU
 		prReorderQueParm->fgIsAmsduDuplicated = FALSE;
 #endif
+
 		/* Update the Reorder Queue Parameters according to the found insert position */
 		if (prExaminedQueuedSwRfb == NULL) {
 			/* The received packet shall be placed at the tail */
@@ -2938,7 +2975,6 @@ VOID qmInsertFallWithinReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 		}
 
 		prReorderQue->u4NumElem++;
-
 	}
 
 }
@@ -2956,7 +2992,6 @@ VOID qmInsertFallAheadReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb
 	prReorderQueParm->fgIsAmsduDuplicated = FALSE;
 #endif
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
-
 	/* There are no packets queued in the Reorder Queue */
 	if (QUEUE_IS_EMPTY(prReorderQue)) {
 		((P_QUE_ENTRY_T) prSwRfb)->prPrev = NULL;
@@ -2969,7 +3004,6 @@ VOID qmInsertFallAheadReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb
 	}
 	prReorderQue->prTail = (P_QUE_ENTRY_T) prSwRfb;
 	prReorderQue->u4NumElem++;
-
 }
 
 VOID qmPopOutReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue,
@@ -3064,16 +3098,21 @@ VOID qmPopOutDueToFallWithin(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReor
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn = prReorderQueParm->u2WinStart;
 
-				DBGLOG(QM, TRACE, "QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-					prReorderQueParm->ucStaRecIdx, prReorderedSwRfb->ucTid,
-					prReorderQueParm->u2FirstBubbleSn, prReorderQueParm->u2WinStart,
+				DBGLOG(QM, TRACE,
+					"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%u, %u}\n",
+					prReorderQueParm->ucStaRecIdx,
+					prReorderedSwRfb->ucTid,
+					prReorderQueParm->u2FirstBubbleSn,
+					prReorderQueParm->u2WinStart,
 					prReorderQueParm->u2WinEnd);
 			}
 
 			if (fgMissing && CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
 				MSEC_TO_SYSTIME(QM_RX_BA_ENTRY_MISS_TIMEOUT_MS))) {
 
-				DBGLOG(QM, TRACE, "QM:RX BA Timout Next Tid %d SSN %d\n", prReorderQueParm->ucTid,
+				DBGLOG(QM, TRACE,
+					"QM:RX BA Timout Next Tid %u SSN %u\n",
+					prReorderQueParm->ucTid,
 					prReorderedSwRfb->u2SSN);
 				fgDequeuHead = TRUE;
 				prReorderQueParm->u2WinStart = (((prReorderedSwRfb->u2SSN) + 1) % MAX_SEQ_NO_COUNT);
@@ -3096,7 +3135,9 @@ VOID qmPopOutDueToFallWithin(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReor
 				(((P_QUE_ENTRY_T) prReorderedSwRfb)->prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			DBGLOG(QM, LOUD, "QM: [%d] %d (%d)\n", prReorderQueParm->ucTid, prReorderedSwRfb->u2PacketLen,
+			DBGLOG(QM, LOUD, "QM: [%u] %u (%u)\n",
+				prReorderQueParm->ucTid,
+				prReorderedSwRfb->u2PacketLen,
 				prReorderedSwRfb->u2SSN);
 			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb, prReturnedQue, RX_DATA_REORDER_WITHIN_COUNT);
 		}
@@ -3178,9 +3219,12 @@ VOID qmPopOutDueToFallAhead(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReord
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn = prReorderQueParm->u2WinStart;
 
-				DBGLOG(QM, TRACE, "QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-					prReorderQueParm->ucStaRecIdx, prReorderedSwRfb->ucTid,
-					prReorderQueParm->u2FirstBubbleSn, prReorderQueParm->u2WinStart,
+				DBGLOG(QM, TRACE,
+					"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%u,%u}\n",
+					prReorderQueParm->ucStaRecIdx,
+					prReorderedSwRfb->ucTid,
+					prReorderQueParm->u2FirstBubbleSn,
+					prReorderQueParm->u2WinStart,
 					prReorderQueParm->u2WinEnd);
 			}
 			break;
@@ -3196,8 +3240,10 @@ VOID qmPopOutDueToFallAhead(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReord
 				(((P_QUE_ENTRY_T) prReorderedSwRfb)->prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			DBGLOG(QM, TRACE, "QM: [%d] %d (%d)\n", prReorderQueParm->ucTid,
-				prReorderedSwRfb->u2PacketLen, prReorderedSwRfb->u2SSN);
+			DBGLOG(QM, TRACE, "QM: [%u] %u (%u)\n",
+				prReorderQueParm->ucTid,
+				prReorderedSwRfb->u2PacketLen,
+				prReorderedSwRfb->u2SSN);
 
 			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb, prReturnedQue, RX_DATA_REORDER_AHEAD_COUNT);
 		}
@@ -3271,10 +3317,12 @@ VOID qmHandleReorderBubbleTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 
 		cnmTimerStartTimer(prAdapter, &(prReorderQueParm->rReorderBubbleTimer), QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
 
-		DBGLOG(QM, TRACE, "QM:(Bub Timer Restart) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-		       prReorderQueParm->ucStaRecIdx,
-		       prReorderQueParm->ucTid,
-		       prReorderQueParm->u2FirstBubbleSn, prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
+		DBGLOG(QM, TRACE,
+			"QM:(Bub Timer Restart) STA[%u] TID[%u] BubSN[%u] Win{%u,%u}\n",
+		       prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
+		       prReorderQueParm->u2FirstBubbleSn,
+		       prReorderQueParm->u2WinStart,
+		       prReorderQueParm->u2WinEnd);
 	}
 
 }
@@ -3318,13 +3366,15 @@ VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
 	if (QUEUE_IS_EMPTY(prReorderQue)) {
 		prReorderQueParm->fgHasBubble = FALSE;
 
 		DBGLOG(QM, TRACE,
 		       "QM:(Bub Check Cancel) STA[%u] TID[%u], Bubble has been filled\n",
 		       prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
-
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 		return;
 	}
 
@@ -3333,10 +3383,12 @@ VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 
 	/* Expected bubble timeout => pop out packets before win_end */
 	if (prReorderQueParm->u2FirstBubbleSn == prReorderQueParm->u2WinStart) {
-
-		prReorderedSwRfb = (P_SW_RFB_T) QUEUE_GET_TAIL(prReorderQue);
+		prReorderedSwRfb = (P_SW_RFB_T)QUEUE_GET_TAIL(prReorderQue);
 
 		prReorderQueParm->u2WinStart = prReorderedSwRfb->u2SSN + 1;
+		if (prReorderQueParm->u2WinStart >= MAX_SEQ_NO_COUNT)
+			prReorderQueParm->u2WinStart %= MAX_SEQ_NO_COUNT;
+
 		prReorderQueParm->u2WinEnd =
 		    ((prReorderQueParm->u2WinStart) + (prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
 #if CFG_SUPPORT_RX_AMSDU
@@ -3344,13 +3396,21 @@ VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 #endif
 		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm, prReturnedQue);
 
-		DBGLOG(QM, TRACE, "QM:(Bub Flush) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-		       prReorderQueParm->ucStaRecIdx,
-		       prReorderQueParm->ucTid,
-		       prReorderQueParm->u2FirstBubbleSn, prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
+		DBGLOG(QM, TRACE,
+			"QM:(Bub Flush) STA[%u] TID[%u] BubSN[%u] Win{%u,%u}\n",
+			prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
+			prReorderQueParm->u2FirstBubbleSn,
+			prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinEnd);
 
+		prReorderQueParm->fgHasBubble = FALSE;
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		/* process prReturnedQue after unlock prReturnedQue */
 		if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
-			QM_TX_SET_NEXT_MSDU_INFO((P_SW_RFB_T) QUEUE_GET_TAIL(prReturnedQue), NULL);
+			P_QUE_ENTRY_T prTail = QUEUE_GET_TAIL(prReturnedQue);
+
+			QM_RX_SET_NEXT_SW_RFB((P_SW_RFB_T)prTail, NULL);
 
 			prSwRfb = (P_SW_RFB_T) QUEUE_GET_HEAD(prReturnedQue);
 			while (prSwRfb) {
@@ -3366,18 +3426,21 @@ VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 			DBGLOG(QM, TRACE, "QM:(Bub Flush) STA[%u] TID[%u] Pop Out 0 packet\n",
 			       prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 		}
-
-		prReorderQueParm->fgHasBubble = FALSE;
 	}
 	/* First bubble has been filled but others exist */
 	else {
 		prReorderQueParm->u2FirstBubbleSn = prReorderQueParm->u2WinStart;
-		cnmTimerStartTimer(prAdapter, &(prReorderQueParm->rReorderBubbleTimer), QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+		DBGLOG(QM, TRACE,
+			"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%u,%u}\n",
+			prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
+			prReorderQueParm->u2FirstBubbleSn,
+			prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinEnd);
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 
-		DBGLOG(QM, TRACE, "QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-		       prReorderQueParm->ucStaRecIdx,
-		       prReorderQueParm->ucTid,
-		       prReorderQueParm->u2FirstBubbleSn, prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
+		cnmTimerStartTimer(prAdapter,
+			&(prReorderQueParm->rReorderBubbleTimer),
+			QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
 	}
 
 	prMissTimeout = &g_arMissTimeout[prReorderQueParm->ucStaRecIdx][prReorderQueParm->ucTid];
@@ -3593,9 +3656,9 @@ qmAddRxBaEntry(IN P_ADAPTER_T prAdapter,
 			g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 
 			DBGLOG(QM, INFO,
-			       "QM: +RxBA(STA=%d TID=%d WinStart=%d WinEnd=%d WinSize=%d)\n",
-			       ucStaRecIdx, ucTid, prRxBaEntry->u2WinStart, prRxBaEntry->u2WinEnd,
-			       prRxBaEntry->u2WinSize);
+			       "QM: +RxBA(STA=%u TID=%u WinStart=%u WinEnd=%u WinSize=%u)\n",
+			       ucStaRecIdx, ucTid, prRxBaEntry->u2WinStart,
+			       prRxBaEntry->u2WinEnd, prRxBaEntry->u2WinSize);
 
 			/* Update the BA entry reference table for per-packet lookup */
 			prStaRec->aprRxReorderParamRefTbl[ucTid] = prRxBaEntry;
@@ -4206,10 +4269,9 @@ VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult
 
 					prStaRec->fgIsWmmSupported = TRUE;
 					prStaRec->fgIsUapsdSupported =
-						(((((P_IE_WMM_PARAM_T) pucIE)
-						->ucQosInfo) &
-						WMM_QOS_INFO_UAPSD) ?
-						TRUE : FALSE);
+				(((((P_IE_WMM_PARAM_T) pucIE)->ucQosInfo)
+				& WMM_QOS_INFO_UAPSD) ?
+				TRUE : FALSE);
 					break;
 
 				case VENDOR_OUI_SUBTYPE_WMM_INFO:
@@ -4218,10 +4280,9 @@ VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult
 
 					prStaRec->fgIsWmmSupported = TRUE;
 					prStaRec->fgIsUapsdSupported =
-						(((((P_IE_WMM_INFO_T) pucIE)
-						->ucQosInfo) &
-						WMM_QOS_INFO_UAPSD) ?
-						TRUE : FALSE);
+					(((((P_IE_WMM_INFO_T) pucIE)->ucQosInfo)
+						& WMM_QOS_INFO_UAPSD) ?
+						     TRUE : FALSE);
 					break;
 
 				default:

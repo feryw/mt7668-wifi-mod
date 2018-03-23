@@ -1550,7 +1550,7 @@ free_wdev:
 
 static void wlanDestroyWirelessDevice(void)
 {
-	set_wiphy_dev(gprWdev->wiphy, NULL);
+	/* Move set_wiphy_dev(wiphy, NULL) in wlanNetDestroy */
 	wiphy_unregister(gprWdev->wiphy);
 	wiphy_free(gprWdev->wiphy);
 	kfree(gprWdev);
@@ -1798,6 +1798,18 @@ static VOID wlanNetDestroy(struct wireless_dev *prWdev)
 	/* prGlueInfo is allocated with net_device */
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(prWdev->wiphy);
 	ASSERT(prGlueInfo);
+	/* prWdev: base AIS dev
+	 * Becase the interface dev (ex: usb_device) would be free
+	 * after un-plug event. Should set the wiphy->dev->parent which
+	 * pointer to the interface dev to NULL. Otherwise, the corresponding
+	 * system operation (poweroff, suspend) might reference it.
+	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
+	 * The trunk-ce1 does this, but the trunk seems not.
+	 * ce1 do set_wiphy_dev(prWdev->wiphy, prDev) in wlanNetCreate.
+	 * But that is after wiphy_register, and will cause exception in
+	 * wiphy_unregister(), if do not set_wiphy_dev(wiphy, NULL).
+	 */
+	set_wiphy_dev(prWdev->wiphy, NULL);
 
 	/* destroy kal OS timer */
 	kalCancelTimer(prGlueInfo);

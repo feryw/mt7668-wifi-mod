@@ -1259,6 +1259,12 @@ cnmPeerAdd(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, PUI
 	prCmd = (CMD_PEER_ADD_T *) pvSetBuffer;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;	/* for AIS only test */
+
+	if (prAisBssInfo == NULL) {
+		DBGLOG(TDLS, ERROR, "[%s]prAisBssInfo is NULL!", __func__);
+		return TDLS_STATUS_FAIL;
+	}
+
 	prStaRec = cnmGetStaRecByAddress(prAdapter, (UINT_8) prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeerMac);
 
 	if (prStaRec == NULL) {
@@ -1338,6 +1344,11 @@ cnmPeerUpdate(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, 
 	prCmd = (CMD_PEER_UPDATE_T *) pvSetBuffer;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
+
+	if (prAisBssInfo == NULL) {
+		DBGLOG(TDLS, ERROR, "[%s]prAisBssInfo is NULL!", __func__);
+		return TDLS_STATUS_FAIL;
+	}
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter, (UINT_8) prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeerMac);
 
