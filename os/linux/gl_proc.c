@@ -82,7 +82,11 @@
 ********************************************************************************
 */
 #define PROC_MCR_ACCESS                         "mcr"
-#define PROC_ROOT_NAME							"wlan"
+#if defined(_HIF_USB)
+#define PROC_ROOT_NAME "wlan_usb"
+#else
+#define PROC_ROOT_NAME "wlan"
+#endif
 
 #if CFG_SUPPORT_DEBUG_FS
 #define PROC_ROAM_PARAM							"roam_param"

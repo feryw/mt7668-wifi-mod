@@ -4969,7 +4969,8 @@ int kalMetInitProcfs(IN P_GLUE_INFO_T prGlueInfo)
 	/*
 	 * Directory: Root (/proc/net/wlan0)
 	 */
-	pMetProcDir = proc_mkdir("wlan0", init_net.proc_net);
+	pMetProcDir = proc_mkdir(prGlueInfo->prDevHandler->name,
+		init_net.proc_net);
 	if (pMetProcDir == NULL)
 		return -ENOENT;
 	/*

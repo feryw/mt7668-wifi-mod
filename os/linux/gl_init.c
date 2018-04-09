@@ -1965,6 +1965,12 @@ VOID wlanGetParseConfig(P_ADAPTER_T prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
+#if defined(_HIF_USB)
+		if (kalRequestFirmware("wifi_usb.cfg", pucConfigBuf,
+			WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			prAdapter->prGlueInfo->prDev) == 0) {
+		} else
+#endif
 		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
 					 WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen, prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
