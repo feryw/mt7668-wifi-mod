@@ -348,6 +348,7 @@ typedef struct _RX_BA_ENTRY_T {
 	UINT_8 u8LastAmsduSubIdx;
 	BOOL fgIsAmsduDuplicated;
 #endif
+	BOOLEAN fgFirstSnToWinStart;
 } RX_BA_ENTRY_T, *P_RX_BA_ENTRY_T;
 
 typedef UINT_32(*PFN_DEQUEUE_FUNCTION) (IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue, IN UINT_8 ucTC, IN UINT_32

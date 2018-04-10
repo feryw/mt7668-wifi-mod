@@ -9665,6 +9665,8 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	UINT_8 ucKeyIdx = 0;
 	UINT_8 ucRpyOffload = 0;
 #endif
+	P_STA_RECORD_T prStaRec;
+	P_RX_BA_ENTRY_T prRxBaEntry;
 
 	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
 		wlanKeepFullPwr(prGlueInfo->prAdapter, FALSE);
@@ -9751,6 +9753,24 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 			nicUpdateBss(prGlueInfo->prAdapter, idx);
 		}
 	}
+
+	/* After resuming, WinStart will unsync with AP's SN.
+	  * Set fgFirstSnToWinStart for all valid BA entry before suspend.
+	 */
+	for (idx = 0; idx < CFG_STA_REC_NUM; idx++) {
+		prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter, idx);
+		if (!prStaRec)
+			continue;
+
+		for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
+			prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[i];
+			if (!prRxBaEntry || !(prRxBaEntry->fgIsValid))
+				continue;
+
+			prRxBaEntry->fgFirstSnToWinStart = TRUE;
+		}
+	}
+
 }
 
 /*----------------------------------------------------------------------------*/
