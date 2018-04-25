@@ -6748,6 +6748,9 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucAp2gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "Ap2gBw", MAX_BW_40MHZ);
 	prWifiVar->ucAp5gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "Ap5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (UINT_8) wlanCfgGetUint32(prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
+	prWifiVar->ucApAllowHtVhtTkip =
+		(UINT_8) wlanCfgGetUint32(prAdapter,
+			"ApAllowHtVhtTkip", FEATURE_DISABLED);
 
 	prWifiVar->ucNSS = (UINT_8) wlanCfgGetUint32(prAdapter, "Nss", 2);
 
@@ -9755,7 +9758,7 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	}
 
 	/* After resuming, WinStart will unsync with AP's SN.
-	  * Set fgFirstSnToWinStart for all valid BA entry before suspend.
+	 * Set fgFirstSnToWinStart for all valid BA entry before suspend.
 	 */
 	for (idx = 0; idx < CFG_STA_REC_NUM; idx++) {
 		prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter, idx);
@@ -9770,7 +9773,6 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 			prRxBaEntry->fgFirstSnToWinStart = TRUE;
 		}
 	}
-
 }
 
 /*----------------------------------------------------------------------------*/

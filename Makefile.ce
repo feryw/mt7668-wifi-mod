@@ -173,9 +173,16 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 
 CFG_CHIP_RESET_SUPPORT=0
 
+# 1: Enable SDIO RX Tasklet De-Aggregation
+# 0: Disable (default)
+CFG_SDIO_RX_AGG_TASKLET=0
+
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
+CFG_DRIVER_INITIAL_RUNNING_MODE=0
+CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
 endif
+
 
 
 #/***** Manage configs into compile options ******/
@@ -255,6 +262,9 @@ ifneq ($(CFG_CHIP_RESET_SUPPORT),)
 PLATFORM_FLAGS += -DCFG_CHIP_RESET_SUPPORT=$(CFG_CHIP_RESET_SUPPORT)
 endif
 
+ifneq ($(CFG_SDIO_RX_AGG_TASKLET),)
+PLATFORM_FLAGS += -DCFG_SDIO_RX_AGG_TASKLET=$(CFG_SDIO_RX_AGG_TASKLET)
+endif
 ##############################################################
 # Compile settings
 ##############################################################

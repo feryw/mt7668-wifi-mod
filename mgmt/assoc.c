@@ -1130,6 +1130,7 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 	P_RSN_INFO_ELEM_T prIeRsn = (P_RSN_INFO_ELEM_T) NULL;
 	P_IE_SUPPORTED_RATE_T prIeSupportedRate = (P_IE_SUPPORTED_RATE_T) NULL;
 	P_IE_EXT_SUPPORTED_RATE_T prIeExtSupportedRate = (P_IE_EXT_SUPPORTED_RATE_T) NULL;
+	P_WIFI_VAR_T prWifiVar = NULL;
 	PUINT_8 pucIE, pucIEStart;
 	UINT_16 u2IELength;
 	UINT_16 u2Offset = 0;
@@ -1138,13 +1139,15 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 	UINT_16 u2BSSBasicRateSet;
 	UINT_8 ucFixedFieldLength;
 	BOOLEAN fgIsUnknownBssBasicRate;
-	BOOLEAN fgIsHT = FALSE, fgIsTKIP = FALSE;
+	BOOLEAN fgIsTKIP = FALSE;
 	UINT_32 i;
 
 	if (!prAdapter || !prSwRfb || !pu2StatusCode) {
 		DBGLOG(SAA, WARN, "Invalid parameters, ignore this pkt!\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	prWifiVar = &(prAdapter->rWifiVar);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
@@ -1232,7 +1235,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 			break;
 		case ELEM_ID_HT_CAP:
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
-			fgIsHT = TRUE;
 			break;
 		case ELEM_ID_VHT_CAP:
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
@@ -1294,6 +1296,13 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 			break;
 		}
 	}			/* end of IE_FOR_EACH */
+
+	/*
+	 * According to TGn & TGac 4.2.44, AP should not bring HT/VHT Cap IE in
+	 * the IE of Assoc resp, if the STA request to use TKIP cipher
+	 */
+	if (fgIsTKIP && !prWifiVar->ucApAllowHtVhtTkip)
+		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_VHT | PHY_TYPE_BIT_HT);
 
 	/* parsing for WMM related information (2010/12/21) */
 	mqmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
@@ -1398,9 +1407,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 				      prStaRec->ucBssIndex);
 	}
 #endif
-
-	if (fgIsHT && fgIsTKIP && prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		u2StatusCode = STATUS_CODE_REQ_DECLINED;
 
 	*pu2StatusCode = u2StatusCode;
 

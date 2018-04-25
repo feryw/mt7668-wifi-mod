@@ -2679,22 +2679,21 @@ VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 #endif
 
 	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
-
 	/* After resuming, WinStart and WinEnd are obsolete and unsync
 	 * with AP's SN. So assign the SN of first packet to WinStart
 	 * as "Fall Within" case.
 	 */
 	if (prReorderQueParm->fgFirstSnToWinStart) {
 		DBGLOG(QM, INFO,
-			"[%u] First resumed SN(%u) reset Window{%u,%u}\n",
-			prSwRfb->ucTid, prSwRfb->u2SSN,
-			prReorderQueParm->u2WinStart,
-			prReorderQueParm->u2WinEnd);
+		       "[%u] First resumed SN(%u) reset Window{%u,%u}\n",
+		       prSwRfb->ucTid, prSwRfb->u2SSN,
+		       prReorderQueParm->u2WinStart,
+		       prReorderQueParm->u2WinEnd);
 
 		prReorderQueParm->u2WinStart = prSwRfb->u2SSN;
 		prReorderQueParm->u2WinEnd =
-			((prReorderQueParm->u2WinStart) +
-			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+		    ((prReorderQueParm->u2WinStart) +
+		     (prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
 		prReorderQueParm->fgFirstSnToWinStart = FALSE;
 	}
 
@@ -4289,9 +4288,9 @@ VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult
 
 					prStaRec->fgIsWmmSupported = TRUE;
 					prStaRec->fgIsUapsdSupported =
-				(((((P_IE_WMM_PARAM_T) pucIE)->ucQosInfo)
-				& WMM_QOS_INFO_UAPSD) ?
-				TRUE : FALSE);
+					(((((P_IE_WMM_PARAM_T)pucIE)->ucQosInfo)
+					& WMM_QOS_INFO_UAPSD) ?
+					TRUE : FALSE);
 					break;
 
 				case VENDOR_OUI_SUBTYPE_WMM_INFO:
@@ -4301,7 +4300,7 @@ VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult
 					prStaRec->fgIsWmmSupported = TRUE;
 					prStaRec->fgIsUapsdSupported =
 					(((((P_IE_WMM_INFO_T) pucIE)->ucQosInfo)
-						& WMM_QOS_INFO_UAPSD) ?
+					& WMM_QOS_INFO_UAPSD) ?
 						     TRUE : FALSE);
 					break;
 

@@ -737,6 +737,14 @@ typedef struct _WIFI_VAR_T {
 	/* Otherwise align cfg80211 */
 	UINT_8 ucApChnlDefFromCfg;
 
+	/*
+	 * According TGn/TGac 4.2.44, AP should not connect
+	 * to TKIP client with * HT/VHT capabilities. We leave
+	 * a wifi.cfg item for user to decide whether * to
+	 * enable HT/VHT capabilities in that case
+	 */
+	UINT_8 ucApAllowHtVhtTkip;
+
 	UINT_8 ucNSS;
 
 	UINT_8 ucRxMaxMpduLen;
