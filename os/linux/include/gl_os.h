@@ -249,6 +249,10 @@
 #endif
 #include <linux/time.h>
 
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+#include "gl_gpio.h"
+#endif
+
 extern BOOLEAN fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination *p_mtk_iface_combinations_sta;
 extern const INT_32 mtk_iface_combinations_sta_num;
@@ -640,6 +644,9 @@ struct _GLUE_INFO_T {
 	INT_32 i4RssiCache;
 	UINT_32 u4LinkSpeedCache;
 
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	struct GPIO_GLUE_INFO *prGpioGlueInfo;
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id, struct pt_regs *regs);

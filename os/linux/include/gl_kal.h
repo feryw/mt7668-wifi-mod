@@ -1230,6 +1230,7 @@ WLAN_STATUS kalCloseCorDumpFile(BOOLEAN fgIsN9);
 #if CFG_WOW_SUPPORT
 VOID kalWowInit(IN P_GLUE_INFO_T prGlueInfo);
 VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable);
+VOID kalWowUninit(IN P_GLUE_INFO_T prGlueInfo);
 #endif
 
 int main_thread(void *data);

@@ -78,6 +78,9 @@
 #include <net/netlink.h>
 #endif
 #include <linux/ctype.h>
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+#include <linux/interrupt.h>
+#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -5089,10 +5092,173 @@ WLAN_STATUS kalCloseCorDumpFile(BOOLEAN fgIsN9)
 #endif
 
 #if CFG_WOW_SUPPORT
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+static irqreturn_t wowHandler(int irq, void *data)
+{
+
+	disable_irq_nosync(irq);
+
+	return IRQ_WAKE_THREAD;
+}
+
+static irqreturn_t wowThreadFn(int irq, void *data)
+{
+	DBGLOG(INIT, ERROR, "WOW wakup interrupt come in!!\n");
+
+	return IRQ_HANDLED;
+}
+
+INT_32 wlanWowIrqEnable(IN struct GPIO_GLUE_INFO *prGpioGlueInfo)
+{
+	struct GPIO_CTRL_INFO *wowPinInfo = NULL;
+	INT_32 ret = 0;
+
+	if (prGpioGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s parameter check fail\n", __func__);
+		return -EINVAL;
+	}
+
+	wowPinInfo = &prGpioGlueInfo->pinInfo[WLAN_GPIO_WOW_PIN];
+
+	if (wowPinInfo->irq <= 0) {
+		DBGLOG(INIT, ERROR, "%s no IRQ specified\n", __func__);
+		return -EINVAL;
+	}
+
+	enable_irq(wowPinInfo->irq);
+
+	ret = enable_irq_wake(wowPinInfo->irq);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "%s enable_irq_wake(%d) fail(%d)!\n",
+				__func__, wowPinInfo->irq, ret);
+	} else {
+		DBGLOG(INIT, STATE, "%s enable_irq_wake(%d) success!\n",
+				__func__, wowPinInfo->irq);
+	}
+
+	return ret;
+}
+
+INT_32 wlanWowIrqDisable(IN struct GPIO_GLUE_INFO *prGpioGlueInfo)
+{
+	struct GPIO_CTRL_INFO *wowPinInfo = NULL;
+	INT_32 ret = 0;
+
+	if (prGpioGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s parameter check fail\n", __func__);
+		return -EINVAL;
+	}
+
+	wowPinInfo = &prGpioGlueInfo->pinInfo[WLAN_GPIO_WOW_PIN];
+
+	if (wowPinInfo->irq <= 0) {
+		DBGLOG(INIT, ERROR, "%s no IRQ specified\n", __func__);
+		return -EINVAL;
+	}
+
+	DBGLOG(INIT, STATE, "%s get wow irq(%d) suscessfully\n",
+		__func__, wowPinInfo->irq);
+
+	disable_irq(wowPinInfo->irq);
+
+	DBGLOG(INIT, STATE, "%s disable_irq success!\n", __func__);
+
+	return ret;
+}
+
+INT_32 wlanWowIrqInit(IN struct GPIO_GLUE_INFO *prGpioGlueInfo)
+{
+	struct GPIO_CTRL_INFO *wowPinInfo = NULL;
+	INT_32 ret = 0;
+
+	if (prGpioGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s parameter check fail\n", __func__);
+		return -EINVAL;
+	}
+
+	wowPinInfo = &prGpioGlueInfo->pinInfo[WLAN_GPIO_WOW_PIN];
+
+	if (wowPinInfo->irq <= 0) {
+		DBGLOG(INIT, ERROR, "%s no IRQ specified\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = request_threaded_irq(wowPinInfo->irq,
+					  wowHandler, wowThreadFn,
+					  IRQF_ONESHOT | IRQF_TRIGGER_LOW,
+					  wowPinInfo->pinName,
+					  NULL);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "%s failed to request IRQ\n", __func__);
+		return ret;
+	}
+
+	disable_irq(wowPinInfo->irq);
+	DBGLOG(INIT, STATE, "%s disable_irq(%d) !\n",
+				__func__, wowPinInfo->irq);
+
+	return ret;
+}
+
+INT_32 wlanWowIrqFree(IN struct GPIO_GLUE_INFO *prGpioGlueInfo)
+{
+	struct GPIO_CTRL_INFO *wowPinInfo = NULL;
+	INT_32 ret = 0;
+
+	if (prGpioGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s prGpioGlueInfo is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	wowPinInfo = &prGpioGlueInfo->pinInfo[WLAN_GPIO_WOW_PIN];
+
+	if (wowPinInfo->irq <= 0) {
+		DBGLOG(INIT, ERROR, "%s no IRQ specified\n", __func__);
+		return -EINVAL;
+	}
+
+	free_irq(wowPinInfo->irq, NULL);
+
+	DBGLOG(INIT, STATE, "%s free_irq(%d) !\n",
+				__func__, wowPinInfo->irq);
+
+	return ret;
+}
+
+#endif /* CFG_USE_LINUX_GPIO_GLUE */
+
+VOID kalWowUninit(IN P_GLUE_INFO_T prGlueInfo)
+{
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s prGlueInfo is NULL\n", __func__);
+		return;
+	}
+
+	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort, sizeof(WOW_PORT_T));
+
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	wlanWowIrqFree(prGlueInfo->prGpioGlueInfo);
+
+	DBGLOG(INIT, STATE, "%s wow module uninitialized end!\n", __func__);
+#endif /* CFG_USE_LINUX_GPIO_GLUE */
+}
+
 VOID kalWowInit(IN P_GLUE_INFO_T prGlueInfo)
 {
-	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort, sizeof(WOW_PORT_T));
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "%s prGlueInfo is NULL\n", __func__);
+		return;
+	}
+
+	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort,
+		sizeof(WOW_PORT_T));
 	prGlueInfo->prAdapter->rWowCtrl.ucReason = INVALID_WOW_WAKE_UP_REASON;
+
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	wlanWowIrqInit(prGlueInfo->prGpioGlueInfo);
+
+	DBGLOG(INIT, STATE, "%s wow module initialized end!\n", __func__);
+#endif /* CFG_USE_LINUX_GPIO_GLUE */
 }
 
 VOID kalWowCmdEventSetCb(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
@@ -5244,6 +5410,10 @@ VOID kalWowProcess(IN P_GLUE_INFO_T prGlueInfo, UINT_8 enable)
 		wait++;
 	}
 
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	if (enable == 1)
+		wlanWowIrqEnable(prGlueInfo->prGpioGlueInfo);
+#endif
 }
 #endif
 

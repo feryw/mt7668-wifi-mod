@@ -1153,6 +1153,16 @@ static int wlanInit(struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 static void wlanUninit(struct net_device *prDev)
 {
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	if (!prDev)
+		return;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
+
+#if CFG_WOW_SUPPORT
+	kalWowUninit(prGlueInfo);
+#endif
 }				/* end of wlanUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -1753,6 +1763,10 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 
 	/* init CSI wait queue  */
 	init_waitqueue_head(&(prGlueInfo->prAdapter->rCsiData.waitq));
+
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	prGlueInfo->prGpioGlueInfo = wlanPlatformCfgGet();
+#endif
 
 	return prWdev;
 
@@ -2861,6 +2875,11 @@ static int initWlan(void)
 		glP2pCreateWirelessDevice((P_GLUE_INFO_T) wiphy_priv(gprWdev->wiphy));
 	gprP2pWdev = gprP2pRoleWdev[0];/* P2PDev and P2PRole[0] share the same Wdev */
 
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+		/* Allocate platform resource */
+		wlanPlatformCfgInit();
+#endif
+
 	ret = ((glRegisterBus(wlanProbe, wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 
 	if (ret == -EIO) {
@@ -2894,6 +2913,12 @@ static VOID exitWlan(void)
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
 #endif
+
+#ifdef CFG_USE_LINUX_GPIO_GLUE
+	/* Allocate platform resource */
+	wlanPlatformCfgDestroy();
+#endif
+
 	DBGLOG(INIT, INFO, "exitWlan\n");
 
 }				/* end of exitWlan() */

@@ -183,7 +183,9 @@ CFG_DRIVER_INITIAL_RUNNING_MODE=0
 CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
 endif
 
-
+ifeq ($(WOW_WAKE_UP), 1)
+PLATFORM_FLAGS += -DCFG_USE_LINUX_GPIO_GLUE=1
+endif
 
 #/***** Manage configs into compile options ******/
 ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_STA),)

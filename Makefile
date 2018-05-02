@@ -163,6 +163,7 @@ NIC_OBJS := $(NIC_DIR)nic.o \
 			$(NIC_DIR)nic_umac.o
 
 OS_OBJS :=	$(OS_DIR)gl_init.o \
+			$(OS_DIR)gl_gpio.o \
 			$(OS_DIR)gl_kal.o  \
 			$(OS_DIR)gl_bow.o \
 			$(OS_DIR)gl_wext.o \
