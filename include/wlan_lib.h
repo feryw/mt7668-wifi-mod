@@ -1352,7 +1352,7 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS wlanAccessRegisterStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSeqNum,
 			IN UINT_8 ucSetQuery, IN PVOID prEvent, IN UINT_32 u4EventLen);
 
-VOID wlanSetChipEcoInfo(IN P_ADAPTER_T prAdapter);
+WLAN_STATUS wlanSetChipEcoInfo(IN P_ADAPTER_T prAdapter);
 
 VOID wlanNotifyFwSuspend(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN fgSuspend);
 

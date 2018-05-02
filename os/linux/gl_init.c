@@ -1187,7 +1187,6 @@ static int wlanOpen(struct net_device *prDev)
 static int wlanStop(struct net_device *prDev)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
-	struct cfg80211_scan_request *prScanRequest = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1198,13 +1197,10 @@ static int wlanStop(struct net_device *prDev)
 	/* CFG80211 down */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prGlueInfo->prScanRequest != NULL) {
-		prScanRequest = prGlueInfo->prScanRequest;
+		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
 		prGlueInfo->prScanRequest = NULL;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-	if (prScanRequest)
-		kalCfg80211ScanDone(prScanRequest, TRUE);
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 	/* zero clear old acs information */
@@ -1216,7 +1212,6 @@ static int wlanStop(struct net_device *prDev)
 
 	return 0;		/* success */
 }				/* end of wlanStop() */
-
 #if CFG_SUPPORT_SNIFFER
 static int wlanMonOpen(struct net_device *prDev)
 {
@@ -2360,6 +2355,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (wlanAdapterStart(prAdapter, prRegInfo) != WLAN_STATUS_SUCCESS)
 			i4Status = -EIO;
 
+		if (i4Status < 0)
+			break;
+
 		if (HAL_IS_TX_DIRECT(prAdapter)) {
 			if (!prAdapter->fgTxDirectInited) {
 				skb_queue_head_init(&prAdapter->rTxDirectSkbQueue);
@@ -2377,9 +2375,6 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 
 		/* kfree(prRegInfo); */
-
-		if (i4Status < 0)
-			break;
 
 		INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
 		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork, halDeAggRxPktWorker);
@@ -2432,30 +2427,19 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		rlmDomainSendInfoToFirmware(prAdapter);
 
 		/* set MAC address */
-		{
-			WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
-			struct sockaddr MacAddr;
-			UINT_32 u4SetInfoLen = 0;
+		if (prAdapter && prAdapter->rWifiVar.aucMacAddress) {
+			kalMemCopy(prGlueInfo->prDevHandler->dev_addr,
+			prAdapter->rWifiVar.aucMacAddress, ETH_ALEN);
+			kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
+			prGlueInfo->prDevHandler->dev_addr, ETH_ALEN);
 
-			rStatus = kalIoctl(prGlueInfo,
-					   wlanoidQueryCurrentAddr,
-					   &MacAddr.sa_data, PARAM_MAC_ADDR_LEN, TRUE, TRUE, TRUE, &u4SetInfoLen);
-
-			if (rStatus != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, WARN, "set MAC addr fail 0x%lx\n", rStatus);
-				prGlueInfo->u4ReadyFlag = 0;
-			} else {
-				kalMemCopy(prGlueInfo->prDevHandler->dev_addr, &MacAddr.sa_data, ETH_ALEN);
-				kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
-					   prGlueInfo->prDevHandler->dev_addr, ETH_ALEN);
-
-				/* card is ready */
-				prGlueInfo->u4ReadyFlag = 1;
 #if CFG_SHOW_MACADDR_SOURCE
-				DBGLOG(INIT, INFO, "MAC address: " MACSTR, MAC2STR(&MacAddr.sa_data));
+			DBGLOG(INIT, ERROR, "MAC address: " MACSTR,
+			MAC2STR(prAdapter->rWifiVar.aucMacAddress));
 #endif
-			}
-		}
+
+		} else
+			prGlueInfo->u4ReadyFlag = 0;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		/* set HW checksum offload */
@@ -2613,15 +2597,8 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 			}
 		}
 #endif
-
-		DBGLOG(INIT, LOUD, "wlanProbe: probe success\n");
-	} else {
-		if (prGlueInfo == NULL)
-			return -1;
-
-		glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
-		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
-	}
+		/* card is ready */
+		prGlueInfo->u4ReadyFlag = 1;
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 	ucRpyDetectOffload = prAdapter->rWifiVar.ucRpyDetectOffload;
@@ -2636,6 +2613,14 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 			GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF);
 	}
 #endif
+		DBGLOG(INIT, LOUD, "wlanProbe: probe success\n");
+	} else {
+		if (prGlueInfo == NULL)
+			return -1;
+
+		glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
+		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
+	}
 
 	return i4Status;
 }				/* end of wlanProbe() */
@@ -2687,6 +2672,8 @@ static VOID wlanRemove(VOID)
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+
+	prGlueInfo->u4ReadyFlag = 0;
 
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsNetRegistered) {

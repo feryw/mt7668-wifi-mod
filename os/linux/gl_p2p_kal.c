@@ -1080,21 +1080,33 @@ VOID kalP2PIndicateScanDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex, 
 		DBGLOG(INIT, INFO, "[p2p] scan complete %p\n", prP2pGlueDevInfo->prScanRequest);
 
 		KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		if (prP2pGlueDevInfo->prScanRequest != NULL) {
+		/* The cfg80211_scan_done may be interruptd by the p2pStop.
+		 * And the following kernel process calls __cfg80211_scan_done,
+		 * that causes some issue. the temporary solution is putting
+		 * the scan_done inside the lock. ref: change 1022227.
+		 */
+		if (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE) {
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			prScanRequest = prP2pGlueDevInfo->prScanRequest;
-			prP2pGlueDevInfo->prScanRequest = NULL;
-		}
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		if ((prScanRequest != NULL) && (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE)) {
-
-			/* report all queued beacon/probe response frames  to upper layer */
-			scanReportBss2Cfg80211(prGlueInfo->prAdapter, BSS_TYPE_P2P_DEVICE, NULL);
-
-			DBGLOG(INIT, INFO, "DBG:p2p_cfg_scan_done\n");
-			kalCfg80211ScanDone(prScanRequest, fgIsAbort);
+			if (prScanRequest != NULL) {
+				scanReportBss2Cfg80211(prGlueInfo->prAdapter,
+						BSS_TYPE_P2P_DEVICE, NULL);
+			}
+			/* scanReportBss2Cfg80211() do many works, so don't put
+			 * it inside the lock. And its main function puts bss
+			 * to cfg80211, that isn't related to scan_req.
+			 */
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			prScanRequest = prP2pGlueDevInfo->prScanRequest;
+			if (prScanRequest != NULL) {
+				DBGLOG(INIT, INFO, "DBG:p2p_cfg_scan_done\n");
+				kalCfg80211ScanDone(prScanRequest, fgIsAbort);
+				prP2pGlueDevInfo->prScanRequest = NULL;
+			}
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		}
 		KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
 

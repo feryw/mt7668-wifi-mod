@@ -204,6 +204,12 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 	dev = interface_to_usbdev(intf);
 	dev = usb_get_dev(dev);
 
+	/* Prevent un-expected usb operation  */
+	if (g_fgDriverProbed) {
+		DBGLOG(HAL, ERROR, "wlan_probe(): Device already probed!!\n");
+		return -EBUSY;
+	}
+
 	DBGLOG(HAL, EVENT, "wlan_probe()\n");
 	if (pfWlanProbe((PVOID) intf, (PVOID) id->driver_info) != WLAN_STATUS_SUCCESS) {
 		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */

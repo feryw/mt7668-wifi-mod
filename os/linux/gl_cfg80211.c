@@ -827,6 +827,11 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	if (prGlueInfo->prScanRequest != NULL)
 		return -EBUSY;
 
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "prGlueInfo->u4ReadyFlag == 0\n");
+		return -EFAULT;
+	}
+
 	if (request->n_ssids == 0) {
 		rScanRequest.u4SsidNum = 0;
 	} else if (request->n_ssids <= SCN_SSID_MAX_NUM) {
@@ -1411,6 +1416,11 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bo
 
 	if (!prGlueInfo->prAdapter->prAisBssInfo)
 		return -EFAULT;
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "prGlueInfo->u4ReadyFlag == 0\n");
+		return -EFAULT;
+	}
 
 	if (enabled) {
 		if (timeout == -1)
