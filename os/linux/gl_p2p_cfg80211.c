@@ -283,10 +283,15 @@ static void mtk_vif_destructor(struct net_device *dev)
 	}
 }
 
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 						const char *name, unsigned char name_assign_type,
-						enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+						enum nl80211_iftype type, struct vif_params *params)
+#elif KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+	struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
+							const char *name, unsigned char name_assign_type,
+							enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+
 #else
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 						const char *name,
@@ -379,7 +384,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (prNewNetDevice->ieee80211_ptr)
 			prNewNetDevice->ieee80211_ptr->iftype = type;
 		/* register destructor function for virtual interface */
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+		prNewNetDevice->priv_destructor = mtk_vif_destructor;
+#else
 		prNewNetDevice->destructor = mtk_vif_destructor;
+#endif
 
 		gprP2pRoleWdev[u4Idx] = prWdev;
 		/*prP2pInfo->prRoleWdev[0] = prWdev;*//* TH3 multiple P2P */
@@ -2612,10 +2621,17 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *dev, u16
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_disconnect */
 
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+int
+mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
+			      IN struct net_device *ndev,
+			      IN enum nl80211_iftype type, IN struct vif_params *params)
+#else
 int
 mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			      IN struct net_device *ndev,
 			      IN enum nl80211_iftype type, IN u32 *flags, IN struct vif_params *params)
+#endif
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
 	INT_32 i4Rslt = -EINVAL;

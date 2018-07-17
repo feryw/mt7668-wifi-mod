@@ -369,7 +369,11 @@ extern const UINT_32 mtk_cipher_suites[5];
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
 
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
+						const char *name, unsigned char name_assign_type,
+						enum nl80211_iftype type, struct vif_params *params);
+#elif KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 						const char *name, unsigned char name_assign_type,
 						enum nl80211_iftype type, u32 *flags, struct vif_params *params);
@@ -379,10 +383,17 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 						enum nl80211_iftype type, u32 *flags, struct vif_params *params);
 #endif
 
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+int
+mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
+			      struct net_device *ndev,
+			      enum nl80211_iftype type, struct vif_params *params);
+#else
 int
 mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
 			      struct net_device *ndev,
 			      enum nl80211_iftype type, u32 *flags, struct vif_params *params);
+#endif
 
 int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev);
 

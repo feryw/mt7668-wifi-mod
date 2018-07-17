@@ -955,7 +955,12 @@ VOID wlanSchedScanStoppedWorkQueue(struct work_struct *work)
 
 	/* 2. indication to cfg80211 */
 	/* 20150205 change cfg80211_sched_scan_stopped to work queue due to sched_scan_mtx dead lock issue */
+	#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+	/*We not support sched scan on 7668, so just change reqid to 0*/
+	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo), 0);
+	#else
 	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo));
+	#endif
 	DBGLOG(SCN, INFO,
 	       "cfg80211_sched_scan_stopped event send done WorkQueue thread return from wlanSchedScanStoppedWorkQueue\n");
 	return;
@@ -2402,6 +2407,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		/* TODO the change schedule API shall be provided by OS glue layer */
 		/* Switch the Wi-Fi task priority to higher priority and change the scheduling method */
+		#if KERNEL_VERSION(4, 14, 0) > CFG80211_VERSION_CODE
 		if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
 			struct sched_param param = {.sched_priority = prGlueInfo->prAdapter->rWifiVar.ucThreadPriority
 			};
@@ -2418,6 +2424,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 			       prGlueInfo->prAdapter->rWifiVar.ucThreadPriority,
 			       prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling);
 		}
+		#endif
 
 		g_u4HaltFlag = 0;
 
