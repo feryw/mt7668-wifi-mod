@@ -3485,6 +3485,18 @@ UINT_32 kalGetTxPendingCmdCount(IN P_GLUE_INFO_T prGlueInfo)
 */
 /*----------------------------------------------------------------------------*/
 
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void (*prTimerHandlerHack)(unsigned long);
+
+static void prTimerHandlerWrapper(struct timer_list *timer)
+{
+
+	P_GLUE_INFO_T prGlueInfo = container_of(timer, GLUE_INFO_T, tickfn);
+
+	prTimerHandlerHack((unsigned long) prGlueInfo);
+}
+#endif
+
 /* static struct timer_list tickfn; */
 
 VOID kalOsTimerInitialize(IN P_GLUE_INFO_T prGlueInfo, IN PVOID prTimerHandler)
@@ -3492,9 +3504,15 @@ VOID kalOsTimerInitialize(IN P_GLUE_INFO_T prGlueInfo, IN PVOID prTimerHandler)
 
 	ASSERT(prGlueInfo);
 
+	prTimerHandlerHack = prTimerHandler;
+
+#if KERNEL_VERSION(4, 15, 0) > LINUX_VERSION_CODE
 	init_timer(&(prGlueInfo->tickfn));
 	prGlueInfo->tickfn.function = prTimerHandler;
 	prGlueInfo->tickfn.data = (unsigned long)prGlueInfo;
+#else
+	timer_setup(&prGlueInfo->tickfn, prTimerHandlerWrapper, 0);
+#endif
 }
 
 /* Todo */
