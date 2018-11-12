@@ -266,3 +266,14 @@ PREALLOC_OBJS := prealloc/prealloc.o
 $(MODULE_NAME_PREALLOC)-objs += $(PREALLOC_OBJS)
 obj-m += $(MODULE_NAME_PREALLOC).o
 endif
+
+all:
+	$(MAKE) -C $(KERNEL_SRC) M=`pwd`
+
+modules_install:
+	$(MAKE) -C $(KERNEL_SRC) M=`pwd` modules_install
+
+clean:
+	rm -f *.o *~ core .depend .*.cmd *.ko *.mod.c
+	rm -f Module.markers Module.symvers modules.order
+	rm -rf .tmp_versions Modules.symvers
