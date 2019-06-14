@@ -3504,7 +3504,9 @@ VOID kalOsTimerInitialize(IN P_GLUE_INFO_T prGlueInfo, IN PVOID prTimerHandler)
 
 	ASSERT(prGlueInfo);
 
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
 	prTimerHandlerHack = prTimerHandler;
+#endif
 
 #if KERNEL_VERSION(4, 15, 0) > LINUX_VERSION_CODE
 	init_timer(&(prGlueInfo->tickfn));
@@ -4539,7 +4541,7 @@ void *pMetGlobalData;
 VOID kalSchedScanResults(IN P_GLUE_INFO_T prGlueInfo)
 {
 	ASSERT(prGlueInfo);
-	
+
 	#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
 	/*We not support sched scan on 7668, so just set reqid to 0*/
 	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo), 0);
