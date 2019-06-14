@@ -238,7 +238,7 @@
 
 #if CFG_ENABLE_AEE_MSG
 #ifdef CONFIG_ANDROID
-#include <mt-plat/aee.h>
+#include <soc/mt-plat/aee.h>
 #else
 #include <soc/mt-plat/aee.h>
 #endif
