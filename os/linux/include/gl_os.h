@@ -240,7 +240,7 @@
 #ifdef CONFIG_ANDROID
 #include <mt-plat/aee.h>
 #else
-#include <linux/aee.h>
+#include <soc/mt-plat/aee.h>
 #endif
 #endif
 
