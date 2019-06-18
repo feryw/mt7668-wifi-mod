@@ -488,7 +488,9 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 			wlanUpdateNetworkAddress(prAdapter);
 
 			/* 8. Apply Network Address */
+#if KERNEL_VERSION(4, 5, 0) > LINUX_VERSION_CODE
 			nicApplyNetworkAddress(prAdapter);
+#endif
 
 			/* 9. indicate disconnection as default status */
 			kalIndicateStatusAndComplete(prAdapter->prGlueInfo, WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
