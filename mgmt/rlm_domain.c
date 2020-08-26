@@ -2743,8 +2743,7 @@ struct channel *rlmDomainGetActiveChannels(void)
 
 void rlmDomainSetDefaultCountryCode(void)
 {
-	// Set the default country code to US
-	g_mtk_regd_control.alpha2 = 0x5355;
+	g_mtk_regd_control.alpha2 = COUNTRY_CODE_WW;
 }
 
 void rlmDomainResetCtrlInfo(void)
